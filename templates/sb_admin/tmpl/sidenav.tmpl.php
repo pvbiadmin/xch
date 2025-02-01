@@ -615,7 +615,7 @@ function commission($user_id)
     $indirect_referral = indirect_referral($user_id);
     $echelon = echelon($user_id);
     $unilevel = unilevel($user_id);
-    $binary = binary();
+    $binary = binary($user_id);
     $leadership_binary = leadership_binary($user_id);
     $passup_binary = passup_binary($user_id);
     $leadership_passive = leadership_passive($user_id);
@@ -1038,9 +1038,13 @@ function unilevel($user_id)
     HTML;
 }
 
-function binary()
+function binary($user_id)
 {
     $sp = settings('plans');
+
+    if (!($sp->binary_pair && user_binary($user_id))) {
+        return '';
+    }
 
     $binary_pair_name = $sp->binary_pair_name;
 
@@ -1568,6 +1572,17 @@ function user_indirect($user_id)
     return $db->setQuery(
         'SELECT * ' .
         'FROM network_indirect ' .
+        'WHERE user_id = ' . $db->quote($user_id)
+    )->loadObject();
+}
+
+function user_binary($user_id)
+{
+    $db = db();
+
+    return $db->setQuery(
+        'SELECT * ' .
+        'FROM network_binary ' .
         'WHERE user_id = ' . $db->quote($user_id)
     )->loadObject();
 }

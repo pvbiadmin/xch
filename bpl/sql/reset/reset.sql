@@ -1721,7 +1721,7 @@ VALUES (
         UNIX_TIMESTAMP(),
         UNIX_TIMESTAMP(),
         'admin@bit-cash.online',
-        'executive',
+        'basic',
         'director',
         '',
         '',

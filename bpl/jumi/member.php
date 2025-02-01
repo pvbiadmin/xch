@@ -2,6 +2,7 @@
 
 namespace BPL\Jumi\Member;
 
+require_once 'templates/sb_admin/tmpl/login.tmpl.php';
 require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'templates/sb_admin/tmpl/error403.tmpl.php';
 require_once 'bpl/mods/url_sef.php';
@@ -10,6 +11,8 @@ require_once 'bpl/mods/helpers.php';
 use Exception;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Session\Session;
+
+use function Templates\SB_Admin\Tmpl\Login\main as view_login;
 
 use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\session_set;
@@ -39,7 +42,7 @@ function main()
 
 	$str = process_login($username, $password, $usertype, $attempts, $max_attempts);
 
-	$str .= member($user_id, $admintype);
+	$str .= member($user_id, $admintype, true);
 
 	return $str;
 }
@@ -116,8 +119,8 @@ function live_reload(bool $counter, int $s = 5000): string
                 .then(data => {
                     const parser = new DOMParser();
                     const newDocument = parser.parseFromString(data, "text/html");
-                    const newBody = newDocument.querySelector("body").innerHTML;
-                    document.querySelector("body").innerHTML = newBody;
+                    const newBody = newDocument.querySelector("main").innerHTML;
+                    document.querySelector("main").innerHTML = newBody;
 
                     // Restore the counter value after reload
                     {$counter_script}
@@ -133,15 +136,30 @@ function process_login($username, $password, $usertype, $attempts, $max_attempts
 	$str = '';
 
 	if ($usertype === '') {
+		// Check if the user is currently blocked
+		$last_failed_attempt_time = session_get('last_failed_attempt_time', 0);
+		$block_duration = 150 * 60; // 150 minutes in seconds
+
 		if ($max_attempts - $attempts <= 0) {
-			// Display the custom error page
-			error403('You are blocked from logging in for 150 minutes due to too many failed attempts.', '403');
+			// Check if the block duration has passed
+			if (time() - $last_failed_attempt_time < $block_duration) {
+				// Display the custom error page
+				error403('You are blocked from logging in for 150 minutes due to too many failed attempts.', '403');
+			} else {
+				// Reset the attempts and last failed attempt time if the block duration has passed
+				session_set('attempts', 0);
+				session_set('last_failed_attempt_time', 0);
+			}
+
 		}
 
 		$app = application();
 
 		try {
-			if (!empty($username)) {
+			if (empty($username)) {
+				// view login form
+				view_login();
+			} else {
 				// Validate CSRF token
 				if (!Session::checkToken()) {
 					$app->enqueueMessage('Invalid Transaction!', 'error');
@@ -160,8 +178,9 @@ function process_login($username, $password, $usertype, $attempts, $max_attempts
 						// Set session variables
 						set_user_session($login);
 
-						// Reset login attempts
+						// Reset login attempts and last failed attempt time
 						session_set('attempts', 0);
+						session_set('last_failed_attempt_time', 0);
 
 						// Redirect to the desired page
 						$app->redirect(Uri::current());
@@ -172,9 +191,10 @@ function process_login($username, $password, $usertype, $attempts, $max_attempts
 				} else {
 					// Increment failed login attempts
 					$attempts = session_set('attempts', $attempts + 1);
+					session_set('last_failed_attempt_time', time());
 
 					$err = 'Incorrect Username or Password. Too many failed logins will block you for 150 minutes.' .
-						'<br>Attempts left: ' . ($max_attempts - $attempts) . '.';
+						'<br>Attempts left: ' . ($max_attempts - $attempts);
 
 					$app->enqueueMessage($err, 'error');
 					$app->redirect(Uri::current());

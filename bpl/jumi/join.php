@@ -2,19 +2,16 @@
 
 namespace BPL\Jumi\Join;
 
-require_once 'bpl/mods/ajax.php';
+require_once 'templates/sb_admin/tmpl/register.tmpl.php';
 require_once 'bpl/mods/query.php';
 require_once 'bpl/mods/helpers.php';
-require_once 'bpl/mods/terms.php';
 
 use Exception;
 
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Session\Session;
-use Joomla\CMS\HTML\HTMLHelper;
 
-use function BPL\Mods\Ajax\check_input;
-use function BPL\Mods\Ajax\check_position;
+use function Templates\SB_Admin\Tmpl\Registration\main as view_registration;
 
 use function BPL\Mods\Database\Query\insert;
 
@@ -28,10 +25,7 @@ use function BPL\Mods\Helpers\application;
 use function BPL\Mods\Helpers\session_set;
 use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\input_get;
-use function BPL\Mods\Helpers\menu;
 use function BPL\Mods\Helpers\time;
-
-use function BPL\Mods\Terms\main as terms;
 
 main();
 
@@ -42,364 +36,15 @@ main();
  */
 function main()
 {
-	$str = menu();
-
 	session_set('edit', false);
 
 	if (input_get('username') === '') {
-		try {
-			$str .= view_form();
-		} catch (Exception $e) {
-		}
+		view_registration();
 	} else {
 		process_form();
 	}
-
-	echo $str;
 }
 
-/**
- *
- * @return string
- *
- * @since version
- */
-function display_loader(): string
-{
-	return <<<HTML
-		<div class="wave">
-			<div class="ball"></div>
-			<div class="ball"></div>
-			<div class="ball"></div>
-			<div class="ball"></div>
-			<div class="ball"></div>
-		</div>
-		<style>
-			.wave {
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				position: fixed;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
-			}
-
-			.ball {
-				width: 10px; /* Further reduce width */
-				height: 10px; /* Further reduce height */
-				border-radius: 50%;
-				margin: 0 3px; /* Reduce margin for closer spacing */
-				background-color: #6c5ce7;
-				animation: wave 1s ease-in-out infinite;
-			}
-
-			@keyframes wave {
-				0% {
-					transform: translateY(0);
-				}
-				50% {
-					transform: translateY(-5px); /* Further reduce bounce height */
-				}
-				100% {
-					transform: translateY(0);
-				}
-			}
-
-			.ball:nth-child(2) {
-				animation-delay: -0.2s;
-			}
-
-			.ball:nth-child(3) {
-				animation-delay: -0.4s;
-			}
-
-			.ball:nth-child(4) {
-				animation-delay: -0.6s;
-			}
-
-			.ball:nth-child(5) {
-				animation-delay: -0.8s;
-			}
-		</style>
-	HTML;
-}
-
-/**
- *
- * @return string
- *
- * @since version
- */
-function view_logo(): string
-{
-	$img = 'images/Logo_Yellow_P.gif';
-
-	$logo1 = '<svg data-jdenticon-value="' . time() . '" width="80" height="80"></svg>';
-	$logo2 = '<a href="../"><img src="' . $img . '" class="img-responsive" alt=""></a>';
-
-	$str = '<div style="background-color: transparent; text-align: center; padding: 5px">' .
-		(!1 ? $logo1 : $logo2) . /*('<a href="../">
-<img src="' . $img . '" class="img-responsive" style="padding: 5px; margin-left: 33px" alt="">
-</a>') .*/
-		'</div>';
-
-	$str .= identicon_js();
-
-	return $str;
-}
-
-function identicon_js(): string
-{
-	return '<script src="https://cdn.jsdelivr.net/npm/jdenticon@3.1.1/dist/jdenticon.min.js" async
-        integrity="sha384-l0/0sn63N3mskDgRYJZA6Mogihu0VY3CusdLMiwpJ9LFPklOARUcOiWEIGGmFELx" crossorigin="anonymous">
-</script>';
-}
-
-/**
- * @return string
- *
- * @since version
- */
-function view_form(): string
-{
-	$settings_plans = settings('plans');
-	$usertype = session_get('usertype');
-	$admintype = session_get('admintype');
-	$sid = input_get('s');
-	$s_username = session_get('s_username');
-	$s_email = session_get('s_email');
-	$s_password = session_get('s_password');
-	$s_sponsor = session_get('s_sponsor');
-	$edit = session_get('edit');
-	$sponsor = sponsor();
-
-	$form = '';
-
-	$margin_style = '';
-	$logo = '';
-
-	if ($usertype === '') {
-		$form .= <<<CSS
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-		CSS;
-
-		$margin_style = ' style="margin-top: -10px;"';
-
-		$logo = view_logo();
-	}
-
-	$sponsor_field = '';
-	if ($settings_plans->direct_referral || $settings_plans->echelon) {
-		$sponsor_value = $s_sponsor && !isset($sponsor) ? $s_sponsor : $sponsor;
-		$readonly = $sid !== '' ? ' readonly' : '';
-		$sponsor_field = <<<HTML
-            <div class="form-group">
-                <label for="sponsor">Sponsor Username: *</label>
-                <div class="input-group">
-                    <input type="text" name="sponsor" id="sponsor" class="form-control" value="$sponsor_value" placeholder="Enter Sponsor Username Here.." required$readonly>
-                    <span class="input-group-btn">
-                        <button type="button" onClick="checkInput('sponsor')" class="btn btn-default" style="height: 38px;">Check Validity</button>
-                    </span>
-                </div>
-                <div id="sponsorDiv" class="help-block validation-message"></div>
-            </div>
-        HTML;
-	}
-
-	$date_field = '';
-	if ($edit && $admintype === 'Super') {
-		$date_field = <<<HTML
-            <div class="form-group">
-                <label for="date">Date Registered:</label>
-                <input type="text" name="date" id="date" class="form-control" size="40">
-            </div>
-        HTML;
-	}
-
-	$login_link = !$usertype ? '<a href="' . sef(43) . '" class="login-link">Log In</a>' : '';
-
-	$formToken = HTMLHelper::_('form.token');
-
-	// Include the form CSS and JS
-	$form .= formCss();
-
-	// Form HTML with updated style
-	$form .= <<<HTML
-        <div class="registration-form"$margin_style>
-            $logo
-            <h1>Register</h1>
-            <p>Please fill up all fields marked *</p>
-            <form name="regForm" method="post" enctype="multipart/form-data" onsubmit="submit.disabled = true; return validateForm()">
-                <!-- Username Field -->
-                <div class="form-group">
-                    <label for="username">Username: *</label>
-                    <div class="input-group">
-                        <input type="text" name="username" id="username" class="form-control" value="$s_username" placeholder="Enter Username Here.." required>
-                        <span class="input-group-btn">
-                            <button type="button" onClick="checkInput('username')" class="btn btn-default" style="height: 38px;">Check Availability</button>
-                        </span>
-                    </div>
-                    <div id="usernameDiv" class="help-block validation-message"></div>
-                </div>
-
-                <!-- Email Field -->
-                <div class="form-group">
-                    <label for="email">Email: *</label>
-                    <input type="email" name="email" id="email" class="form-control" value="$s_email" placeholder="Enter Email Here.." required>
-                </div>
-
-                <!-- Password Fields -->
-                <div class="form-group">
-                    <label for="password1">Password: *</label>
-                    <input type="password" name="password1" id="password1" class="form-control" value="$s_password" placeholder="Enter Password Here.." required>
-                </div>
-
-                <div class="form-group">
-                    <label for="password2">Confirm Password: *</label>
-                    <input type="password" name="password2" id="password2" class="form-control" value="$s_password" placeholder="Confirm Password Here.." required>
-                </div>
-
-                <!-- Sponsor Field -->
-                $sponsor_field
-
-                <!-- Date Field (for admin) -->
-                $date_field
-
-                <!-- Terms and Conditions -->
-                <div class="form-group terms">
-                    <label style="display: flex; align-items: center;">
-                        <input type="checkbox" id="terms" required>&nbsp;
-                        I Agree to the <a href="javascript:void(0)" data-uk-modal="{target:'#modal-1'}">Terms & Conditions</a>
-                    </label>
-                </div>
-
-                <!-- Submit Button and Login Link -->
-                <div class="form-group actions">
-                    <button type="submit" id="register" class="btn btn-primary">Register</button>
-                    <div style="text-align: center; margin-top: 10px;">
-                        $login_link
-                    </div>
-                </div>
-                $formToken
-            </form>
-        </div>
-    HTML;
-
-	// Append additional functions
-	$form .= terms();
-	$form .= check_input();
-	$form .= check_position();
-	$form .= js();
-
-	return $form;
-}
-
-function formCss(): string
-{
-	return <<<CSS
-        <style>
-            /* Make the page transparent */
-            body {
-                background-color: transparent;
-            }
-
-            /* Card-like styling for the registration form */
-            .registration-form {
-                background-color: white; /* White background */
-                max-width: 600px; /* Reduced width */
-                margin: 50px auto; /* Center the form with some top margin */
-                padding: 20px; /* Add padding */
-                border-radius: 8px; /* Rounded corners */
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-            }
-
-            /* Custom styling for the input group */
-            .input-group {
-                width: 100%;
-            }
-
-            .input-group .form-control {
-                border-radius: 4px 0 0 4px;
-                height: 38px; /* Ensure input height matches button height */
-            }
-
-            .input-group-btn .btn {
-                border-radius: 0 4px 4px 0;
-                border-left: 0;
-                height: 38px; /* Ensure button height matches input height */
-            }
-
-            .input-group-btn .btn-default {
-                background-color: #f8f9fa;
-                border-color: #ccc;
-            }
-
-            .input-group-btn .btn-default:hover {
-                background-color: #e9ecef;
-            }
-
-            /* Custom styling for the validation messages */
-            .help-block.validation-message {
-                color: #a94442; /* Red color for error messages */
-                font-size: 12px;
-            }
-
-            /* Center the form heading */
-            .registration-form h1 {
-                text-align: center;
-                margin-bottom: 20px;
-            }
-
-            /* Style the terms and conditions link */
-            .registration-form .terms a {
-                color: #007bff; /* Bootstrap primary color */
-                text-decoration: none;
-            }
-
-            .registration-form .terms a:hover {
-                text-decoration: underline;
-            }
-
-            /* Style the submit button */
-            .registration-form .actions .btn-primary {
-                width: 100%;
-                margin-top: 10px;
-            }
-
-            /* Center the login link */
-            .registration-form .actions {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .registration-form .actions .login-link {
-                margin-top: 10px; /* Add spacing between the button and the link */
-                text-align: center;
-                color: #007bff; /* Bootstrap primary color */
-                text-decoration: none;
-            }
-
-            .registration-form .actions .login-link:hover {
-                text-decoration: underline;
-            }
-        </style>
-    CSS;
-}
-
-/**
- * // *
- * @param $username
- * @param $password1
- * @param $password2
- * @param $code
- * @param $sponsor
- * @param $admintype
- * @param $edit
- *
- * @since version
- */
 function validate_input(
 	$username,
 	$password1,
@@ -421,51 +66,51 @@ function validate_input(
 	$app = application();
 
 	if ($username === '') {
-		$err = 'Please specify your Username.<br>';
-		$app->redirect(Uri::root(true) . '/' . sef(144), $err, 'error');
+		$app->enqueueMessage('Please specify your Username.', 'error');
+		$app->redirect(Uri::current());
 	}
 
 	if ($password1 === '') {
-		$err = 'Please specify your Password.<br>';
-		$app->redirect(Uri::root(true) . '/' . sef(144), $err, 'error');
+		$app->enqueueMessage('Please specify your Password.', 'error');
+		$app->redirect(Uri::current());
 	}
 
 	if ($password2 === '') {
-		$err = 'Please specify your Password confirmation.<br>';
-		$app->redirect(Uri::root(true) . '/' . sef(144), $err, 'error');
+		$app->enqueueMessage('Please specify your Password confirmation.', 'error');
+		$app->redirect(Uri::current());
 	}
 
 	if ($edit && !isset($date)) {
-		$err = 'Please specify your Registration Date.<br>';
-		$app->redirect(Uri::root(true) . '/' . sef(144), $err, 'error');
+		$app->enqueueMessage('Please specify your Registration Date.', 'error');
+		$app->redirect(Uri::current());
 	}
 
 	if (count(user_username_unblock($username))) {
-		$err = 'Username already taken.<br>';
-		$app->redirect(Uri::root(true) . '/' . sef(144), $err, 'error');
+		$app->enqueueMessage('Username already taken.', 'error');
+		$app->redirect(Uri::current());
 	}
 
 	if ($payment_mode === 'CODE' && $code === '') {
-		$err = 'Please specify your Registration Code.<br>';
-		$app->redirect(Uri::root(true) . '/' . sef(144), $err, 'error');
+		$app->enqueueMessage('Please specify your Registration Code.', 'error');
+		$app->redirect(Uri::current());
 	}
 
 	if ($password1 !== $password2) {
-		$err = 'Your Passwords do not match!<br>';
-		$app->redirect(Uri::root(true) . '/' . sef(144), $err, 'error');
+		$app->enqueueMessage('Your Passwords do not match!', 'error');
+		$app->redirect(Uri::current());
 	}
 
 	if ($settings_plans->direct_referral) {
 		$user_sponsor = user_username($sponsor);
 
 		if ($sponsor === '') {
-			$err = 'Please specify your Sponsor Username.<br>';
-			$app->redirect(Uri::root(true) . '/' . sef(144), $err, 'error');
+			$app->enqueueMessage('Please specify your Sponsor Username.', 'error');
+			$app->redirect(Uri::current());
 		}
 
 		if (empty($user_sponsor) || (empty(user_username_active($sponsor)))) {
-			$err = 'Invalid Sponsor Username!<br>';
-			$app->redirect(Uri::root(true) . '/' . sef(144), $err, 'error');
+			$app->enqueueMessage('Invalid Sponsor Username!', 'error');
+			$app->redirect(Uri::current());
 		}
 	}
 }
@@ -475,7 +120,11 @@ function validate_input(
  */
 function process_form()
 {
-	echo display_loader();
+	$db = db();
+
+	// die('hahaha');
+
+	// echo display_loader();
 
 	$admintype = session_get('admintype');
 	$edit = session_get('edit');
@@ -489,8 +138,11 @@ function process_form()
 
 	$app = application();
 
-	Session::checkToken() or $app->redirect(Uri::root(true) .
-		'/' . sef(144), 'Invalid Transaction!', 'error');
+	// Validate CSRF token
+	if (!Session::checkToken()) {
+		$app->enqueueMessage('Invalid Transaction!', 'error');
+		$app->redirect(Uri::current());
+	}
 
 	$email = substr($email, 0, 60);
 
@@ -511,11 +163,76 @@ function process_form()
 		$edit
 	);
 
-	if (insert_user($username, $password1, $sponsor, $email, $admintype, $edit)) {
-		$app->redirect(Uri::root(true) . '/' . sef(144), $username .
-			' has joined successfully!', 'success');
+	$insert_user = insert_user($username, $password1, $sponsor, $email, $admintype, $edit);
+
+	if ($insert_user) {
+		$insert_id = $db->insertid();
+		$type = 'basic';
+		process_indirect_referral($insert_id, $type);
+
+		$app->enqueueMessage($username . ' has joined successfully!', 'success');
+		$app->redirect(Uri::current());
 	} else {
-		$app->redirect(Uri::root(true) . '/' . sef(144), 'Something went wrong!', 'error');
+		$app->enqueueMessage('An error occurred during registration. Please try again.', 'error');
+		$app->redirect(Uri::current());
+	}
+}
+
+function process_indirect_referral($insert_id, $code_type)
+{
+	$sp = settings('plans');
+	$si = settings('indirect_referral');
+	$se = settings('entry');
+
+	$username = input_get('username');
+	$sponsor = input_get('sponsor');
+
+	$edit = session_get('edit');
+
+	$indirect_referral_level = $si->{$code_type . '_indirect_referral_level'};
+
+	$sponsor_id = '';
+
+	$user_sponsor = user_username($sponsor);
+
+	if (!empty($user_sponsor)) {
+		$sponsor_id = $user_sponsor[0]->id;
+	}
+
+	$date = time();
+
+	$db = db();
+
+	if (
+		$indirect_referral_level &&
+		$sp->indirect_referral
+	) {
+		insert(
+			'network_indirect',
+			['id', 'user_id'],
+			[$db->quote($insert_id), $db->quote($insert_id)]
+		);
+
+		$activity = '<b>' . ucwords($sp->indirect_referral_name) . ' Entry: </b> <a href="' .
+			sef(44) . qs() . 'uid=' . $insert_id . '">' . $username . '</a> has entered into ' .
+			ucwords($sp->indirect_referral_name) . ' upon ' .
+			ucfirst($se->{$code_type . '_package_name'}) . ' Sign Up.';
+
+		insert(
+			'network_activity',
+			[
+				'user_id',
+				'sponsor_id',
+				'activity',
+				'activity_date'
+			],
+			[
+				$db->quote($insert_id),
+				$db->quote($sponsor_id),
+				$db->quote($activity),
+				($edit === true && (int) $date !== 0 ? $db->quote($date) : $db->quote(time()))
+			]
+		);
 	}
 }
 
@@ -580,7 +297,7 @@ function insert_user($username, $password, $sponsor, $email, $admintype, $edit)
 
 	if ($payment_mode === 'ECASH') {
 		$columns_user_insert[] = 'account_type';
-		$values_user_insert[] = $db->quote('starter');
+		$values_user_insert[] = $db->quote('basic');
 	}
 
 	return insert(
@@ -728,52 +445,6 @@ function log_registration_transactions($insert_id, $code_type, $username, $spons
 			$db->quote(time())
 		]
 	);
-}
-
-/**
- *
- * @return string
- *
- * @since version
- */
-function js(): string
-{
-	return <<<JS
-		<script>
-			function validateForm() {
-				if (document.forms["regForm"]["username"].value === ""
-					|| document.forms["regForm"]["password1"].value === ""
-					|| document.forms["regForm"]["password2"].value === ""
-					|| document.forms["regForm"]["code"].value === ""
-					|| document.forms["regForm"]["sponsor"].value === ""
-					|| document.forms["regForm"]["upline"].value === "") {
-					alert("Please specify all required info.");
-					
-					return false;
-				} else {
-					return true;
-				}
-			}
-
-			function disableMenu() {
-				document.getElementById("menu").disabled = true;
-			}
-
-			(function ($) {
-				$("#register").attr("disabled", true);
-
-				$("#terms").change(function () {
-					if (this.checked) {
-						$("#register").attr("disabled", false);
-					} else {
-						$("#register").attr("disabled", true);
-					}
-					
-					return false;
-				});
-			})(jQuery);
-		</script>
-	JS;
 }
 
 /**
