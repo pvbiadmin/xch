@@ -167,8 +167,10 @@ function process_form()
 
 	if ($insert_user) {
 		$insert_id = $db->insertid();
+
 		$type = 'basic';
-		process_indirect_referral($insert_id, $type);
+
+		process_leadership_fast_track_principal($insert_id, $type);
 
 		$app->enqueueMessage($username . ' has joined successfully!', 'success');
 		$app->redirect(Uri::current());
@@ -178,10 +180,10 @@ function process_form()
 	}
 }
 
-function process_indirect_referral($insert_id, $code_type)
+function process_leadership_fast_track_principal($insert_id, $code_type)
 {
 	$sp = settings('plans');
-	$si = settings('indirect_referral');
+	$slftp = settings('leadership_fast_track_principal');
 	$se = settings('entry');
 
 	$username = input_get('username');
@@ -189,7 +191,7 @@ function process_indirect_referral($insert_id, $code_type)
 
 	$edit = session_get('edit');
 
-	$indirect_referral_level = $si->{$code_type . '_indirect_referral_level'};
+	$lftp_level = $slftp->{$code_type . '_leadership_fast_track_principal_level'};
 
 	$sponsor_id = '';
 
@@ -204,18 +206,18 @@ function process_indirect_referral($insert_id, $code_type)
 	$db = db();
 
 	if (
-		$indirect_referral_level &&
-		$sp->indirect_referral
+		$lftp_level &&
+		$sp->leadership_fast_track_principal
 	) {
 		insert(
-			'network_indirect',
+			'network_leadership_fast_track_principal',
 			['id', 'user_id'],
 			[$db->quote($insert_id), $db->quote($insert_id)]
 		);
 
-		$activity = '<b>' . ucwords($sp->indirect_referral_name) . ' Entry: </b> <a href="' .
+		$activity = '<b>' . ucwords($sp->leadership_fast_track_principal_name) . ' Entry: </b> <a href="' .
 			sef(44) . qs() . 'uid=' . $insert_id . '">' . $username . '</a> has entered into ' .
-			ucwords($sp->indirect_referral_name) . ' upon ' .
+			ucwords($sp->leadership_fast_track_principal_name) . ' upon ' .
 			ucfirst($se->{$code_type . '_package_name'}) . ' Sign Up.';
 
 		insert(

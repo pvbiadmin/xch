@@ -50,15 +50,7 @@ function main($input, $user_id)
         if ($update_user) {
             $sponsor_id = user($user_id)->sponsor_id;
 
-            referral_fast_track_principal($sponsor_id, $input);
-
-            $custom_percentages = [
-                1 => 2, // 2% for level 1
-                2 => 1.5, // 1.5% for level 2
-                3 => 1.5  // 1.5% for level 3
-            ];
-
-            indirect_referral_fast_track_principal($sponsor_id, $input, 3, $custom_percentages);
+            indirect_referral_fast_track_principal($sponsor_id, $input, 2);
         }
 
         $dbh->commit();
@@ -96,40 +88,7 @@ function main($input, $user_id)
     echo_json($return);
 }
 
-function referral_fast_track_principal($user_id, $input)
-{
-    $sp = settings('plans');
-
-    if ($sp->direct_referral_fast_track_principal) {
-        $srftp = settings('referral_fast_track_principal');
-
-        $sponsor = user($user_id);
-
-        $account_type = $sponsor->account_type;
-
-        $percent = $srftp->{$account_type . '_referral_fast_track_principal'};
-
-        $bonus = $input * ($percent / 100);
-
-        $income_referral_ftp = $sponsor->income_referral_fast_track_principal;
-        $balance = $sponsor->payout_transfer;
-
-        return crud(
-            'UPDATE network_users ' .
-            'SET income_referral_fast_track_principal = :income_referral_ftp, ' .
-            'payout_transfer = :payout_transfer ' .
-            'WHERE id = :id',
-            [
-                'income_referral_ftp' => ($income_referral_ftp + $bonus),
-                'payout_transfer' => ($balance + $bonus),
-                'id' => $user_id
-            ]
-        );
-    }
-}
-
-
-function indirect_referral_fast_track_principal($user_id, $input, $levels = 1, $custom_percentages = [])
+function indirect_referral_fast_track_principal($user_id, $input, $levels = 1)
 {
     // Validate levels input
     $levels = min(max(1, (int) $levels), 10); // Ensure levels is between 1 and 10
@@ -140,6 +99,9 @@ function indirect_referral_fast_track_principal($user_id, $input, $levels = 1, $
     }
 
     $srftp = settings('referral_fast_track_principal');
+
+    // Store successful updates
+    $updates = [];
 
     // Current sponsor ID to track upline
     $current_sponsor_id = $user_id;
@@ -157,27 +119,22 @@ function indirect_referral_fast_track_principal($user_id, $input, $levels = 1, $
         $account_type = $sponsor->account_type;
 
         // Calculate percentage for current level
-        if (isset($custom_percentages[$level])) {
-            // Use custom percentage if provided
-            $percent = (float) $custom_percentages[$level];
-        } else {
-            // Fallback to original calculation
-            $base_percent = $srftp->{$account_type . '_referral_fast_track_principal'};
-            $level_factor = 1 - (($level - 1) * 0.1); // Decrease by 10% per level
-            $percent = $base_percent * $level_factor;
-        }
+        // Base percentage from settings multiplied by level factor
+        $base_percent = $srftp->{$account_type . '_referral_fast_track_principal'};
+        $level_factor = 1 - (($level - 1) * 0.1); // Decrease by 10% per level
+        $percent = $base_percent * $level_factor;
 
         // Calculate bonus
         $bonus = $input * ($percent / 100);
 
         // Get current values
-        $income_referral_ftp = $sponsor->bonus_leadership_fast_track_principal;
+        $income_referral_ftp = $sponsor->income_referral_fast_track_principal;
         $balance = $sponsor->payout_transfer;
 
         // Update database
         crud(
             'UPDATE network_users ' .
-            'SET bonus_leadership_fast_track_principal = :income_referral_ftp, ' .
+            'SET income_referral_fast_track_principal = :income_referral_ftp, ' .
             'payout_transfer = :payout_transfer ' .
             'WHERE id = :id',
             [
@@ -190,6 +147,8 @@ function indirect_referral_fast_track_principal($user_id, $input, $levels = 1, $
         // Move up to next sponsor
         $current_sponsor_id = $sponsor->sponsor_id;
     }
+
+    return $updates;
 }
 
 /**

@@ -126,6 +126,7 @@ function getPlanAttributes(): array
 		'unilevel' => ['code' => 'UB', 'field' => 'unilevel'],
 		'echelon' => ['code' => 'EB', 'field' => 'bonus_echelon'],
 		'leadership_binary' => ['code' => 'LB', 'field' => 'bonus_leadership'],
-		'leadership_passive' => ['code' => 'LP', 'field' => 'bonus_leadership_passive']
+		'leadership_passive' => ['code' => 'LP', 'field' => 'bonus_leadership_passive'],
+		'leadership_fast_track_principal' => ['code' => 'LFTP', 'field' => 'bonus_leadership_fast_track_principal'],
 	];
 }

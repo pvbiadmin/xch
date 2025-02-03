@@ -926,6 +926,33 @@ INSERT INTO `network_leadership_passive` (`user_id`) VALUES (1);
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `network_leadership_fast_track_principal`
+--
+
+DROP TABLE IF EXISTS `network_leadership_fast_track_principal`;
+
+CREATE TABLE IF NOT EXISTS `network_leadership_fast_track_principal` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `user_id` int(11) NOT NULL,
+    `bonus_leadership_fast_track_principal` double NOT NULL DEFAULT '0',
+    `bonus_leadership_fast_track_principal_now` double NOT NULL DEFAULT '0',
+    `bonus_leadership_fast_track_principal_last` double NOT NULL DEFAULT '0',
+    `income_today` double NOT NULL DEFAULT '0',
+    `flushout_local` double NOT NULL DEFAULT '0',
+    `flushout_global` double NOT NULL DEFAULT '0',
+    `date_last_flushout` int(11) NOT NULL DEFAULT '0',
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `network_leadership_passive`
+--
+
+INSERT INTO `network_leadership_fast_track_principal` (`user_id`) VALUES (1);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `network_matrix`
 --
 
@@ -1638,7 +1665,9 @@ CREATE TABLE IF NOT EXISTS `network_users` (
   `bank` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `payment_method` json DEFAULT NULL,
   `income_referral` double NOT NULL DEFAULT '0',
+  `income_referral_fast_track_principal` double NOT NULL DEFAULT '0',
   `income_referral_flushout` double NOT NULL DEFAULT '0',
+  `income_referral_fast_track_principal_flushout` double NOT NULL DEFAULT '0',
   `bonus_echelon` double NOT NULL DEFAULT '0',
   `payout_total` double NOT NULL DEFAULT '0',
   `address` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
@@ -1649,6 +1678,7 @@ CREATE TABLE IF NOT EXISTS `network_users` (
   `p2p_wallet` json DEFAULT NULL,
   `bonus_leadership` double NOT NULL DEFAULT '0',
   `bonus_leadership_passive` double NOT NULL DEFAULT '0',
+  `bonus_leadership_fast_track_principal` double NOT NULL DEFAULT '0',
   `bonus_indirect_referral` double NOT NULL DEFAULT '0',
   `bonus_indirect_referral_points` double NOT NULL DEFAULT '0',
   `bonus_indirect_referral_fmc` double NOT NULL DEFAULT '0',
@@ -1669,6 +1699,7 @@ CREATE TABLE IF NOT EXISTS `network_users` (
   `bonus_merchant` double NOT NULL DEFAULT '0',
   `coin_transfer` double NOT NULL DEFAULT '0',
   `bonus_leadership_passive_balance` double NOT NULL DEFAULT '0',
+  `bonus_leadership_fast_track_principal_balance` double NOT NULL DEFAULT '0',
   `top_up_balance` double NOT NULL DEFAULT '0',
   `fast_track_balance` double NOT NULL DEFAULT '0',
   `fixed_daily_balance` double NOT NULL DEFAULT '0',

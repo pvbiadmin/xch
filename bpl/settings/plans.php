@@ -30,6 +30,9 @@ function input(): array
 	$inputs['direct_referral']['name'] = input_get('direct_referral_name', '', 'RAW');
 	$inputs['direct_referral']['status'] = input_get('direct_referral', 0);
 
+	$inputs['direct_referral_fast_track_principal']['name'] = input_get('direct_referral_fast_track_principal_name', '', 'RAW');
+	$inputs['direct_referral_fast_track_principal']['status'] = input_get('direct_referral_fast_track_principal', 0);
+
 	$inputs['indirect_referral']['name'] = input_get('indirect_referral_name', '', 'RAW');
 	$inputs['indirect_referral']['status'] = input_get('indirect_referral', 0);
 
@@ -44,6 +47,9 @@ function input(): array
 
 	$inputs['leadership_passive']['name'] = input_get('leadership_passive_name', '', 'RAW');
 	$inputs['leadership_passive']['status'] = input_get('leadership_passive', 0);
+
+	$inputs['leadership_fast_track_principal']['name'] = input_get('leadership_fast_track_principal_name', '', 'RAW');
+	$inputs['leadership_fast_track_principal']['status'] = input_get('leadership_fast_track_principal', 0);
 
 	$inputs['redundant_binary']['name'] = input_get('redundant_binary_name', '', 'RAW');
 	$inputs['redundant_binary']['status'] = input_get('redundant_binary', 0);
@@ -278,11 +284,13 @@ function name_default(): array
 	return [
 		'account_freeze_name' => 'Account Freeze',
 		'direct_referral_name' => 'Direct Referral',
+		'direct_referral_fast_track_principal_name' => 'Direct Referral FTP',
 		'indirect_referral_name' => 'Indirect Referral',
 		'unilevel_name' => 'Unilevel',
 		'binary_pair_name' => 'Binary',
 		'leadership_binary_name' => 'Leadership Binary',
 		'leadership_passive_name' => 'Leadership Passive',
+		'leadership_fast_track_principal_name' => 'Leadership Fast Track Principal',
 		'redundant_binary_name' => 'Redundant Binary',
 		'matrix_name' => 'Matrix',
 		'power_name' => 'Power',

@@ -872,6 +872,7 @@ function plan_attr(): array
         'passup_binary' => ['position', 'passup_binary_bonus'],
         'leadership_binary' => 'bonus_leadership',
         'leadership_passive' => 'bonus_leadership_passive',
+        'leadership_fast_track_principal' => 'bonus_leadership_fast_track_principal',
         'matrix' => 'bonus_matrix',
         'power' => 'bonus_power',
         'matrix_table' => 'bonus_share',

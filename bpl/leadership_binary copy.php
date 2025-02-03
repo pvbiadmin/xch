@@ -1,22 +1,24 @@
 <?php
 
-namespace BPL\Leadership_Passive;
+namespace BPL\Leadership_Binary;
 
 require_once 'bpl/mods/query.php';
-//require_once 'bpl/mods/cd_filter.php';
+require_once 'bpl/mods/cd_filter.php';
 //require_once 'bpl/upline_support.php';
 require_once 'bpl/mods/helpers.php';
 
 use function BPL\Mods\Database\Query\update;
 use function BPL\Mods\Database\Query\insert;
 
-//use function BPL\Mods\Commission_Deduct\Filter\main as cd_filter;
+use function BPL\Mods\Commission_Deduct\Filter\main as cd_filter;
+
 //use function BPL\Upline_Support\main as upline_support;
 use function BPL\Mods\Url_SEF\sef;
 use function BPL\Mods\Url_SEF\qs;
 
 use function BPL\Mods\Helpers\db;
-use function BPL\Mods\Helpers\user;
+
+//use function BPL\Mods\Helpers\user;
 use function BPL\Mods\Helpers\users;
 use function BPL\Mods\Helpers\settings;
 
@@ -27,48 +29,146 @@ use function BPL\Mods\Helpers\settings;
  */
 function main()
 {
-	$slp = settings('leadership_passive');
-
 	foreach (users() as $user) {
+		$slb = settings('leadership');
+
 		$account_type = $user->account_type;
+		$user_bonus_lb = $user->bonus_leadership;
 
-		$count_directs = count(user_directs($user->user_id));
+		$sponsored = user_directs($user->id);
 
-		$type_level = $slp->{$account_type . '_leadership_passive_level'};
-		$required_directs = $slp->{$account_type . '_leadership_passive_sponsored'};
-		$max_daily_income = $slp->{$account_type . '_leadership_passive_max_daily_income'};
-		$income_max = $slp->{$account_type . '_leadership_passive_maximum'};
+		$type_level = $slb->{$account_type . '_leadership_level'};
+		$required_directs = $slb->{$account_type . '_leadership_sponsored'};
+		$max_daily_income = $slb->{$account_type . '_leadership_max_daily_income'};
+		$max_income_total = $slb->{$account_type . '_leadership_max'};
 
-		$user_bonus_lp = $user->bonus_leadership_passive;
+		$ulb = user_leadership($user->id);
 
-		$ulp = user_leadership_passive($user->id);
-
-		$income_today = $ulp->income_today;
+		$income_today = $ulb->income_today;
 
 		if (
-			$type_level > 0 && $count_directs >= $required_directs
-			/*&& (($max_daily_income > 0 && $income_today < $max_daily_income) || !$max_daily_income)
-																																 && ($income_max > 0 && $user_bonus_lp < $income_max || !$income_max)*/
+			$type_level
+			//	        && empty(user_cd($user->id))
+			&& count($sponsored) >= $required_directs
 		) {
-			$lp_total = bonus_total($user);
+			$lb = bonus_total($user);
+			$lb_add = $lb - $ulb->bonus_leadership_last;
 
-			$lp_add = $lp_total - $ulp->bonus_leadership_passive_last;
-
-			if ($lp_add > 0) {
-				if ($max_daily_income > 0 && ($income_today + $lp_add) >= $max_daily_income) {
-					$lp_add = non_zero($max_daily_income - $income_today);
+			if ($lb_add > 0) {
+				if ($max_daily_income > 0 && ($income_today + $lb_add) >= $max_daily_income) {
+					$lb_add = non_zero($max_daily_income - $income_today);
 				}
 
-				if ($income_max > 0 && ($user_bonus_lp + $lp_add) >= $income_max) {
-					$ir_add = non_zero($income_max - $user_bonus_lp);
+				if ($max_income_total > 0 && ($user_bonus_lb + $lb_add) >= $max_income_total) {
+					$lb_add = non_zero($max_income_total - $user_bonus_lb);
 				}
 
-				update_leadership_passive($lp_add, $lp_total, $user->id);
-				update_user($lp_add, $user->id);
-				log_activity($user, $lp_total);
+				update_bonus_lb($lb_add, $lb, $user);
 			}
 		}
 	}
+}
+
+/**
+ * @param $lb_add
+ * @param $lb
+ * @param $user
+ *
+ *
+ * @since version
+ */
+function update_bonus_lb($lb_add, $lb, $user)
+{
+	$db = db();
+
+	//    $se = settings('entry');
+//    $sf = settings('freeze');
+
+	$user_id = $user->id;
+	//    $account_type = $user->account_type;
+
+	//    $income_cycle_global = $user->income_cycle_global;
+
+	//    $entry  = $se->{$account_type . '_entry'};
+//    $factor = $sf->{$account_type . '_percentage'} / 100;
+
+	//    $freeze_limit = $entry * $factor;
+
+	//    $status = $user->status_global;
+
+	//    if ($income_cycle_global >= $freeze_limit)
+//    {
+//        if ($status === 'active')
+//        {
+//            update(
+//                'network_users',
+//                [
+//                    'status_global = ' . $db->quote('inactive'),
+//                    'income_flushout = income_flushout + ' . $lb_add
+//                ],
+//                ['id = ' . $db->quote($user_id)]
+//            );
+//        }
+//
+//        update_leadership(0, $lb, $user_id);
+//    }
+//    else
+//    {
+//        $diff = $freeze_limit - $income_cycle_global;
+//
+//        if ($diff < $lb_add)
+//        {
+//            $flushout_global = $lb_add - $diff;
+//
+//            if ($status === 'active')
+//            {
+//                $field_user = ['bonus_leadership = bonus_leadership + ' . $diff];
+//
+//                $field_user[] = 'status_global = ' . $db->quote('inactive');
+//                $field_user[] = 'income_cycle_global = income_cycle_global + ' . cd_filter($user_id, $diff);
+//                $field_user[] = 'income_flushout = income_flushout + ' . $flushout_global;
+//
+//                if (settings('ancillaries')->withdrawal_mode === 'standard')
+//                {
+//                    $field_user[] = 'balance = balance + ' . cd_filter($user_id, $diff);
+//                }
+//                else
+//                {
+//                    $field_user[] = 'payout_transfer = payout_transfer + ' . cd_filter($user_id, $diff);
+//                }
+//
+//                update(
+//                    'network_users',
+//                    $field_user,
+//                    ['id = ' . $db->quote($user_id)]
+//                );
+//            }
+//
+//            update_leadership($diff, $lb, $user_id);
+//        }
+//        else
+//        {
+	$field_user = ['bonus_leadership = bonus_leadership + ' . $lb_add];
+
+	//	$field_user[] = 'income_cycle_global = income_cycle_global + ' . cd_filter($user_id, $lb_add);
+
+	if (settings('ancillaries')->withdrawal_mode === 'standard') {
+		$field_user[] = 'balance = balance + ' . cd_filter($user_id, $lb_add);
+	} else {
+		$field_user[] = 'payout_transfer = payout_transfer + ' . cd_filter($user_id, $lb_add);
+	}
+
+	update(
+		'network_users',
+		$field_user,
+		['id = ' . $db->quote($user_id)]
+	);
+
+	update_leadership($lb_add, $lb, $user_id);
+	//        }
+
+	log_activity($user, $lb);
+	//    }
 }
 
 /**
@@ -84,28 +184,24 @@ function non_zero($value)
 }
 
 /**
- * @param $user_id
+ * @param $user
  *
  * @return string
  *
  * @since version
  */
-function view($user_id): string
+function view($user): string
 {
-	$user = user($user_id);
-
 	$account_type = $user->account_type;
 
-	$settings_leadership_passive = settings('leadership_passive');
-
-	$required_directs = $settings_leadership_passive->{$account_type . '_leadership_passive_sponsored'};
-	$level = $settings_leadership_passive->{$account_type . '_leadership_passive_level'};
+	$required_directs = settings('leadership')->{$account_type . '_leadership_sponsored'};
+	$level = settings('leadership')->{$account_type . '_leadership_level'};
 
 	$status = count(user_directs($user->id)) >= $required_directs ? '' : ' (inactive)';
 
 	$currency = settings('ancillaries')->currency;
 
-	$str = '<h3>List ' . settings('plans')->leadership_passive_name . '</h3>
+	$str = '<h3>Income Summary</h3>
         <table class="category table table-striped table-bordered table-hover">
             <thead>
             <tr>
@@ -189,11 +285,6 @@ function view($user_id): string
 			break;
 	}
 
-	$ulp = user_leadership_passive($user_id);
-
-	$flushout_local = $ulp->flushout_local;
-	$flushout_global = $ulp->flushout_global;
-
 	$str .= '<tr>
                 <td>
                     <div style="text-align: center"><strong>Total' . $status . '</strong></div>
@@ -202,9 +293,8 @@ function view($user_id): string
                     <div style="text-align: center">' . (members_total($user)) . '</div>
                 </td>
                 <td>
-                    <div style="text-align: center">' .
-		number_format((bonus_total($user)/* - $flushout_local - $flushout_global*/), 8) . '</div>
-                </td>              
+                    <div style="text-align: center">' . number_format(/*bonus_total($user)*/ $user->bonus_leadership, 8) . '</div>
+                </td>
                 <td>
                     <div style="text-align: center">N/A</div>
                 </td>
@@ -213,79 +303,6 @@ function view($user_id): string
         </table>';
 
 	return $str;
-}
-
-function insert_leadership_passive($insert_id, $code_type, $username, $sponsor_id, $date, string $prov = 'code')
-{
-	if (empty(user_leadership_passive($insert_id))) {
-		insert(
-			'network_leadership_passive',
-			['user_id'],
-			[db()->quote($insert_id)]
-		);
-
-		logs_leadership_fast_track_principal($insert_id, $code_type, $username, $sponsor_id, $date, $prov);
-	}
-}
-
-function logs_leadership_passive($insert_id, $code_type, $username, $sponsor, $date, $prov)
-{
-	$db = db();
-
-	$settings_plans = settings('plans');
-
-	$sponsor_id = '';
-
-	$user_sponsor = user_username($sponsor);
-
-	if (!empty($user_sponsor)) {
-		$sponsor_id = $user_sponsor[0]->id;
-	}
-
-	$activity = '<b>' . ucwords($settings_plans->leadership_passive_name) . ' Entry: </b> <a href="' .
-		sef(44) . qs() . 'uid=' . $insert_id . '">' . $username . '</a> has entered into ' .
-		ucwords($settings_plans->leadership_passive_name) . ' upon ' .
-		ucfirst(settings('entry')->{$code_type . '_package_name'}) . source($prov) . '.';
-
-	insert(
-		'network_activity',
-		[
-			'user_id',
-			'sponsor_id',
-			'activity',
-			'activity_date'
-		],
-		[
-			$db->quote($insert_id),
-			$db->quote($sponsor_id),
-			$db->quote($activity),
-			$db->quote($date)
-		]
-	);
-}
-
-function source($prov): string
-{
-	$source = ' Sign Up';
-
-	if ($prov === 'activate') {
-		$source = ' Activation';
-	} elseif ($prov === 'upgrade') {
-		$source = ' Upgrade';
-	}
-
-	return $source;
-}
-
-function user_username($username)
-{
-	$db = db();
-
-	return $db->setQuery(
-		'SELECT * ' .
-		'FROM network_users ' .
-		'WHERE username = ' . $db->quote($username)
-	)->loadObjectList();
 }
 
 /**
@@ -298,48 +315,48 @@ function user_username($username)
  */
 function view_row($level, $user): string
 {
-	$slp = settings('leadership_passive');
+	$sl = settings('leadership');
 
 	switch ((int) $level) {
 		case 1:
 			$members = members_lvl1($user);
-			$bonus = leadership_passive_lvl1($user);
+			$bonus = leadership_lvl1($user);
 			break;
 		case 2:
 			$members = members_lvl2($user);
-			$bonus = leadership_fast_track_principal_lvl2($user);
+			$bonus = leadership_lvl2($user);
 			break;
 		case 3:
 			$members = members_lvl3($user);
-			$bonus = leadership_fast_track_principal_lvl3($user);
+			$bonus = leadership_lvl3($user);
 			break;
 		case 4:
 			$members = members_lvl4($user);
-			$bonus = leadership_fast_track_principal_lvl4($user);
+			$bonus = leadership_lvl4($user);
 			break;
 		case 5:
 			$members = members_lvl5($user);
-			$bonus = leadership_fast_track_principal_lvl5($user);
+			$bonus = leadership_lvl5($user);
 			break;
 		case 6:
 			$members = members_lvl6($user);
-			$bonus = leadership_fast_track_principal_lvl6($user);
+			$bonus = leadership_lvl6($user);
 			break;
 		case 7:
 			$members = members_lvl7($user);
-			$bonus = leadership_fast_track_principal_lvl7($user);
+			$bonus = leadership_lvl7($user);
 			break;
 		case 8:
 			$members = members_lvl8($user);
-			$bonus = leadership_fast_track_principal_lvl8($user);
+			$bonus = leadership_lvl8($user);
 			break;
 		case 9:
 			$members = members_lvl9($user);
-			$bonus = leadership_fast_track_principal_lvl9($user);
+			$bonus = leadership_lvl9($user);
 			break;
 		case 10:
 			$members = members_lvl10($user);
-			$bonus = leadership_fast_track_principal_lvl10($user);
+			$bonus = leadership_lvl10($user);
 			break;
 		default:
 			$members = 0;
@@ -370,8 +387,8 @@ function view_row($level, $user): string
 			number_format($bonus, 8)) . '</div>
                     </td>';
 
-	$share = $slp->{$user->account_type . '_leadership_passive_share_' . $level};
-	$share_cut = $slp->{$user->account_type . '_leadership_passive_share_cut_' . $level};
+	$share = $sl->{$user->account_type . '_leadership_share_' . $level};
+	$share_cut = $sl->{$user->account_type . '_leadership_share_cut_' . $level};
 
 	$percentage = $share * $share_cut / 100;
 
@@ -403,7 +420,7 @@ function log_activity($user, $bonus)
 			$db->quote($user->id),
 			$db->quote($user->sponsor_id),
 			$db->quote(
-				'<b>' . settings('plans')->leadership_passive_name .
+				'<b>' . settings('plans')->leadership_binary_name .
 				' Bonus: </b> <a href="' . sef(44) . qs() . 'uid=' . $user->id . '">' .
 				$user->username . '</a> has earned ' . number_format($bonus, 2) .
 				' ' . settings('ancillaries')->currency
@@ -442,109 +459,109 @@ function get_str_row7($user): string
  */
 function bonus_total($user)
 {
-	$settings_lp = settings('leadership_passive');
+	$settings_leadership = settings('leadership');
 
 	$account_type = $user->account_type;
 
-	$required_directs = $settings_lp->{$account_type . '_leadership_passive_sponsored'};
-	$type_level = $settings_lp->{$account_type . '_leadership_passive_level'};
+	$required_directs = $settings_leadership->{$account_type . '_leadership_sponsored'};
+	$type_level = $settings_leadership->{$account_type . '_leadership_level'};
 
 	$total = 0;
 
 	if (count(user_directs($user->id)) >= $required_directs) {
 		switch ($type_level) {
 			case 1:
-				$total = leadership_passive_lvl1($user);
+				$total = leadership_lvl1($user);
 
 				break;
 			case 2:
 				$total = (
-					leadership_passive_lvl1($user) +
-					leadership_fast_track_principal_lvl2($user));
+					leadership_lvl1($user) +
+					leadership_lvl2($user));
 
 				break;
 			case 3:
 				$total = (
-					leadership_passive_lvl1($user) +
-					leadership_fast_track_principal_lvl2($user) +
-					leadership_fast_track_principal_lvl3($user));
+					leadership_lvl1($user) +
+					leadership_lvl2($user) +
+					leadership_lvl3($user));
 
 				break;
 			case 4:
 				$total = (
-					leadership_passive_lvl1($user) +
-					leadership_fast_track_principal_lvl2($user) +
-					leadership_fast_track_principal_lvl3($user) +
-					leadership_fast_track_principal_lvl4($user));
+					leadership_lvl1($user) +
+					leadership_lvl2($user) +
+					leadership_lvl3($user) +
+					leadership_lvl4($user));
 
 				break;
 			case 5:
 				$total = (
-					leadership_passive_lvl1($user) +
-					leadership_fast_track_principal_lvl2($user) +
-					leadership_fast_track_principal_lvl3($user) +
-					leadership_fast_track_principal_lvl4($user) +
-					leadership_fast_track_principal_lvl5($user));
+					leadership_lvl1($user) +
+					leadership_lvl2($user) +
+					leadership_lvl3($user) +
+					leadership_lvl4($user) +
+					leadership_lvl5($user));
 
 				break;
 			case 6:
 				$total = (
-					leadership_passive_lvl1($user) +
-					leadership_fast_track_principal_lvl2($user) +
-					leadership_fast_track_principal_lvl3($user) +
-					leadership_fast_track_principal_lvl4($user) +
-					leadership_fast_track_principal_lvl5($user) +
-					leadership_fast_track_principal_lvl6($user));
+					leadership_lvl1($user) +
+					leadership_lvl2($user) +
+					leadership_lvl3($user) +
+					leadership_lvl4($user) +
+					leadership_lvl5($user) +
+					leadership_lvl6($user));
 
 				break;
 			case 7:
 				$total = (
-					leadership_passive_lvl1($user) +
-					leadership_fast_track_principal_lvl2($user) +
-					leadership_fast_track_principal_lvl3($user) +
-					leadership_fast_track_principal_lvl4($user) +
-					leadership_fast_track_principal_lvl5($user) +
-					leadership_fast_track_principal_lvl6($user) +
-					leadership_fast_track_principal_lvl7($user));
+					leadership_lvl1($user) +
+					leadership_lvl2($user) +
+					leadership_lvl3($user) +
+					leadership_lvl4($user) +
+					leadership_lvl5($user) +
+					leadership_lvl6($user) +
+					leadership_lvl7($user));
 
 				break;
 			case 8:
 				$total = (
-					leadership_passive_lvl1($user) +
-					leadership_fast_track_principal_lvl2($user) +
-					leadership_fast_track_principal_lvl3($user) +
-					leadership_fast_track_principal_lvl4($user) +
-					leadership_fast_track_principal_lvl5($user) +
-					leadership_fast_track_principal_lvl6($user) +
-					leadership_fast_track_principal_lvl7($user) +
-					leadership_fast_track_principal_lvl8($user));
+					leadership_lvl1($user) +
+					leadership_lvl2($user) +
+					leadership_lvl3($user) +
+					leadership_lvl4($user) +
+					leadership_lvl5($user) +
+					leadership_lvl6($user) +
+					leadership_lvl7($user) +
+					leadership_lvl8($user));
 
 				break;
 			case 9:
 				$total = (
-					leadership_passive_lvl1($user) +
-					leadership_fast_track_principal_lvl2($user) +
-					leadership_fast_track_principal_lvl3($user) +
-					leadership_fast_track_principal_lvl4($user) +
-					leadership_fast_track_principal_lvl5($user) +
-					leadership_fast_track_principal_lvl6($user) +
-					leadership_fast_track_principal_lvl7($user) +
-					leadership_fast_track_principal_lvl8($user) +
-					leadership_fast_track_principal_lvl9($user));
+					leadership_lvl1($user) +
+					leadership_lvl2($user) +
+					leadership_lvl3($user) +
+					leadership_lvl4($user) +
+					leadership_lvl5($user) +
+					leadership_lvl6($user) +
+					leadership_lvl7($user) +
+					leadership_lvl8($user) +
+					leadership_lvl9($user));
 
 				break;
 			case 10:
 				$total = (
-					leadership_passive_lvl1($user) +
-					leadership_fast_track_principal_lvl2($user) +
-					leadership_fast_track_principal_lvl3($user) +
-					leadership_fast_track_principal_lvl4($user) +
-					leadership_fast_track_principal_lvl5($user) +
-					leadership_fast_track_principal_lvl6($user) +
-					leadership_fast_track_principal_lvl7($user) +
-					leadership_fast_track_principal_lvl8($user) +
-					leadership_fast_track_principal_lvl9($user) +
-					leadership_fast_track_principal_lvl10($user));
+					leadership_lvl1($user) +
+					leadership_lvl2($user) +
+					leadership_lvl3($user) +
+					leadership_lvl4($user) +
+					leadership_lvl5($user) +
+					leadership_lvl6($user) +
+					leadership_lvl7($user) +
+					leadership_lvl8($user) +
+					leadership_lvl9($user) +
+					leadership_lvl10($user));
 
 				break;
 		}
@@ -555,33 +572,39 @@ function bonus_total($user)
 
 /**
  * @param $level
- * @param $users
+ * @param $indirects
+ * @param $head_account_type
  *
  * @return float|int
  *
  * @since version
  */
-function bonus_leadership_passive($level, $users)
+function bonus_leadership($level, $indirects, $head_account_type)
 {
 	$bonus = 0;
 
-	if (!empty($users)) {
-		foreach ($users as $user) {
-			$account_type = $user->account_type;
+	if (!empty($indirects)) {
+		$slb = settings('leadership');
 
-			$settings_lp = settings('leadership_passive');
+		$head_share = $slb->{$head_account_type . '_leadership_share_' . $level} / 100;
+		$head_share_cut = $slb->{$head_account_type . '_leadership_share_cut_' . $level} / 100;
 
-			$share = $settings_lp->{$account_type . '_leadership_passive_share_' . $level} / 100;
-			$share_cut = $settings_lp->{$account_type . '_leadership_passive_share_cut_' . $level} / 100;
+		$head_bonus_share = $head_share * $head_share_cut;
 
-			$top_up = $user->top_up_interest;
-			$fast_track = $user->fast_track_interest;
-			$fixed_daily = $user->fixed_daily_interest;
-			$compound_daily = $user->compound_daily_interest;
+		foreach ($indirects as $indirect) {
+			$user_binary = user_binary($indirect->id);
 
-			$passive = $top_up + $fast_track + $fixed_daily + $compound_daily;
+			$indirect_account_type = $user_binary->account_type;
 
-			$bonus += $passive * $share * $share_cut;
+			$indirect_share = $slb->{$indirect_account_type . '_leadership_share_' . $level} / 100;
+			$indirect_share_cut = $slb->{$indirect_account_type . '_leadership_share_cut_' . $level} / 100;
+
+			$indirect_bonus_share = $indirect_share * $indirect_share_cut;
+
+			$share = !empty(user_cd($indirect->id)) ? 0
+				: ($indirect_bonus_share < $head_bonus_share ? $indirect_bonus_share : $head_bonus_share);
+
+			$bonus += $user_binary->income_cycle * $share;
 		}
 	}
 
@@ -595,34 +618,17 @@ function bonus_leadership_passive($level, $users)
  *
  * @since version
  */
-//function user_binary($user_id)
-//{
-//	$db = db();
-//
-//	return $db->setQuery(
-//		'SELECT * ' .
-//		'FROM network_users u ' .
-//		'INNER JOIN network_binary b ' .
-//		'ON u.id = b.user_id ' .
-//		'WHERE b.user_id = ' . $db->quote($user_id)
-//	)->loadObject();
-//}
-
-/**
- * @param $user
- *
- * @return float|int
- *
- * @since version
- */
-function leadership_passive_lvl1($user)
+function user_binary($user_id)
 {
-	return bonus_leadership_fast_track_principal(1, level_directs([$user]));
-}
+	$db = db();
 
-function leadership_passive_lvl2($user)
-{
-	return bonus_leadership_fast_track_principal(2, level_directs(level_directs([$user])));
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_users u ' .
+		'INNER JOIN network_binary b ' .
+		'ON u.id = b.user_id ' .
+		'WHERE b.user_id = ' . $db->quote($user_id)
+	)->loadObject();
 }
 
 /**
@@ -632,12 +638,29 @@ function leadership_passive_lvl2($user)
  *
  * @since version
  */
-function leadership_passive_lvl3($user)
+function leadership_lvl1($user)
+{
+	return bonus_leadership(1, level_directs([$user]), $user->account_type);
+}
+
+function leadership_lvl2($user)
+{
+	return bonus_leadership(2, level_directs(level_directs([$user])), $user->account_type);
+}
+
+/**
+ * @param $user
+ *
+ * @return float|int
+ *
+ * @since version
+ */
+function leadership_lvl3($user)
 {
 	$level_1 = level_directs([$user]);
 	$level_2 = level_directs($level_1);
 
-	return bonus_leadership_fast_track_principal(3, level_directs($level_2));
+	return bonus_leadership(3, level_directs($level_2), $user->account_type);
 }
 
 /**
@@ -647,13 +670,13 @@ function leadership_passive_lvl3($user)
  *
  * @since version
  */
-function leadership_passive_lvl4($user)
+function leadership_lvl4($user)
 {
 	$level_1 = level_directs([$user]);
 	$level_2 = level_directs($level_1);
 	$level_3 = level_directs($level_2);
 
-	return bonus_leadership_fast_track_principal(4, level_directs($level_3));
+	return bonus_leadership(4, level_directs($level_3), $user->account_type);
 }
 
 /**
@@ -663,14 +686,14 @@ function leadership_passive_lvl4($user)
  *
  * @since version
  */
-function leadership_passive_lvl5($user)
+function leadership_lvl5($user)
 {
 	$level_1 = level_directs([$user]);
 	$level_2 = level_directs($level_1);
 	$level_3 = level_directs($level_2);
 	$level_4 = level_directs($level_3);
 
-	return bonus_leadership_fast_track_principal(5, level_directs($level_4));
+	return bonus_leadership(5, level_directs($level_4), $user->account_type);
 }
 
 /**
@@ -680,7 +703,7 @@ function leadership_passive_lvl5($user)
  *
  * @since version
  */
-function leadership_passive_lvl6($user)
+function leadership_lvl6($user)
 {
 	$level_1 = level_directs([$user]);
 	$level_2 = level_directs($level_1);
@@ -688,7 +711,7 @@ function leadership_passive_lvl6($user)
 	$level_4 = level_directs($level_3);
 	$level_5 = level_directs($level_4);
 
-	return bonus_leadership_fast_track_principal(6, level_directs($level_5));
+	return bonus_leadership(6, level_directs($level_5), $user->account_type);
 }
 
 /**
@@ -698,7 +721,7 @@ function leadership_passive_lvl6($user)
  *
  * @since version
  */
-function leadership_passive_lvl7($user)
+function leadership_lvl7($user)
 {
 	$level_1 = level_directs([$user]);
 	$level_2 = level_directs($level_1);
@@ -707,7 +730,7 @@ function leadership_passive_lvl7($user)
 	$level_5 = level_directs($level_4);
 	$level_6 = level_directs($level_5);
 
-	return bonus_leadership_fast_track_principal(7, level_directs($level_6));
+	return bonus_leadership(7, level_directs($level_6), $user->account_type);
 }
 
 /**
@@ -717,9 +740,9 @@ function leadership_passive_lvl7($user)
  *
  * @since version
  */
-function leadership_passive_lvl8($user)
+function leadership_lvl8($user)
 {
-	return bonus_leadership_fast_track_principal(8, get_level7($user));
+	return bonus_leadership(8, get_level7($user), $user->account_type);
 }
 
 /**
@@ -729,11 +752,11 @@ function leadership_passive_lvl8($user)
  *
  * @since version
  */
-function leadership_passive_lvl9($user)
+function leadership_lvl9($user)
 {
 	$level_8 = get_level7($user);
 
-	return bonus_leadership_fast_track_principal(9, level_directs($level_8));
+	return bonus_leadership(9, level_directs($level_8), $user->account_type);
 }
 
 /**
@@ -743,12 +766,12 @@ function leadership_passive_lvl9($user)
  *
  * @since version
  */
-function leadership_passive_lvl10($user)
+function leadership_lvl10($user)
 {
 	$level_8 = get_level7($user);
 	$level_9 = level_directs($level_8);
 
-	return bonus_leadership_fast_track_principal(10, level_directs($level_9));
+	return bonus_leadership(10, level_directs($level_9), $user->account_type);
 }
 
 /**
@@ -959,13 +982,24 @@ function level_directs(array $lvl_1 = []): array
 
 			if (!empty($directs)) {
 				foreach ($directs as $direct) {
-					$lvl_directs[] = $direct;
+					$lvl_directs[] = $direct; // user object
 				}
 			}
 		}
 	}
 
 	return $lvl_directs;
+}
+
+function user_cd($user_id)
+{
+	$db = db();
+
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_commission_deduct ' .
+		'WHERE id = ' . $db->quote($user_id)
+	)->loadObject();
 }
 
 /**
@@ -994,13 +1028,13 @@ function user_directs($sponsor_id): array
  *
  * @since version
  */
-function user_leadership_passive($user_id)
+function user_leadership($user_id)
 {
 	$db = db();
 
 	return $db->setQuery(
 		'SELECT * ' .
-		'FROM network_leadership_passive ' .
+		'FROM network_leadership ' .
 		'WHERE user_id = ' . $db->quote($user_id)
 	)->loadObject();
 }
@@ -1013,16 +1047,16 @@ function user_leadership_passive($user_id)
  *
  * @since version
  */
-function update_leadership_passive($leadership_add, $leadership, $user_id)
+function update_leadership($leadership_add, $leadership, $user_id)
 {
 	$db = db();
 
 	update(
-		'network_leadership_passive',
+		'network_leadership',
 		[
-			'bonus_leadership_passive = bonus_leadership_passive + ' . $leadership_add,
-			'bonus_leadership_passive_now = bonus_leadership_passive_now + ' . $leadership_add,
-			'bonus_leadership_passive_last = ' . $db->quote($leadership),
+			'bonus_leadership = bonus_leadership + ' . $leadership_add,
+			'bonus_leadership_now = bonus_leadership_now + ' . $leadership_add,
+			'bonus_leadership_last = ' . $db->quote($leadership),
 			'income_today = income_today + ' . $leadership_add
 		],
 		['user_id = ' . $db->quote($user_id)]
@@ -1038,7 +1072,7 @@ function update_leadership_passive($leadership_add, $leadership, $user_id)
  */
 function update_user($bonus, $user_id)
 {
-	$field_user = ['bonus_leadership_passive = bonus_leadership_passive + ' . $bonus];
+	$field_user = ['bonus_leadership = bonus_leadership + ' . $bonus];
 
 	if (settings('ancillaries')->withdrawal_mode === 'standard') {
 		$field_user[] = 'balance = balance + ' . $bonus;

@@ -171,7 +171,7 @@ function indirect_referral_fast_track_principal($user_id, $input, $levels = 1, $
         $bonus = $input * ($percent / 100);
 
         // Get current values
-        $income_referral_ftp = $sponsor->bonus_leadership_fast_track_principal;
+        $bonus_lftp = $sponsor->bonus_leadership_fast_track_principal;
         $balance = $sponsor->payout_transfer;
 
         // Update database
@@ -181,7 +181,7 @@ function indirect_referral_fast_track_principal($user_id, $input, $levels = 1, $
             'payout_transfer = :payout_transfer ' .
             'WHERE id = :id',
             [
-                'income_referral_ftp' => ($income_referral_ftp + $bonus),
+                'income_referral_ftp' => ($bonus_lftp + $bonus),
                 'payout_transfer' => ($balance + $bonus),
                 'id' => $current_sponsor_id
             ]

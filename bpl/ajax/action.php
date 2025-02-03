@@ -17,8 +17,7 @@ main();
  */
 function main()
 {
-	if (isset($_POST['action']) && !empty($_POST['action']) && is_ajax())
-	{
+	if (isset($_POST['action']) && !empty($_POST['action']) && is_ajax()) {
 		$dir = 'mods/';
 		$ext = '.php';
 

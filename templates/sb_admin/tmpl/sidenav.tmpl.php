@@ -619,6 +619,7 @@ function commission($user_id)
     $leadership_binary = leadership_binary($user_id);
     $passup_binary = passup_binary($user_id);
     $leadership_passive = leadership_passive($user_id);
+    $leadership_fast_track_principal = leadership_fast_track_principal($user_id);
     $harvest = harvest($user_id);
     $table_matrix = table_matrix($user_id);
 
@@ -641,6 +642,7 @@ function commission($user_id)
             {$leadership_binary}
             {$passup_binary}
             {$leadership_passive}
+            {$leadership_fast_track_principal}
             {$harvest}
             {$table_matrix}
 
@@ -661,6 +663,7 @@ function settings_adjust($admintype)
         'plans' => sef(88),
         'entry' => sef(81),
         'direct_referral' => sef(91),
+        'direct_referral_fast_track_principal' => sef(158),
         'indirect_referral' => sef(82),
         'echelon' => sef(146),
         'unilevel' => sef(93),
@@ -668,6 +671,7 @@ function settings_adjust($admintype)
         'binary_pair' => sef(80),
         'leadership_binary' => sef(84),
         'leadership_passive' => sef(85),
+        'leadership_fast_track_principal' => sef(155),
         'harvest' => sef(121),
         'matrix' => sef(86),
         'upline_support' => sef(117),
@@ -682,6 +686,7 @@ function settings_adjust($admintype)
 
     $settings = [
         'direct_referral' => $sp->direct_referral,
+        'direct_referral_fast_track_principal' => $sp->direct_referral_fast_track_principal,
         'indirect_referral' => $sp->indirect_referral,
         'echelon' => $sp->echelon,
         'unilevel' => $sp->unilevel,
@@ -689,6 +694,7 @@ function settings_adjust($admintype)
         'binary_pair' => $sp->binary_pair,
         'leadership_binary' => $sp->leadership_binary && $sp->binary_pair,
         'leadership_passive' => $sp->leadership_passive && ($sp->etrade || $sp->top_up || $sp->fast_track || $sp->fixed_daily),
+        'leadership_fast_track_principal' => $sp->leadership_fast_track_principal,
         'harvest' => $sp->harvest,
         'matrix' => $sp->matrix,
         'upline_support' => $sp->upline_support,
@@ -1178,6 +1184,48 @@ function leadership_passive($user_id)
         <nav class="sb-sidenav-menu-nested nav">
             <a class="nav-link" href="{$bounty_line_link}">Bounty Line</a> 
             <a class="nav-link" href="{$bounty_chart_link}">Bounty Chart</a>                        
+        </nav>
+    </div>
+    HTML;
+}
+
+function leadership_fast_track_principal($user_id)
+{
+    $sp = settings('plans');
+    $slftp = settings('leadership_fast_track_principal');
+
+    $user = user($user_id);
+    $account_type = $user->account_type;
+
+    if (
+        !(
+            $account_type !== 'starter'
+            && (
+                $sp->leadership_fast_track_principal
+                && $slftp->{$account_type . '_leadership_fast_track_principal_level'} > 0
+                && $sp->fast_track
+            )
+        )
+    ) {
+        return '';
+    }
+
+    $lftp_name = $sp->leadership_fast_track_principal_name;
+
+    $bounty_line_link = sef(157);
+    $bounty_chart_link = sef(156);
+
+    return <<<HTML
+    <a class="nav-link collapsed" href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseLeadershipPassive"
+        aria-expanded="false" aria-controls="collapseLeadershipPassive">
+        {$lftp_name}
+        <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+    </a>
+    <div class="collapse" id="collapseLeadershipPassive" aria-labelledby="headingOne"
+        data-bs-parent="#sidenavAccordionCommissions">
+        <nav class="sb-sidenav-menu-nested nav">
+            <a class="nav-link" href="{$bounty_line_link}">{$lftp_name} Line</a> 
+            <a class="nav-link" href="{$bounty_chart_link}">{$lftp_name} Chart</a>                        
         </nav>
     </div>
     HTML;

@@ -17,6 +17,7 @@ use function Templates\SB_Admin\Tmpl\Login\main as view_login;
 use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\session_set;
 use function BPL\Mods\Helpers\input_get;
+use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Url_SEF\sef;
 use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\user;
@@ -55,9 +56,25 @@ function member($user_id, $admintype, $counter = false)
 
 	$str = live_reload($counter);
 
+	$sp = settings('plans');
+	$sa = settings('ancillaries');
+
+	$currency = $sa->currency;
+
 	$user = user($user_id);
+	$user_directs = user_direct($user_id);
+	$count_directs = count($user_directs);
+	$income_referral_ftp = $user->income_referral_fast_track_principal;
+	$bonus_leadership_ftp = $user->bonus_leadership_fast_track_principal;
 
 	$view_admintype = '';
+	$view_user_directs = '';
+	$view_income_referral_ftp = '';
+	$view_bonus_leadership_ftp = '';
+
+	// echo '<pre>';
+	// print_r($user);
+	// exit;
 
 	if ($admintype) {
 		$view_admintype = <<<HTML
@@ -65,35 +82,48 @@ function member($user_id, $admintype, $counter = false)
         HTML;
 	}
 
-	$counter_script = '';
-
-	if ($counter) {
-		$counter_script = <<<HTML
-		<div id="counter">0</div>
-		<script>
-			let counter = parseInt(localStorage.getItem('counter')) || 0;
-			const counterElement = document.getElementById('counter');
-		
-			function updateCounter() {
-				counter++;
-				counterElement.textContent = counter;
-				localStorage.setItem('counter', counter);
-			}
-		
-			// Update the counter every second
-			setInterval(updateCounter, 1000);
-		</script>
+	if ($count_directs) {
+		$view_user_directs = <<<HTML
+			<p>Directs: {$count_directs}</p>
 		HTML;
 	}
 
-	// Add a counter div
+	if ($sp->direct_referral_fast_track_principal) {
+		$income_referral_ftp_format = number_format($income_referral_ftp, 2);
+		$view_income_referral_ftp = <<<HTML
+			<p>Direct Referral: {$income_referral_ftp_format} {$currency}</p>
+		HTML;
+	}
+
+	if (
+		$sp->leadership_fast_track_principal
+		&& has_leadership_fast_track_principal($user_id)
+	) {
+		$bonus_leadership_ftp_format = number_format($bonus_leadership_ftp, 2);
+		$view_bonus_leadership_ftp = <<<HTML
+			<p>Indirect Referral: {$bonus_leadership_ftp_format} {$currency}</p>
+		HTML;
+	}
+
+	// Add counter div without the JavaScript (moved to live_reload)
+	$counter_div = '';
+	if ($counter) {
+		$counter_div = '<div id="counter">00:00:00</div>';
+	}
+
+	$account_type_format = ucwords($user->account_type);
+
 	$str .= <<<HTML
-        <p>User ID: {$user_id}</p>
-        <p>User Type: {$user->usertype}</p>
-        <p>Username: {$user->username}</p>
-        {$view_admintype}
-        {$counter_script}
-    HTML;
+		<p>User ID: {$user_id}</p>
+		<p>User Type: {$user->usertype}</p>
+		<p>Account Type: {$account_type_format}</p>
+		<p>Username: {$user->username}</p>
+		{$view_admintype}
+		{$view_user_directs}
+		{$view_income_referral_ftp}
+		{$view_bonus_leadership_ftp}
+		{$counter_div}
+	HTML;
 
 	return $str;
 }
@@ -102,17 +132,45 @@ function live_reload(bool $counter, int $s = 5000): string
 {
 	$counter_script = '';
 
+	$increment = $s / 1000;
+
 	if ($counter) {
 		$counter_script = <<<JS
-		const savedCounter = localStorage.getItem('counter');
-		if (savedCounter) {
-			document.getElementById('counter').textContent = savedCounter;
-		}
+			// Initialize counter functionality
+			let counter = parseInt(localStorage.getItem('counter')) || 0;
+			const counterElement = document.getElementById('counter');
+
+			const increment = $increment;
+
+			function formatTime(seconds) {
+				const hours = Math.floor(seconds / 3600);
+				const minutes = Math.floor((seconds % 3600) / 60);
+				const secs = seconds % 60;
+				return String(hours).padStart(2, '0') + ':' + 
+						String(minutes).padStart(2, '0') + ':' + 
+						String(secs).padStart(2, '0');
+			}
+
+			function updateCounter() {
+				counter += increment;
+				counterElement.textContent = formatTime(counter);
+				localStorage.setItem('counter', counter);
+			}
+
+			// Update the counter every second
+			setInterval(updateCounter, $s);
+
+			// Restore counter value after reload
+			const savedCounter = localStorage.getItem('counter');
+			if (savedCounter) {
+				document.getElementById('counter').textContent = formatTime(savedCounter);
+			}
 		JS;
 	}
 
 	return <<<HTML
     <script>
+        // Live reload functionality
         setInterval(() => {
             fetch(window.location.href, { headers: { "X-Requested-With": "XMLHttpRequest" } })
                 .then(response => response.text())
@@ -122,8 +180,10 @@ function live_reload(bool $counter, int $s = 5000): string
                     const newBody = newDocument.querySelector("main").innerHTML;
                     document.querySelector("main").innerHTML = newBody;
 
-                    // Restore the counter value after reload
-                    {$counter_script}
+                    // Counter functionality
+                    if ({$counter}) {
+                        {$counter_script}
+                    }
                 })
                 .catch(error => console.error("Error fetching page:", error));
         }, {$s});
@@ -231,4 +291,31 @@ function login_user_get($username, $password)
 		'WHERE username = ' . $db->quote($username) .
 		' AND password = ' . $db->quote(md5($password))
 	)->loadObject();
+}
+
+function has_leadership_fast_track_principal($user_id)
+{
+	return user_leadership_fast_track_principal($user_id) ? true : false;
+}
+
+function user_leadership_fast_track_principal($user_id)
+{
+	$db = db();
+
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_leadership_fast_track_principal ' .
+		'WHERE user_id = ' . $db->quote($user_id)
+	)->loadObject();
+}
+
+function user_direct($user_id)
+{
+	$db = db();
+
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_users ' .
+		'WHERE sponsor_id = ' . $db->quote($user_id)
+	)->loadObjectList();
 }
