@@ -145,6 +145,7 @@ function member($user_id)
     $p2p_trading = p2p_trading();
 
     $core = '';
+    $token = '';
 
     if (
         $dashboard

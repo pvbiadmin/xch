@@ -32,7 +32,7 @@ master($content);
 function main()
 {
 	$user_id = session_get('user_id');
-	$admintype = session_get('admintype');
+	// $admintype = session_get('admintype');
 	$attempts = session_get('attempts', 0);
 	$usertype = session_get('usertype');
 
@@ -43,18 +43,20 @@ function main()
 
 	$str = process_login($username, $password, $usertype, $attempts, $max_attempts);
 
-	$str .= member($user_id, $admintype, true);
+	$str .= member($user_id, /* $admintype, */ true);
 
 	return $str;
 }
 
-function member($user_id, $admintype, $counter = false)
+function member($user_id, /* $admintype, */ $counter = false)
 {
 	if (!$user_id) {
 		return '';
 	}
 
-	$str = live_reload($counter);
+	$str = '';
+
+	$str .= live_reload($counter);
 
 	$sp = settings('plans');
 	$sa = settings('ancillaries');
@@ -67,62 +69,158 @@ function member($user_id, $admintype, $counter = false)
 	$income_referral_ftp = $user->income_referral_fast_track_principal;
 	$bonus_leadership_ftp = $user->bonus_leadership_fast_track_principal;
 
-	$view_admintype = '';
-	$view_user_directs = '';
-	$view_income_referral_ftp = '';
-	$view_bonus_leadership_ftp = '';
+	// $view_admintype = '';
+	// $view_user_directs = '';
+	// $view_income_referral_ftp = '';
+	// $view_bonus_leadership_ftp = '';
 
 	// echo '<pre>';
 	// print_r($user);
 	// exit;
 
-	if ($admintype) {
-		$view_admintype = <<<HTML
-        <p>AdminType: {$admintype}</p>
-        HTML;
-	}
+	// if ($admintype) {
+	// 	$view_admintype = <<<HTML
+	//     <p>AdminType: {$admintype}</p>
+	//     HTML;
+	// }
 
-	if ($count_directs) {
-		$view_user_directs = <<<HTML
-			<p>Directs: {$count_directs}</p>
-		HTML;
-	}
+	// if ($count_directs) {
+	// 	$view_user_directs = <<<HTML
+	// 		<p>Directs: {$count_directs}</p>
+	// 	HTML;
+	// }
+
+	$income_referral_ftp_format = 00.00;
 
 	if ($sp->direct_referral_fast_track_principal) {
 		$income_referral_ftp_format = number_format($income_referral_ftp, 2);
-		$view_income_referral_ftp = <<<HTML
-			<p>Direct Referral: {$income_referral_ftp_format} {$currency}</p>
-		HTML;
+		// $view_income_referral_ftp = <<<HTML
+		// 	<p>Direct Referral: {$income_referral_ftp_format} {$currency}</p>
+		// HTML;
 	}
+
+	$bonus_leadership_ftp_format = 00.00;
 
 	if (
 		$sp->leadership_fast_track_principal
 		&& has_leadership_fast_track_principal($user_id)
 	) {
 		$bonus_leadership_ftp_format = number_format($bonus_leadership_ftp, 2);
-		$view_bonus_leadership_ftp = <<<HTML
-			<p>Indirect Referral: {$bonus_leadership_ftp_format} {$currency}</p>
-		HTML;
+		// $view_bonus_leadership_ftp = <<<HTML
+		// 	<p>Indirect Referral: {$bonus_leadership_ftp_format} {$currency}</p>
+		// HTML;
 	}
 
 	// Add counter div without the JavaScript (moved to live_reload)
-	$counter_div = '';
+	// $counter_div = '';
+	$counter_span = '';
+
 	if ($counter) {
-		$counter_div = '<div id="counter">00:00:00</div>';
+		// $counter_div = '<div id="counter">00:00:00</div>';
+		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
 	}
 
-	$account_type_format = ucwords($user->account_type);
+	// $account_type_format = ucwords($user->account_type);
+
+	// $str .= <<<HTML
+	// 	<p>User ID: {$user_id}</p>
+	// 	<p>User Type: {$user->usertype}</p>
+	// 	<p>Account Type: {$account_type_format}</p>
+	// 	<p>Username: {$user->username}</p>
+	// 	{$view_admintype}
+	// 	{$view_user_directs}
+	// 	{$view_income_referral_ftp}
+	// 	{$view_bonus_leadership_ftp}
+	// 	{$counter_div}
+	// HTML;
+
+	// $hold = live_reload($counter);
 
 	$str .= <<<HTML
-		<p>User ID: {$user_id}</p>
-		<p>User Type: {$user->usertype}</p>
-		<p>Account Type: {$account_type_format}</p>
-		<p>Username: {$user->username}</p>
-		{$view_admintype}
-		{$view_user_directs}
-		{$view_income_referral_ftp}
-		{$view_bonus_leadership_ftp}
-		{$counter_div}
+	<div class="container-fluid px-4">
+		<h1 class="mt-4">Dashboard</h1>
+		<ol class="breadcrumb mb-4">
+			<li class="breadcrumb-item active">Profit Summary</li>
+		</ol>
+		<div class="row">
+			<div class="col-xl-3 col-md-6">
+				<div class="card bg-primary text-white mb-4">
+					<div class="card-body">Direct Referral<span id="direct_referral" style="float:right">$income_referral_ftp_format $currency</span></div>
+					<div class="card-footer d-flex align-items-center justify-content-between">
+						<a class="small text-white stretched-link" href="#">View Details</a>
+						<div class="small text-white"><i class="fas fa-angle-right"></i></div>
+					</div>
+				</div>
+			</div>
+			<div class="col-xl-3 col-md-6">
+				<div class="card bg-warning text-white mb-4">
+					<div class="card-body">Sponsored Members<span id="sponsored_members" style="float:right">$count_directs</span></div>
+					<div class="card-footer d-flex align-items-center justify-content-between">
+						<a class="small text-white stretched-link" href="#">View Details</a>
+						<div class="small text-white"><i class="fas fa-angle-right"></i></div>
+					</div>
+				</div>
+			</div>
+			<div class="col-xl-3 col-md-6">
+				<div class="card bg-success text-white mb-4">
+					<div class="card-body">Royalty Bonus<span id="royalty_bonus" style="float:right">$bonus_leadership_ftp_format $currency</span></div>
+					<div class="card-footer d-flex align-items-center justify-content-between">
+						<a class="small text-white stretched-link" href="#">View Details</a>
+						<div class="small text-white"><i class="fas fa-angle-right"></i></div>
+					</div>
+				</div>
+			</div>
+			<div class="col-xl-3 col-md-6">
+				<div class="card bg-danger text-white mb-4">
+					<div class="card-body">Passive Income<span id="passive_income" style="float:right">00.00 $currency</span></div>
+					<div class="card-footer d-flex align-items-center justify-content-between">
+						<a class="small text-white stretched-link" href="#">View Details</a>
+						<div class="small text-white"><i class="fas fa-angle-right"></i></div>
+					</div>
+				</div>
+			</div>
+		</div>		
+		<div class="card mb-4">
+			<div class="card-header">
+				<i class="fas fa-table me-1"></i>
+				DataTable Example{$counter_span}
+			</div>
+			<div class="card-body">
+				<table id="datatablesSimple">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Position</th>
+							<th>Office</th>
+							<th>Age</th>
+							<th>Start date</th>
+							<th>Salary</th>
+						</tr>
+					</thead>
+					<tfoot>
+						<tr>
+							<th>Name</th>
+							<th>Position</th>
+							<th>Office</th>
+							<th>Age</th>
+							<th>Start date</th>
+							<th>Salary</th>
+						</tr>
+					</tfoot>
+					<tbody>
+						<tr>
+							<td>Tiger Nixon</td>
+							<td>System Architect</td>
+							<td>Edinburgh</td>
+							<td>61</td>
+							<td>2011/04/25</td>
+							<td>$320,800</td>
+						</tr>						
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
 	HTML;
 
 	return $str;
@@ -136,42 +234,49 @@ function live_reload(bool $counter, int $s = 5000): string
 
 	if ($counter) {
 		$counter_script = <<<JS
-			// Initialize counter functionality
-			let counter = parseInt(localStorage.getItem('counter')) || 0;
-			const counterElement = document.getElementById('counter');
+            // Initialize counter functionality
+            let counter = parseInt(localStorage.getItem('counter')) || 0;
+            const counterElement = document.getElementById('counter');
 
-			const increment = $increment;
+            const increment = $increment;
 
-			function formatTime(seconds) {
-				const hours = Math.floor(seconds / 3600);
-				const minutes = Math.floor((seconds % 3600) / 60);
-				const secs = seconds % 60;
-				return String(hours).padStart(2, '0') + ':' + 
-						String(minutes).padStart(2, '0') + ':' + 
-						String(secs).padStart(2, '0');
-			}
+            function formatTime(seconds) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                return String(hours).padStart(2, '0') + ':' + 
+                        String(minutes).padStart(2, '0') + ':' + 
+                        String(secs).padStart(2, '0');
+            }
 
-			function updateCounter() {
-				counter += increment;
-				counterElement.textContent = formatTime(counter);
-				localStorage.setItem('counter', counter);
-			}
+            function updateCounter() {
+                counter += increment;
+                counterElement.textContent = formatTime(counter);
+                localStorage.setItem('counter', counter);
+            }
 
-			// Update the counter every second
-			setInterval(updateCounter, $s);
+            // Update the counter every second
+            setInterval(updateCounter, $s);
 
-			// Restore counter value after reload
-			const savedCounter = localStorage.getItem('counter');
-			if (savedCounter) {
-				document.getElementById('counter').textContent = formatTime(savedCounter);
-			}
-		JS;
+            // Restore counter value after reload
+            const savedCounter = localStorage.getItem('counter');
+            if (savedCounter) {
+                document.getElementById('counter').textContent = formatTime(savedCounter);
+            }
+        JS;
 	}
 
 	return <<<HTML
     <script>
         // Live reload functionality
         setInterval(() => {
+            // Save the current state of the DataTable
+            const datatablesSimple = document.getElementById('datatablesSimple');
+            let tableState = null;
+            if (datatablesSimple && window.dataTable) {
+                tableState = window.dataTable.getState(); // Save the current state
+            }
+
             fetch(window.location.href, { headers: { "X-Requested-With": "XMLHttpRequest" } })
                 .then(response => response.text())
                 .then(data => {
@@ -179,6 +284,17 @@ function live_reload(bool $counter, int $s = 5000): string
                     const newDocument = parser.parseFromString(data, "text/html");
                     const newBody = newDocument.querySelector("main").innerHTML;
                     document.querySelector("main").innerHTML = newBody;
+
+                    // Reinitialize DataTable after content update
+                    const newDatatablesSimple = document.getElementById('datatablesSimple');
+                    if (newDatatablesSimple) {
+                        window.dataTable = new simpleDatatables.DataTable(newDatatablesSimple);
+
+                        // Restore the saved state of the DataTable
+                        if (tableState) {
+                            window.dataTable.setState(tableState);
+                        }
+                    }
 
                     // Counter functionality
                     if ({$counter}) {
