@@ -475,33 +475,33 @@ function live_reload(bool $counter = false, int $s = 5000): string
     <script>
         // Live reload functionality
         setInterval(() => {
-            // Save the current state of the DataTable
-            const datatablesSimple = document.getElementById('datatablesSimple');
-            let tableState = null;
-            if (datatablesSimple && window.dataTable) {
-                tableState = window.dataTable.getState(); // Save the current state
-            }
-
-            fetch(window.location.href, { headers: { "X-Requested-With": "XMLHttpRequest" } })
-                .then(response => response.text())
+            fetch(window.location.href, {
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                cache: 'no-cache'
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("HTTP error! Status: " + response.status);
+                    }
+                    return response.text();
+                })
                 .then(data => {
+                    console.log("Fetched data:", data);
                     const parser = new DOMParser();
                     const newDocument = parser.parseFromString(data, "text/html");
                     const newBody = newDocument.querySelector("main").innerHTML;
                     document.querySelector("main").innerHTML = newBody;
 
-                    // Reinitialize DataTable after content update
-                    const newDatatablesSimple = document.getElementById('datatablesSimple');
-                    if (newDatatablesSimple) {
-                        window.dataTable = new simpleDatatables.DataTable(newDatatablesSimple);
-
-                        // Restore the saved state of the DataTable
-                        if (tableState) {
-                            window.dataTable.setState(tableState);
+                    // Reinitialize DataTable
+                    const datatablesSimple = document.getElementById('datatablesSimple');
+                    if (datatablesSimple) {
+                        if (window.dataTable) {
+                            window.dataTable.destroy();
                         }
+                        window.dataTable = new simpleDatatables.DataTable(datatablesSimple);
                     }
 
-                    // Counter functionality
+                    // Reinitialize counter if needed
                     if ({$counter}) {
                         {$counter_script}
                     }
