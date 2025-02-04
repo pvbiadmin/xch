@@ -53,7 +53,7 @@ function main($input, $user_id)
             referral_fast_track_principal($sponsor_id, $input);
 
             $custom_percentages = [
-                1 => 2, // 2% for level 1
+                1 => 2.5, // 2% for level 1
                 2 => 1.5, // 1.5% for level 2
                 3 => 1.5  // 1.5% for level 3
             ];
