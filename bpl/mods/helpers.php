@@ -430,3 +430,84 @@ function alert($sef, $message, string $type = 'error')
 {
 	application()->redirect(Uri::root(true) . '/' . sef($sef), $message, $type);
 }
+
+function live_reload(bool $counter = false, int $s = 5000): string
+{
+	$counter_script = '';
+
+	$increment = $s / 1000;
+
+	if ($counter) {
+		$counter_script = <<<JS
+            // Initialize counter functionality
+            let counter = parseInt(localStorage.getItem('counter')) || 0;
+            const counterElement = document.getElementById('counter');
+
+            const increment = $increment;
+
+            function formatTime(seconds) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                return String(hours).padStart(2, '0') + ':' + 
+                        String(minutes).padStart(2, '0') + ':' + 
+                        String(secs).padStart(2, '0');
+            }
+
+            function updateCounter() {
+                counter += increment;
+                counterElement.textContent = formatTime(counter);
+                localStorage.setItem('counter', counter);
+            }
+
+            // Update the counter every second
+            setInterval(updateCounter, $s);
+
+            // Restore counter value after reload
+            const savedCounter = localStorage.getItem('counter');
+            if (savedCounter) {
+                document.getElementById('counter').textContent = formatTime(savedCounter);
+            }
+        JS;
+	}
+
+	return <<<HTML
+    <script>
+        // Live reload functionality
+        setInterval(() => {
+            // Save the current state of the DataTable
+            const datatablesSimple = document.getElementById('datatablesSimple');
+            let tableState = null;
+            if (datatablesSimple && window.dataTable) {
+                tableState = window.dataTable.getState(); // Save the current state
+            }
+
+            fetch(window.location.href, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(response => response.text())
+                .then(data => {
+                    const parser = new DOMParser();
+                    const newDocument = parser.parseFromString(data, "text/html");
+                    const newBody = newDocument.querySelector("main").innerHTML;
+                    document.querySelector("main").innerHTML = newBody;
+
+                    // Reinitialize DataTable after content update
+                    const newDatatablesSimple = document.getElementById('datatablesSimple');
+                    if (newDatatablesSimple) {
+                        window.dataTable = new simpleDatatables.DataTable(newDatatablesSimple);
+
+                        // Restore the saved state of the DataTable
+                        if (tableState) {
+                            window.dataTable.setState(tableState);
+                        }
+                    }
+
+                    // Counter functionality
+                    if ({$counter}) {
+                        {$counter_script}
+                    }
+                })
+                .catch(error => console.error("Error fetching page:", error));
+        }, {$s});
+    </script>
+HTML;
+}
