@@ -5,12 +5,15 @@ namespace BPL\Leadership_Fast_Track_Principal;
 // Include necessary files for database queries and helper functions
 require_once 'bpl/mods/query.php';
 require_once 'bpl/mods/helpers.php';
+require_once 'bpl/mods/url_sef.php';
 
 // Import functions from other namespaces
 use function BPL\Mods\Database\Query\update;
 use function BPL\Mods\Database\Query\insert;
+
 use function BPL\Mods\Url_SEF\sef;
 use function BPL\Mods\Url_SEF\qs;
+
 use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\user;
 use function BPL\Mods\Helpers\users;
@@ -23,27 +26,128 @@ function main()
 {
 	// Iterate through each user and process their bonus
 	foreach (users() as $user) {
-		process_user_bonus($user);
+		process_user_lftp($user);
 	}
 }
 
 /**
- * Retrieve direct referrals for a given sponsor ID.
+ * Process bonuses for a single user.
  *
- * @param int $sponsor_id The ID of the sponsor.
- * @return array An array of user objects representing direct referrals.
+ * @param object $user The user object.
  */
-function user_directs($sponsor_id): array
+function process_user_lftp($user)
 {
-	$db = db();
+	$slftp = settings('leadership_fast_track_principal');
 
-	// Query the database for direct referrals excluding 'starter' account types
-	return $db->setQuery(
-		'SELECT * ' .
-		'FROM network_users ' .
-		'WHERE account_type <> ' . $db->quote('starter') .
-		'AND sponsor_id = ' . $db->quote($sponsor_id)
-	)->loadObjectList();
+	$account_type = $user->account_type;
+	$count_directs = count(user_directs($user->id));
+
+	// Retrieve settings for the user's account type
+	$type_level = $slftp->{$account_type . '_leadership_fast_track_principal_level'};
+	$required_directs = $slftp->{$account_type . '_leadership_fast_track_principalsponsored'};
+	$max_daily_income = $slftp->{$account_type . '_leadership_fast_track_principal_max_daily_income'};
+	$income_max = $slftp->{$account_type . '_leadership_fast_track_principal_maximum'};
+
+	$user_bonus_lftp = $user->bonus_leadership_fast_track_principal;
+	$ulftp = user_lftp($user->id);
+	$income_today = $ulftp->income_today;
+
+	// Check if the user is eligible for the bonus
+	if ($type_level > 0 && $count_directs >= $required_directs) {
+		$lftp_total = lftp_total($user, $type_level);
+		$lftp_add = $lftp_total - $ulftp->bonus_leadership_fast_track_principal_last;
+
+		if ($lftp_add > 0) {
+			// Apply daily income and maximum income limits
+			if ($max_daily_income > 0 && ($income_today + $lftp_add) >= $max_daily_income) {
+				$lftp_add = non_zero($max_daily_income - $income_today);
+			}
+
+			if ($income_max > 0 && ($user_bonus_lftp + $lftp_add) >= $income_max) {
+				$lftp_add = non_zero($income_max - $user_bonus_lftp);
+			}
+
+			// Update the user's bonus and log the activity
+			update_lftp($lftp_add, $lftp_total, $user->id);
+			update_user($lftp_add, $user->id);
+			log_activity($user, $lftp_total);
+		}
+	}
+}
+
+/**
+ * Generate the view for a user's leadership fast track principal details.
+ *
+ * @param int $user_id The ID of the user.
+ * @return string The HTML view.
+ */
+function view($user_id): string
+{
+	$user = user($user_id);
+	$slftp = settings('leadership_fast_track_principal');
+
+	$account_type = $user->account_type;
+	$required_directs = $slftp->{$account_type . '_leadership_fast_track_principal_sponsored'};
+	$level = $slftp->{$account_type . '_leadership_fast_track_principal_level'};
+
+	// Determine the status based on the number of direct referrals
+	$status = count(user_directs($user->id)) >= $required_directs ? '' : ' (inactive)';
+
+	// Generate the HTML table
+	$str = '<h3>List ' . settings('plans')->leadership_fast_track_principal_name . '</h3>
+        <table class="category table table-striped table-bordered table-hover">
+            <thead>
+            <tr>
+                <th><div style="text-align: center"><h4>Level</h4></div></th>
+                <th><div style="text-align: center"><h4>Accounts</h4></div></th>
+                <th><div style="text-align: center"><h4>Profit</h4></div></th>
+                <th><div style="text-align: center"><h4>Fixed Rate (%)</h4></div></th>
+            </tr>
+            </thead>
+            <tbody>';
+
+	// Generate rows for each level
+	for ($i = 1; $i <= $level; $i++) {
+		$str .= view_row($i, $user);
+	}
+
+	// Add the total row
+	$str .= '<tr>
+                <td><div style="text-align: center"><strong>Total' . $status . '</strong></div></td>
+                <td><div style="text-align: center">' . members_total($user) . '</div></td>
+                <td><div style="text-align: center">' . number_format(lftp_total($user, $level), 8) . '</div></td>
+                <td><div style="text-align: center">N/A</div></td>
+            </tr>
+            </tbody>
+        </table>';
+
+	return $str;
+}
+
+/**
+ * Generate a table row for a specific level.
+ *
+ * @param int $level The level.
+ * @param object $user The user object.
+ * @return string The HTML row.
+ */
+function view_row($level, $user): string
+{
+	$slftp = settings('leadership_fast_track_principal');
+	$members = count(get_level_users($user, $level));
+	$bonus = calculate_level_bonus($user, $level);
+
+	// Calculate the percentage based on the account type and level
+	$share = $slftp->{$user->account_type . '_leadership_fast_track_principal_share_' . $level};
+	$share_cut = $slftp->{$user->account_type . '_leadership_fast_track_principal_share_cut_' . $level};
+	$percentage = $share * $share_cut / 100;
+
+	return '<tr>
+                <td><div style="text-align: center"><strong>' . $level . '</strong></div></td>
+                <td><div style="text-align: center">' . $members . '</div></td>
+                <td><div style="text-align: center">' . number_format($bonus, 8) . '</div></td>
+                <td><div style="text-align: center">' . number_format($percentage, 2) . '</div></td>
+            </tr>';
 }
 
 /**
@@ -52,7 +156,7 @@ function user_directs($sponsor_id): array
  * @param int $user_id The ID of the user.
  * @return object|null The leadership fast track principal details or null if not found.
  */
-function user_leadership_fast_track_principal($user_id)
+function user_lftp($user_id)
 {
 	$db = db();
 
@@ -91,71 +195,35 @@ function update_user($bonus, $user_id)
 }
 
 /**
- * Ensure the value is non-negative.
- *
- * @param float $value The value to check.
- * @return float The non-negative value.
- */
-function non_zero($value)
-{
-	return $value < 0 ? 0 : $value;
-}
-
-/**
- * Update the leadership fast track principal details for a user.
- *
- * @param float $lftp_add The amount to add to the bonus.
- * @param float $lftp The total bonus amount.
- * @param int $user_id The ID of the user.
- */
-function update_leadership_fast_track_principal($lftp_add, $lftp, $user_id)
-{
-	$db = db();
-
-	// Update the leadership fast track principal details in the database
-	update(
-		'network_leadership_fast_track_principal',
-		[
-			'bonus_leadership_fast_track_principal = bonus_leadership_fast_track_principal + ' . $lftp_add,
-			'bonus_leadership_fast_track_principal_now = bonus_leadership_fast_track_principal_now + ' . $lftp_add,
-			'bonus_leadership_fast_track_principal_last = ' . $db->quote($lftp),
-			'income_today = income_today + ' . $lftp_add
-		],
-		['user_id = ' . $db->quote($user_id)]
-	);
-}
-
-/**
- * Log an activity for a user earning a bonus.
+ * Calculate the total bonus for a user based on their level.
  *
  * @param object $user The user object.
- * @param float $bonus The bonus amount earned.
+ * @param int $type_level The user's level.
+ * @return float The total bonus.
  */
-function log_activity($user, $bonus)
+function lftp_total($user, $type_level)
 {
-	$db = db();
+	$total = 0;
 
-	// Insert a new activity log entry
-	insert(
-		'network_activity',
-		[
-			'user_id',
-			'sponsor_id',
-			'activity',
-			'activity_date'
-		],
-		[
-			$db->quote($user->id),
-			$db->quote($user->sponsor_id),
-			$db->quote(
-				'<b>' . settings('plans')->leadership_fast_track_principal_name .
-				' Bonus: </b> <a href="' . sef(44) . qs() . 'uid=' . $user->id . '">' .
-				$user->username . '</a> has earned ' . number_format($bonus, 2) .
-				' ' . settings('ancillaries')->currency
-			),
-			($db->quote(time()))
-		]
-	);
+	// Calculate the bonus for each level up to the user's level
+	for ($level = 1; $level <= $type_level; $level++) {
+		$total += calculate_level_bonus($user, $level);
+	}
+
+	return $total;
+}
+
+/**
+ * Calculate the bonus for a specific level.
+ *
+ * @param object $user The user object.
+ * @param int $level The level to calculate the bonus for.
+ * @return float The bonus for the level.
+ */
+function calculate_level_bonus($user, $level)
+{
+	$users = get_level_users($user, $level);
+	return bonus_lftp($level, $users);
 }
 
 /**
@@ -165,7 +233,7 @@ function log_activity($user, $bonus)
  * @param array $users The users to calculate the bonus for.
  * @return float The total bonus amount.
  */
-function bonus_leadership_fast_track_principal($level, $users)
+function bonus_lftp($level, $users)
 {
 	$bonus = 0;
 
@@ -190,80 +258,21 @@ function bonus_leadership_fast_track_principal($level, $users)
 }
 
 /**
- * Process bonuses for a single user.
+ * Calculate the total number of members across all levels.
  *
  * @param object $user The user object.
+ * @return int The total number of members.
  */
-function process_user_bonus($user)
-{
-	$slftp = settings('leadership_fast_track_principal');
-
-	$account_type = $user->account_type;
-	$count_directs = count(user_directs($user->id));
-
-	// Retrieve settings for the user's account type
-	$type_level = $slftp->{$account_type . '_leadership_fast_track_principal_level'};
-	$required_directs = $slftp->{$account_type . '_leadership_fast_track_principalsponsored'};
-	$max_daily_income = $slftp->{$account_type . '_leadership_fast_track_principal_max_daily_income'};
-	$income_max = $slftp->{$account_type . '_leadership_fast_track_principal_maximum'};
-
-	$user_bonus_lftp = $user->bonus_leadership_fast_track_principal;
-	$ulftp = user_leadership_fast_track_principal($user->id);
-	$income_today = $ulftp->income_today;
-
-	// Check if the user is eligible for the bonus
-	if ($type_level > 0 && $count_directs >= $required_directs) {
-		$lftp_total = calculate_bonus_total($user, $type_level);
-		$lftp_add = $lftp_total - $ulftp->bonus_leadership_fast_track_principal_last;
-
-		if ($lftp_add > 0) {
-			// Apply daily income and maximum income limits
-			if ($max_daily_income > 0 && ($income_today + $lftp_add) >= $max_daily_income) {
-				$lftp_add = non_zero($max_daily_income - $income_today);
-			}
-
-			if ($income_max > 0 && ($user_bonus_lftp + $lftp_add) >= $income_max) {
-				$lftp_add = non_zero($income_max - $user_bonus_lftp);
-			}
-
-			// Update the user's bonus and log the activity
-			update_leadership_fast_track_principal($lftp_add, $lftp_total, $user->id);
-			update_user($lftp_add, $user->id);
-			log_activity($user, $lftp_total);
-		}
-	}
-}
-
-/**
- * Calculate the total bonus for a user based on their level.
- *
- * @param object $user The user object.
- * @param int $type_level The user's level.
- * @return float The total bonus.
- */
-function calculate_bonus_total($user, $type_level)
+function members_total($user): int
 {
 	$total = 0;
 
-	// Calculate the bonus for each level up to the user's level
-	for ($level = 1; $level <= $type_level; $level++) {
-		$total += calculate_level_bonus($user, $level);
+	// Calculate the total number of members across all levels
+	for ($level = 1; $level <= 10; $level++) {
+		$total += count(get_level_users($user, $level));
 	}
 
 	return $total;
-}
-
-/**
- * Calculate the bonus for a specific level.
- *
- * @param object $user The user object.
- * @param int $level The level to calculate the bonus for.
- * @return float The bonus for the level.
- */
-function calculate_level_bonus($user, $level)
-{
-	$users = get_level_users($user, $level);
-	return bonus_leadership_fast_track_principal($level, $users);
 }
 
 /**
@@ -311,94 +320,88 @@ function level_directs(array $lvl_1 = []): array
 }
 
 /**
- * Generate the view for a user's leadership fast track principal details.
+ * Log an activity for a user earning a bonus.
  *
+ * @param object $user The user object.
+ * @param float $bonus The bonus amount earned.
+ */
+function log_activity($user, $bonus)
+{
+	$db = db();
+
+	// Insert a new activity log entry
+	insert(
+		'network_activity',
+		[
+			'user_id',
+			'sponsor_id',
+			'activity',
+			'activity_date'
+		],
+		[
+			$db->quote($user->id),
+			$db->quote($user->sponsor_id),
+			$db->quote(
+				'<b>' . settings('plans')->leadership_fast_track_principal_name .
+				' Bonus: </b> <a href="' . sef(44) . qs() . 'uid=' . $user->id . '">' .
+				$user->username . '</a> has earned ' . number_format($bonus, 2) .
+				' ' . settings('ancillaries')->currency
+			),
+			($db->quote(time()))
+		]
+	);
+}
+
+/**
+ * Update the leadership fast track principal details for a user.
+ *
+ * @param float $lftp_add The amount to add to the bonus.
+ * @param float $lftp The total bonus amount.
  * @param int $user_id The ID of the user.
- * @return string The HTML view.
  */
-function view($user_id): string
+function update_lftp($lftp_add, $lftp, $user_id)
 {
-	$user = user($user_id);
-	$slftp = settings('leadership_fast_track_principal');
+	$db = db();
 
-	$account_type = $user->account_type;
-	$required_directs = $slftp->{$account_type . '_leadership_fast_track_principal_sponsored'};
-	$level = $slftp->{$account_type . '_leadership_fast_track_principal_level'};
-
-	// Determine the status based on the number of direct referrals
-	$status = count(user_directs($user->id)) >= $required_directs ? '' : ' (inactive)';
-
-	// Generate the HTML table
-	$str = '<h3>List ' . settings('plans')->leadership_fast_track_principal_name . '</h3>
-        <table class="category table table-striped table-bordered table-hover">
-            <thead>
-            <tr>
-                <th><div style="text-align: center"><h4>Level</h4></div></th>
-                <th><div style="text-align: center"><h4>Accounts</h4></div></th>
-                <th><div style="text-align: center"><h4>Profit</h4></div></th>
-                <th><div style="text-align: center"><h4>Fixed Rate (%)</h4></div></th>
-            </tr>
-            </thead>
-            <tbody>';
-
-	// Generate rows for each level
-	for ($i = 1; $i <= $level; $i++) {
-		$str .= view_row($i, $user);
-	}
-
-	// Add the total row
-	$str .= '<tr>
-                <td><div style="text-align: center"><strong>Total' . $status . '</strong></div></td>
-                <td><div style="text-align: center">' . members_total($user) . '</div></td>
-                <td><div style="text-align: center">' . number_format(calculate_bonus_total($user, $level), 8) . '</div></td>
-                <td><div style="text-align: center">N/A</div></td>
-            </tr>
-            </tbody>
-        </table>';
-
-	return $str;
+	// Update the leadership fast track principal details in the database
+	update(
+		'network_leadership_fast_track_principal',
+		[
+			'bonus_leadership_fast_track_principal = bonus_leadership_fast_track_principal + ' . $lftp_add,
+			'bonus_leadership_fast_track_principal_now = bonus_leadership_fast_track_principal_now + ' . $lftp_add,
+			'bonus_leadership_fast_track_principal_last = ' . $db->quote($lftp),
+			'income_today = income_today + ' . $lftp_add
+		],
+		['user_id = ' . $db->quote($user_id)]
+	);
 }
 
 /**
- * Generate a table row for a specific level.
+ * Retrieve direct referrals for a given sponsor ID.
  *
- * @param int $level The level.
- * @param object $user The user object.
- * @return string The HTML row.
+ * @param int $sponsor_id The ID of the sponsor.
+ * @return array An array of user objects representing direct referrals.
  */
-function view_row($level, $user): string
+function user_directs($sponsor_id): array
 {
-	$slftp = settings('leadership_fast_track_principal');
-	$members = count(get_level_users($user, $level));
-	$bonus = calculate_level_bonus($user, $level);
+	$db = db();
 
-	// Calculate the percentage based on the account type and level
-	$share = $slftp->{$user->account_type . '_leadership_fast_track_principal_share_' . $level};
-	$share_cut = $slftp->{$user->account_type . '_leadership_fast_track_principal_share_cut_' . $level};
-	$percentage = $share * $share_cut / 100;
-
-	return '<tr>
-                <td><div style="text-align: center"><strong>' . $level . '</strong></div></td>
-                <td><div style="text-align: center">' . $members . '</div></td>
-                <td><div style="text-align: center">' . number_format($bonus, 8) . '</div></td>
-                <td><div style="text-align: center">' . number_format($percentage, 2) . '</div></td>
-            </tr>';
+	// Query the database for direct referrals excluding 'starter' account types
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_users ' .
+		'WHERE account_type <> ' . $db->quote('starter') .
+		'AND sponsor_id = ' . $db->quote($sponsor_id)
+	)->loadObjectList();
 }
 
 /**
- * Calculate the total number of members across all levels.
+ * Ensure the value is non-negative.
  *
- * @param object $user The user object.
- * @return int The total number of members.
+ * @param float $value The value to check.
+ * @return float The non-negative value.
  */
-function members_total($user): int
+function non_zero($value)
 {
-	$total = 0;
-
-	// Calculate the total number of members across all levels
-	for ($level = 1; $level <= 10; $level++) {
-		$total += count(get_level_users($user, $level));
-	}
-
-	return $total;
+	return $value < 0 ? 0 : $value;
 }

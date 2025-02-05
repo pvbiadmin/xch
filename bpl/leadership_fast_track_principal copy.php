@@ -37,7 +37,7 @@ function main()
 
 		$user_bonus_lftp = $user->bonus_leadership_fast_track_principal;
 
-		$ulftp = user_leadership_fast_track_principal($user->id);
+		$ulftp = user_lftp($user->id);
 
 		$income_today = $ulftp->income_today;
 
@@ -55,7 +55,7 @@ function main()
 					$lftp_add = non_zero($income_max - $user_bonus_lftp);
 				}
 
-				update_leadership_fast_track_principal($lftp_add, $lftp_total, $user->id);
+				update_lftp($lftp_add, $lftp_total, $user->id);
 				update_user($lftp_add, $user->id);
 				log_activity($user, $lftp_total);
 			}
@@ -209,7 +209,7 @@ function view($user_id): string
 
 function insert_leadership_fast_track_principal($insert_id, $code_type, $username, $sponsor_id, $date, string $prov = 'code')
 {
-	if (empty(user_leadership_fast_track_principal($insert_id))) {
+	if (empty(user_lftp($insert_id))) {
 		insert(
 			'network_leadership_fast_track_principal',
 			['user_id'],

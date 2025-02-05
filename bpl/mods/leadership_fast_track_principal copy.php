@@ -53,7 +53,7 @@ function process_user_leadership_fast_track_principal($user)
                 $lftp_add = non_zero($income_max - $user_bonus_lftp);
             }
 
-            update_leadership_fast_track_principal($user, $lftp_add, $lftp_total);
+            update_lftp($user, $lftp_add, $lftp_total);
             update_user($user, $lftp_add);
         }
     }

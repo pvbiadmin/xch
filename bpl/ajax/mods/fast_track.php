@@ -8,13 +8,19 @@ use DateTime;
 use DateTimeZone;
 use Exception;
 
+use function BPL\Mods\Local\Database\Query\fetch;
 use function BPL\Mods\Local\Database\Query\fetch_all;
 use function BPL\Mods\Local\Database\Query\crud;
 
+use function BPL\Mods\Local\Url_SEF\sef;
+use function BPL\Mods\Local\Url_SEF\qs;
+
 use function BPL\Mods\Local\Helpers\settings;
+use function BPL\Mods\Local\Helpers\users;
 use function BPL\Mods\Local\Helpers\user;
 use function BPL\Mods\Local\Helpers\echo_json;
 use function BPL\Mods\Local\Helpers\validate_fast_track;
+use function BPL\Mods\Local\Helpers\directs_valid as user_directs;
 
 $input = filter_input(INPUT_POST, 'input', FILTER_VALIDATE_FLOAT);
 $user_id = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
@@ -45,7 +51,7 @@ function main($input, $user_id)
 
         insert_fast_track($user_id, $input);
 
-        $update_user = update_user($user_id, $input);
+        $update_user = update_user_fast_track($user_id, $input);
 
         if ($update_user) {
             $sponsor_id = user($user_id)->sponsor_id;
@@ -128,13 +134,14 @@ function referral_fast_track_principal($user_id, $input)
     }
 }
 
-
 function indirect_referral_fast_track_principal($user_id, $input, $levels = 1, $custom_percentages = [])
 {
     // Validate levels input
     $levels = min(max(1, (int) $levels), 10); // Ensure levels is between 1 and 10
 
     $sp = settings('plans');
+    $sa = settings('ancillaries');
+
     if (!$sp->direct_referral_fast_track_principal) {
         return false;
     }
@@ -187,6 +194,27 @@ function indirect_referral_fast_track_principal($user_id, $input, $levels = 1, $
             ]
         );
 
+        crud(
+            'INSERT INTO network_activity' .
+            ' (user_id' .
+            ', sponsor_id' .
+            ', activity' .
+            ', activity_date)' .
+            ' VALUES' .
+            ' (:user_id' .
+            ', :sponsor_id' .
+            ', :activity' .
+            ', :activity_date)',
+            [
+                'user_id' => $current_sponsor_id,
+                'sponsor_id' => $sponsor->sponsor_id,
+                'activity' => '<b>' . $sp->leadership_fast_track_principal_name . ' Bonus: </b> <a href="' .
+                    sef(44) . qs() . 'uid=' . $current_sponsor_id . '">' . $sponsor->username .
+                    '</a> has earned ' . number_format($bonus, 2) . ' ' . $sa->currency,
+                'activity_date' => time()
+            ]
+        );
+
         // Move up to next sponsor
         $current_sponsor_id = $sponsor->sponsor_id;
     }
@@ -213,28 +241,24 @@ function insert_fast_track($user_id, $input)
     $now = $time->format('U'); // seconds since unix epoch
 
     crud(
-        'INSERT ' .
-        'INTO network_fast_track (' .
-        'user_id, ' .
-        'time_last, ' .
-        'value_last, ' .
-        'day, ' .
-        'principal, ' .
-        'date_entry, ' .
-        'processing, ' .
-        //        'maturity, ' .
-        'date_last_cron' .
-        ') VALUES (' .
-        ':user_id, ' .
-        ':time_last, ' .
-        ':value_last, ' .
-        ':day, ' .
-        ':principal, ' .
-        ':date_entry, ' .
-        ':processing, ' .
-        //        ':maturity, ' .
-        ':date_last_cron' .
-        ')',
+        'INSERT INTO network_fast_track' .
+        ' (user_id' .
+        ', time_last' .
+        ', value_last' .
+        ', day' .
+        ', principal' .
+        ', date_entry' .
+        ', processing' .
+        ', date_last_cron)' .
+        ' VALUES' .
+        ' (:user_id' .
+        ', :time_last' .
+        ', :value_last' .
+        ', :day' .
+        ', :principal' .
+        ', :date_entry' .
+        ', :processing' .
+        ', :date_last_cron)',
         [
             'user_id' => $user_id,
             'time_last' => 0,
@@ -243,7 +267,6 @@ function insert_fast_track($user_id, $input)
             'principal' => $input,
             'date_entry' => $now,
             'processing' => $fast_track_processing,
-            //            'maturity' => $fast_track_maturity,
             'date_last_cron' => $now
         ]
     );
@@ -256,7 +279,7 @@ function insert_fast_track($user_id, $input)
  *
  * @since version
  */
-function update_user($user_id, $input)
+function update_user_fast_track($user_id, $input)
 {
     $user = user($user_id);
 

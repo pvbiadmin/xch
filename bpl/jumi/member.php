@@ -448,10 +448,10 @@ function login_user_get($username, $password)
 
 function has_leadership_fast_track_principal($user_id)
 {
-	return user_leadership_fast_track_principal($user_id) ? true : false;
+	return user_lftp($user_id) ? true : false;
 }
 
-function user_leadership_fast_track_principal($user_id)
+function user_lftp($user_id)
 {
 	$db = db();
 

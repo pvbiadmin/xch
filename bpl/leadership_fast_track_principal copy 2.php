@@ -151,11 +151,11 @@ function process_user_bonus($user)
 	$income_max = $slftp->{$account_type . '_leadership_fast_track_principal_maximum'};
 
 	$user_bonus_lftp = $user->bonus_leadership_fast_track_principal;
-	$ulftp = user_leadership_fast_track_principal($user->id);
+	$ulftp = user_lftp($user->id);
 	$income_today = $ulftp->income_today;
 
 	if ($type_level > 0 && $count_directs >= $required_directs) {
-		$lftp_total = calculate_bonus_total($user, $type_level);
+		$lftp_total = lftp_total($user, $type_level);
 		$lftp_add = $lftp_total - $ulftp->bonus_leadership_fast_track_principal_last;
 
 		if ($lftp_add > 0) {
@@ -167,7 +167,7 @@ function process_user_bonus($user)
 				$lftp_add = non_zero($income_max - $user_bonus_lftp);
 			}
 
-			update_leadership_fast_track_principal($lftp_add, $lftp_total, $user->id);
+			update_lftp($lftp_add, $lftp_total, $user->id);
 			update_user($lftp_add, $user->id);
 			log_activity($user, $lftp_total);
 		}
@@ -278,7 +278,7 @@ function view($user_id): string
 	$str .= '<tr>
                 <td><div style="text-align: center"><strong>Total' . $status . '</strong></div></td>
                 <td><div style="text-align: center">' . members_total($user) . '</div></td>
-                <td><div style="text-align: center">' . number_format(calculate_bonus_total($user, $level), 8) . '</div></td>
+                <td><div style="text-align: center">' . number_format(lftp_total($user, $level), 8) . '</div></td>
                 <td><div style="text-align: center">N/A</div></td>
             </tr>
             </tbody>
