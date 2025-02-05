@@ -193,12 +193,14 @@ function view_passive_income($user_id)
 
 	$fast_track_interest_format = number_format($fast_track_interest, 2);
 
+	$link_add_royalty = sef(19);
+
 	return <<<HTML
 		<div class="col-xl-3 col-md-6">
 			<div class="card bg-danger text-white mb-4">
 				<div class="card-body">Passive Income<span id="passive_income" style="float:right">$fast_track_interest_format $currency</span></div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
-					<a class="small text-white stretched-link" href="#">View Details</a>
+					<a class="small text-white stretched-link" href="$link_add_royalty">View Details</a>
 					<div class="small text-white"><i class="fas fa-angle-right"></i></div>
 				</div>
 			</div>
