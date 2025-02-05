@@ -8,14 +8,14 @@ require_once 'bpl/mods/helpers.php';
 use function BPL\Mods\Url_SEF\sef;
 use function BPL\Mods\Url_SEF\qs;
 
+use function Templates\SB_Admin\Tmpl\Master\main as master;
+
 use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\input_get;
 use function BPL\Mods\Helpers\page_validate;
 use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\live_reload;
-
-use function Templates\SB_Admin\Tmpl\Master\main as master;
 
 $content = main();
 

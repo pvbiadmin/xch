@@ -23,11 +23,12 @@ use function BPL\Mods\Root_Url_Upline\main as root_url;
 
 use function BPL\Mods\Time_Remaining\main as time_remaining;
 
+use function BPL\Mods\Url_SEF\sef;
+
 use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\session_set;
 use function BPL\Mods\Helpers\input_get;
 use function BPL\Mods\Helpers\settings;
-use function BPL\Mods\Url_SEF\sef;
 use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\user;
 use function BPL\Mods\Helpers\application;

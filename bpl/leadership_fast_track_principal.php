@@ -15,7 +15,7 @@ use function BPL\Mods\Url_SEF\sef;
 use function BPL\Mods\Url_SEF\qs;
 
 use function BPL\Mods\Helpers\db;
-use function BPL\Mods\Helpers\user;
+// use function BPL\Mods\Helpers\user;
 use function BPL\Mods\Helpers\users;
 use function BPL\Mods\Helpers\settings;
 
@@ -73,81 +73,6 @@ function process_user_lftp($user)
 			log_activity($user, $lftp_total);
 		}
 	}
-}
-
-/**
- * Generate the view for a user's leadership fast track principal details.
- *
- * @param int $user_id The ID of the user.
- * @return string The HTML view.
- */
-function view($user_id): string
-{
-	$user = user($user_id);
-	$slftp = settings('leadership_fast_track_principal');
-
-	$account_type = $user->account_type;
-	$required_directs = $slftp->{$account_type . '_leadership_fast_track_principal_sponsored'};
-	$level = $slftp->{$account_type . '_leadership_fast_track_principal_level'};
-
-	// Determine the status based on the number of direct referrals
-	$status = count(user_directs($user->id)) >= $required_directs ? '' : ' (inactive)';
-
-	// Generate the HTML table
-	$str = '<h3>List ' . settings('plans')->leadership_fast_track_principal_name . '</h3>
-        <table class="category table table-striped table-bordered table-hover">
-            <thead>
-            <tr>
-                <th><div style="text-align: center"><h4>Level</h4></div></th>
-                <th><div style="text-align: center"><h4>Accounts</h4></div></th>
-                <th><div style="text-align: center"><h4>Profit</h4></div></th>
-                <th><div style="text-align: center"><h4>Fixed Rate (%)</h4></div></th>
-            </tr>
-            </thead>
-            <tbody>';
-
-	// Generate rows for each level
-	for ($i = 1; $i <= $level; $i++) {
-		$str .= view_row($i, $user);
-	}
-
-	// Add the total row
-	$str .= '<tr>
-                <td><div style="text-align: center"><strong>Total' . $status . '</strong></div></td>
-                <td><div style="text-align: center">' . members_total($user) . '</div></td>
-                <td><div style="text-align: center">' . number_format(lftp_total($user, $level), 8) . '</div></td>
-                <td><div style="text-align: center">N/A</div></td>
-            </tr>
-            </tbody>
-        </table>';
-
-	return $str;
-}
-
-/**
- * Generate a table row for a specific level.
- *
- * @param int $level The level.
- * @param object $user The user object.
- * @return string The HTML row.
- */
-function view_row($level, $user): string
-{
-	$slftp = settings('leadership_fast_track_principal');
-	$members = count(get_level_users($user, $level));
-	$bonus = calculate_level_bonus($user, $level);
-
-	// Calculate the percentage based on the account type and level
-	$share = $slftp->{$user->account_type . '_leadership_fast_track_principal_share_' . $level};
-	$share_cut = $slftp->{$user->account_type . '_leadership_fast_track_principal_share_cut_' . $level};
-	$percentage = $share * $share_cut / 100;
-
-	return '<tr>
-                <td><div style="text-align: center"><strong>' . $level . '</strong></div></td>
-                <td><div style="text-align: center">' . $members . '</div></td>
-                <td><div style="text-align: center">' . number_format($bonus, 8) . '</div></td>
-                <td><div style="text-align: center">' . number_format($percentage, 2) . '</div></td>
-            </tr>';
 }
 
 /**
