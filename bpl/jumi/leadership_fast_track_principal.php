@@ -85,16 +85,18 @@ function view_status($user_id)
 
 	$status = count($user_directs) >= $required_directs ? 'Active' : 'Inactive';
 
-	$link_add_royalty = sef(19);
+	$link_add_royalty = sef(144);
+
+	$status_note = $status === 'Active' ? '' : ' To Activate Royalty';
 
 	return <<<HTML
 		<div class="col-xl-3 col-md-6">
-			<div class="card bg-primary text-white mb-4">
+			<div class="card mb-4">
 				<div class="card-body">Status<span id="direct_referral" style="float:right">
 					$status</span></div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
-					<span><a class="small text-white stretched-link" href="$link_add_royalty">Add Royalty</a></span>
-					<div class="small text-white"><i class="fas fa-angle-right"></i></div>
+					<span><a class="small stretched-link" href="$link_add_royalty">Add Account{$status_note}</a></span>
+					<div class="small"><i class="fas fa-angle-right"></i></div>
 				</div>
 			</div>
 		</div>
@@ -146,7 +148,7 @@ function view_total_bonus($user_id)
 				<div class="card-body">Royalty Bonus<span id="royalty_bonus" style="float:right">
 					$lftp_total_format $sa->currency</span></div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
-					<a class="small text-white stretched-link" href="$link_add_royalty">Add Bonus</a>
+					<a class="small text-white stretched-link" href="$link_add_royalty">Add Stakes</a>
 					<div class="small text-white"><i class="fas fa-angle-right"></i></div>
 				</div>
 			</div>
