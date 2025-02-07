@@ -2,7 +2,6 @@
 
 namespace BPL\Jumi\Member_Info;
 
-require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'bpl/mods/root_url_upline.php';
 require_once 'bpl/mods/helpers.php';
 
@@ -11,19 +10,15 @@ use function BPL\Mods\Root_Url_Upline\main as root_url;
 use function BPL\Mods\Url_SEF\sef;
 use function BPL\Mods\Url_SEF\qs;
 
-use function Templates\SB_Admin\Tmpl\Master\main as master;
-
 use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\page_validate;
-// use function BPL\Mods\Helpers\menu;
+use function BPL\Mods\Helpers\menu;
 use function BPL\Mods\Helpers\input_get;
 use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\user;
 
-$content = main();
-
-master($content);
+main();
 
 /**
  *
@@ -39,9 +34,7 @@ function main()
 
 	page_validate();
 
-	// $str = menu();
-
-	$str = '';
+	$str = menu();
 
 	if ($uid !== '') {
 		$user_id = $uid;
@@ -50,7 +43,7 @@ function main()
 	$str .= view_table($user_id, $usertype);
 	$str .= scripts();
 
-	return $str;
+	echo $str;
 }
 
 /**
