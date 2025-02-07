@@ -2,15 +2,30 @@
 
 namespace BPL\Jumi\Active_Income;
 
+require_once 'bpl/leadership_fast_track_principal.php';
+require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'bpl/mods/income.php';
 require_once 'bpl/mods/account_summary.php';
+require_once 'bpl/mods/root_url_upline.php';
+require_once 'bpl/mods/time_remaining.php';
 require_once 'bpl/mods/helpers.php';
 
 // use Joomla\CMS\Uri\Uri;
 
+use DateTime;
+use DateInterval;
+
+use function BPL\Leadership_Fast_Track_Principal\lftp_total;
+
 use function BPL\Mods\Account_Summary\row_referral_link;
 use function BPL\Mods\Account_Summary\row_username;
 use function BPL\Mods\Account_Summary\row_account_type;
+
+use function BPL\Mods\Root_Url_Upline\main as root_url;
+
+use function BPL\Mods\Time_Remaining\main as time_remaining;
+
+use function Templates\SB_Admin\Tmpl\Master\main as master;
 
 //use function BPL\Mods\Account_Summary\row_balance;
 // use function BPL\Mods\Account_Summary\row_efund;
@@ -25,12 +40,15 @@ use function BPL\Mods\Url_SEF\sef;
 use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\page_validate;
-use function BPL\Mods\Helpers\page_reload;
-use function BPL\Mods\Helpers\menu;
+// use function BPL\Mods\Helpers\page_reload;
+// use function BPL\Mods\Helpers\menu;
 use function BPL\Mods\Helpers\user;
 use function BPL\Mods\Helpers\db;
+use function BPL\Mods\Helpers\live_reload;
 
-main();
+$content = main();
+
+master($content);
 
 /**
  *
@@ -43,7 +61,7 @@ function main()
 
 	page_validate();
 
-	$str = menu();
+	$str = live_reload(true);
 
 	switch (session_get('usertype')) {
 		case 'Admin':
@@ -51,12 +69,409 @@ function main()
 
 			break;
 		case 'Member':
-			$str .= member($user_id);
+			$str .= member($user_id, true);
 
 			break;
 	}
 
-	echo $str;
+	return $str;
+}
+
+/**
+ *
+ * @param $user_id
+ *
+ * @return string
+ *
+ * @since version
+ */
+function member($user_id, $counter = false): string
+{
+	$str = '';
+
+	$sp = settings('plans');
+
+	$reactivate_binary = '';
+
+	if ($sp->binary_pair && user_binary($user_id)) {
+		$user_binary = user_binary($user_id);
+
+		$status = $user_binary->status;
+
+		$reactivate_count = $user_binary->reactivate_count;
+		$capping_cycle_max = settings('binary')->{$user_binary->account_type . '_capping_cycle_max'};
+
+		if ($status === 'inactive' && $reactivate_count < $capping_cycle_max) {
+			$reactivate_binary = <<<HTML
+				<div class="reactivate_binary notification alert alert-info alert-dismissible fade show" 
+					role="alert">Reactivate $sp->binary_pair_name!<button type="button" class="btn-close" 
+						data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>	
+			HTML;
+		}
+	}
+
+	$view_agent_dashboard = view_agent_dashboard($user_id, $counter);
+	$view_fast_track = view_fast_track($user_id, $counter);
+
+	$str .= <<<HTML
+		<div class="container-fluid px-4">
+			<h1 class="mt-4">Active Income</h1>
+			<ol class="breadcrumb mb-4">
+				<li class="breadcrumb-item active">Income Summary</li>
+			</ol>
+			$reactivate_binary						
+			$view_agent_dashboard
+			$view_fast_track
+		</div>
+	HTML;
+
+	// $str .= tableStyle();
+
+	// $str .= '<div class="card">';
+	// $str .= '<div class="card-header">Agent Dashboard</div>';
+	// $str .= '<div class="table-responsive">';
+	// $str .= '<table class="category table table-striped table-bordered table-hover" style="width: 100%;">';
+
+	// $str .= core($user_id);
+
+	// $str .= '</table>';
+	// $str .= '</div></div>';
+
+	// $str .= table_binary_summary($user_id);
+	// $str .= user_info(user($user_id));
+
+	return $str;
+}
+
+function view_agent_dashboard($user_id, $counter): string
+{
+	$sa = settings('ancillaries');
+
+	$user = user($user_id);
+
+	$total_income = total_income($user_id);
+	$available_balance = $user->payout_transfer;
+
+	$total_income_format = number_format($total_income, 8);
+	$available_balance_format = number_format($available_balance, 8);
+
+	$counter_span = '';
+
+	if ($counter) {
+		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
+	}
+
+	$view_account_status = view_account_status($user_id);
+	$view_direct_agents = view_direct_agents($user_id);
+	$view_direct_referral_ftp = view_direct_referral_ftp($user_id);
+	$view_lftp = view_lftp($user_id);
+
+	$str = <<<HTML
+		<div class="card mb-4">
+			<div class="card-header">
+				<i class="fas fa-table me-1"></i>
+				Agent Dashboard{$counter_span}
+			</div>
+			<div class="card-body">
+				<div class="row">
+					$view_account_status
+					$view_direct_agents	
+					$view_direct_referral_ftp				
+					$view_lftp
+				</div>
+			</div>
+			<div class="card-footer small text-muted">
+				<i class="fas fa-money-bill me-1"></i>
+				Total Income: $total_income_format $sa->currency
+				<span style="float:right"><i class="fas fa-wallet me-1"></i>
+				Wallet Available Balance: $available_balance_format $sa->currency</span>
+			</div>
+		</div>
+	HTML;
+
+	return $str;
+}
+
+function view_account_status($user_id)
+{
+	$sp = settings('plans');
+
+	$user = user($user_id);
+
+	$account_status = $user->status_global;
+
+	$view_account_status = ucwords($account_status);
+
+	$reactivate_link = sef(130);
+
+	$account_type_format = ucwords($user->account_type);
+
+	$reactivate = <<<HTML
+		<span class="small">Account Type: $account_type_format</span>
+	HTML;
+
+	if (!$sp->account_freeze && $account_status === 'active') {
+		$reactivate = <<<HTML
+			<span><a class="small stretched-link" href="$reactivate_link">Reactivate Account</a></span>
+		HTML;
+	}
+
+	return <<<HTML
+		<div class="col-xl-3 col-md-6">
+			<div class="card mb-4">
+				<div class="card-body">Account Status<span id="account_status" style="float:right">
+					$view_account_status</span></div>
+				<div class="card-footer d-flex align-items-center justify-content-between">
+					$reactivate
+					<div class="small"><i class="fas fa-angle-right"></i></div>
+				</div>
+			</div>
+		</div>
+	HTML;
+}
+
+function view_direct_agents($user_id)
+{
+	$user = user($user_id);
+
+	$link_sponsored_members = sef(13);
+
+	$user_directs = user_direct($user->id);
+
+	$count_directs = count($user_directs);
+
+	return <<<HTML
+		<div class="col-xl-3 col-md-6">
+			<div class="card mb-4">
+				<div class="card-body">Direct Agents<span id="direct_agents" style="float:right">
+					$count_directs</span></div>
+				<div class="card-footer d-flex align-items-center justify-content-between">
+					<span class="small"><a href="$link_sponsored_members">View Sponsored Members</a></span>
+					<div class="small"><i class="fas fa-angle-right"></i></div>
+				</div>
+			</div>
+		</div>
+	HTML;
+}
+
+function view_direct_referral_ftp($user_id)
+{
+	$sp = settings('plans');
+	$sa = settings('ancillaries');
+
+	if (!$sp->direct_referral_fast_track_principal) {
+		return '';
+	}
+
+	$currency = $sa->currency;
+
+	$user = user($user_id);
+
+	$income_referral_ftp = $user->income_referral_fast_track_principal;
+	$income_referral_ftp_format = number_format($income_referral_ftp, 2);
+
+	$link = 'http://' . $_SERVER['SERVER_NAME'] . root_url() . '/' . $user->username;
+
+	return <<<HTML
+		<div class="col-xl-3 col-md-6">
+			<div class="card mb-4">
+				<div class="card-body">{$sp->direct_referral_fast_track_principal_name}<span id="direct_referral_ftp" style="float:right">
+					$income_referral_ftp_format $currency</span></div>
+				<div class="card-footer d-flex align-items-center justify-content-between">
+					<span class="small">Referral Link: <a href="$link">$link</a></span>					
+					<div class="small"><i class="fas fa-angle-right"></i></div>
+				</div>
+			</div>
+		</div>
+	HTML;
+}
+
+function view_lftp($user_id)
+{
+	$sa = settings('ancillaries');
+	$sp = settings('plans');
+	$slftp = settings('leadership_fast_track_principal');
+
+	if (!$sp->leadership_fast_track_principal) {
+		return '';
+	}
+
+	$user = user($user_id);
+
+	$account_type = $user->account_type;
+	$level = $slftp->{$account_type . '_leadership_fast_track_principal_level'};
+
+	$lftp_total = lftp_total($user, $level);
+	$lftp_total_format = number_format($lftp_total, 8);
+
+	$lftp_name = $sp->leadership_fast_track_principal_name;
+
+	$link_add_royalty = sef(19);
+
+	return <<<HTML
+		<div class="col-xl-3 col-md-6">
+			<div class="card mb-4">
+				<div class="card-body">$lftp_name<span id="lftp" style="float:right">
+					$lftp_total_format $sa->currency</span></div>
+				<div class="card-footer d-flex align-items-center justify-content-between">
+					<a class="small" href="$link_add_royalty">Add Stakes</a>
+					<div class="small"><i class="fas fa-angle-right"></i></div>
+				</div>
+			</div>
+		</div>
+	HTML;
+}
+
+function total_income($user_id)
+{
+	$user = user($user_id);
+
+	$income_referral_ftp = $user->income_referral_fast_track_principal;
+	$bonus_leadership_ftp = $user->bonus_leadership_fast_track_principal;
+
+	return $income_referral_ftp + $bonus_leadership_ftp;
+}
+
+function view_fast_track($user_id)
+{
+	$sa = settings('ancillaries');
+
+	$user = user($user_id);
+
+	$fast_track_interest = $user->fast_track_interest;
+	$fast_track_interest_format = number_format($fast_track_interest, 8);
+
+	$table_fast_track = table_fast_track($user_id);
+
+	return <<<HTML
+		<div class="card mb-4">
+			<div class="card-header">
+				<i class="fas fa-table me-1"></i>
+				Profit Share<span style="float:right">
+					Passive Income: $fast_track_interest_format $sa->currency</span>
+			</div>
+			<div class="card-body">
+				<table id="datatablesSimple">
+					$table_fast_track
+				</table>
+			</div>
+		</div>
+	HTML;
+}
+
+function table_fast_track($user_id)
+{
+	$si = settings('investment');
+
+	$user = user($user_id);
+
+	$account_type = $user->account_type;
+
+	$maturity = $si->{$account_type . '_fast_track_maturity'};
+
+	$row_fast_track = row_fast_track($user_id);
+
+	$str = <<<HTML
+		<thead>
+			<tr>
+				<th>Initial</th>
+				<th>Accumulated</th>
+				<th>Running Days</th>
+				<th>Maturity Date ($maturity days)</th>
+				<th>Status</th>							
+			</tr>
+		</thead>
+		<tfoot>
+			<tr>
+				<th>Initial</th>
+				<th>Accumulated</th>
+				<th>Running Days</th>
+				<th>Maturity Date ($maturity days)</th>
+				<th>Status</th>
+			</tr>
+		</tfoot>
+		<tbody>
+			$row_fast_track						
+		</tbody>
+	HTML;
+
+	return $str;
+}
+
+function row_fast_track($user_id)
+{
+	$si = settings('investment');
+
+	$user = user($user_id);
+
+	$account_type = $user->account_type;
+
+	$interval = $si->{$account_type . '_fast_track_interval'};
+	$maturity = $si->{$account_type . '_fast_track_maturity'};
+
+	$fast_tracks = user_fast_track($user_id);
+
+	$str = '';
+
+	if (empty($fast_tracks)) {
+		$str .= <<<HTML
+			<tr>
+				<td>0.00</td>
+				<td>0.00</td>
+				<td>0</td>
+				<td>n/a</td>
+				<td>n/a</td>				
+			</tr>					
+		HTML;
+	} else {
+		foreach ($fast_tracks as $ft) {
+			$start = new DateTime('@' . $ft->date_entry);
+			$end = new DateInterval('P' . $maturity . 'D');
+
+			$start->add($end);
+
+			$starting_value = number_format($ft->principal, 2);
+			$current_value = number_format($ft->value_last, 2);
+			$maturity_date = $start->format('F d, Y');
+			$status = time_remaining($ft->day, $ft->processing, $interval, $maturity);
+
+			$remaining = ($ft->processing + $maturity - $ft->day) * $interval;
+			$remain_maturity = ($maturity - $ft->day) * $interval;
+
+			$type_day = '';
+
+			if ($remaining > $maturity && $ft->processing) {
+				$type_day = 'Days for Processing: ';
+			} elseif ($remain_maturity > 0) {
+				$type_day = 'Days Remaining: ';
+			}
+
+			$str .= <<<HTML
+				<tr>
+					<td>$starting_value</td>
+					<td>$current_value</td>
+					<td>$ft->day</td>
+					<td>$maturity_date</td>
+					<td>{$type_day}{$status}</td>				
+				</tr>
+			HTML;
+		}
+	}
+
+	return $str;
+}
+
+function user_fast_track($user_id)
+{
+	$db = db();
+
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_fast_track ' .
+		'WHERE user_id = ' . $db->quote($user_id) .
+		' ORDER BY fast_track_id DESC'
+	)->loadObjectList();
 }
 
 /**
@@ -113,6 +528,17 @@ function user_binary($user_id)
 		'FROM network_users u ' .
 		'INNER JOIN network_binary b ' .
 		'ON u.id = b.user_id ' .
+		'WHERE user_id = ' . $db->quote($user_id)
+	)->loadObject();
+}
+
+function user_indirect($user_id)
+{
+	$db = db();
+
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_indirect ' .
 		'WHERE user_id = ' . $db->quote($user_id)
 	)->loadObject();
 }
@@ -768,11 +1194,11 @@ function table_binary_summary($user_id): string
  */
 function admin($user_id): string
 {
-	$str = page_reload();
+	// $str = page_reload();
 
-	$str .= tableStyle();
+	// $str .= tableStyle();
 
-	$str .= '<h2>Profit Chart</h2>';
+	$str = '<h2>Profit Chart</h2>';
 	$str .= '<div class="card">
 		<div class="table-responsive">';
 	$str .= '<table class="category table table-striped table-bordered table-hover" style="width: 100%;">';
@@ -783,57 +1209,6 @@ function admin($user_id): string
 	$str .= '</div></div>';
 
 	$str .= table_binary_summary($user_id);
-
-	return $str;
-}
-
-/**
- *
- * @param $user_id
- *
- * @return string
- *
- * @since version
- */
-function member($user_id): string
-{
-	$str = page_reload();
-
-	$sp = settings('plans');
-
-	if ($sp->binary_pair) {
-		$user_binary = user_binary($user_id);
-
-		$status = $user_binary->status;
-
-		$reactivate_count = $user_binary->reactivate_count;
-		$capping_cycle_max = settings('binary')->{$user_binary->account_type . '_capping_cycle_max'};
-
-		if ($status === 'inactive' && $reactivate_count < $capping_cycle_max) {
-			$str .= '<div class="uk-width-1-1 uk-grid-margin uk-row-first">
-                    <div class="uk-alert uk-alert-warning" data-uk-alert="">
-                        <a class="uk-alert-close uk-close"></a>
-                        <p>Reactivate Your ' . $sp->binary_pair_name . '!</p>
-                    </div>
-                </div>';
-		}
-	}
-
-	$str .= tableStyle();
-
-	$str .= '<div class="card">';
-	$str .= '<div class="card-header">Agent Dashboard</div>';
-	$str .= '<div class="table-responsive">';
-	$str .= '<table class="category table table-striped table-bordered table-hover" style="width: 100%;">';
-
-	$str .= core($user_id);
-
-	$str .= '</table>';
-	$str .= '</div></div>';
-
-	$str .= table_binary_summary($user_id);
-
-	$str .= user_info(user($user_id));
 
 	return $str;
 }
@@ -883,6 +1258,7 @@ function user_info($user): string
  */
 function core($user_id): string
 {
+	$str = '';
 	$str = row_direct_referral($user_id);
 	$str .= row_indirect_referral($user_id);
 	// $str .= row_binary($user_id);

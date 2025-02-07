@@ -61,18 +61,18 @@ function main()
 
 function view_structure($user_id)
 {
-	$view_structure = genealogy('indirect', $user_id, 'leadership_fast_track_principal');
+	return genealogy('indirect', $user_id, 'leadership_fast_track_principal');
 
-	return <<<HTML
-	<div class="card mb-4">
-		<div class="card-header">
-			<i class="fas fa-sitemap me-1"></i>
-			Royalty Bonus
-		</div>
-		<div class="card-body">
-		$view_structure
-		</div>
-		<div class="card-footer small text-muted">Genealogy Structure</div>
-	</div>
-	HTML;
+	// return <<<HTML
+	// <div class="card mb-4">
+	// 	<div class="card-header">
+	// 		<i class="fas fa-sitemap me-1"></i>
+	// 		Royalty Bonus
+	// 	</div>
+	// 	<div class="card-body">
+	// 	$view_structure
+	// 	</div>
+	// 	<div class="card-footer small text-muted">Genealogy Structure</div>
+	// </div>
+	// HTML;
 }

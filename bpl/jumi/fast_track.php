@@ -6,7 +6,7 @@ require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'bpl/ajax/ajaxer/fast_track_input.php';
 require_once 'bpl/ajax/ajaxer/fast_track.php';
 require_once 'bpl/mods/time_remaining.php';
-require_once 'bpl/ajax/ajaxer/table_fast_track.php';
+// require_once 'bpl/ajax/ajaxer/table_fast_track.php';
 require_once 'bpl/mods/time_remaining.php';
 // require_once 'bpl/mods/table_daily_interest.php';
 require_once 'bpl/mods/helpers.php';
@@ -18,15 +18,15 @@ use DateInterval;
 
 use function BPL\Ajax\Ajaxer\Fast_Track_Input\main as fast_track_input;
 use function BPL\Ajax\Ajaxer\Fast_Track\main as ajax_fast_track;
-use function BPL\Ajax\Ajaxer\Table_Fast_Track\main as ajax_table_fast_track;
-use function BPL\Echelon_Bonus\view;
+// use function BPL\Ajax\Ajaxer\Table_Fast_Track\main as ajax_table_fast_track;
+// use function BPL\Echelon_Bonus\view;
 use function BPL\Mods\Time_Remaining\main as time_remaining;
 // use function BPL\Mods\Table_Daily_Interest\tbody;
 
 use function Templates\SB_Admin\Tmpl\Master\main as master;
 
-use function BPL\Mods\Url_SEF\qs;
-use function BPL\Mods\Url_SEF\sef;
+// use function BPL\Mods\Url_SEF\qs;
+// use function BPL\Mods\Url_SEF\sef;
 
 use function BPL\Mods\Helpers\session_get;
 // use function BPL\Mods\Helpers\input_get;
@@ -35,8 +35,8 @@ use function BPL\Mods\Helpers\page_validate;
 use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\user;
-use function BPL\Mods\Helpers\pgn8;
-use function BPL\Mods\Helpers\live_reload;
+// use function BPL\Mods\Helpers\pgn8;
+// use function BPL\Mods\Helpers\live_reload;
 
 $content = main();
 
@@ -57,6 +57,7 @@ function main()
     $view_form = view_form();
     $view_shares = view_shares($user_id);
     $view_principal = view_principal($user_id);
+    $view_balance = view_balance($user_id);
     $view_tbl_fast_track = view_tbl_fast_track($user_id, false);
 
     $str = <<<HTML
@@ -70,6 +71,7 @@ function main()
 			$view_form
 			$view_shares
 			$view_principal
+			$view_balance
 		</div>				
 		$view_tbl_fast_track
 	</div>
@@ -79,44 +81,6 @@ function main()
     $str .= ajax_fast_track($user_id);
 
     return $str;
-}
-
-function notifications_bck()
-{
-    $notification_style = <<<CSS
-        .notification {
-            display: none;
-        }
-    CSS;
-
-    $notification_script = <<<JS
-        function showNotification(type, message) {
-            const notification = document.querySelector(`.\${type}`);
-            notification.textContent = message;
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 5000);
-        }
-    JS;
-
-    return <<<HTML
-		<div class="success_fast_track notification alert alert-success alert-dismissible fade show" 
-			role="alert">Success Fast Track<button type="button" class="btn-close" 
-				data-bs-dismiss="alert" aria-label="Close"></button>
-		</div>
-		<div class="error_fast_track notification alert alert-danger alert-dismissible fade show" 
-			role="alert">Error Fast Track<button type="button" class="btn-close" 
-				data-bs-dismiss="alert" aria-label="Close"></button>
-		</div>
-		<div class="debug_fast_track notification alert alert-info alert-dismissible fade show" 
-			role="alert">Debug Fast Track<button type="button" class="btn-close" 
-				data-bs-dismiss="alert" aria-label="Close"></button>
-		</div>
-		<style>{$notification_style}</style>
-		<script>{$notification_script}</script>
-	HTML;
 }
 
 function notifications()
@@ -246,6 +210,26 @@ function view_principal($user_id)
 				<div class="card-body">Value</div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
 					<span class="fast_track_principal">$value</span>
+					<div class="small"><i class="fas fa-angle-right"></i></div>
+				</div>
+			</div>
+		</div>
+	HTML;
+}
+
+function view_balance($user_id)
+{
+    $sa = settings('ancillaries');
+    $user = user($user_id);
+    $balance = $user->payout_transfer;
+    $balance_format = number_format($balance, 8);
+
+    return <<<HTML
+		<div class="col-xl-3 col-md-6">
+			<div class="card mb-4">
+				<div class="card-body">$sa->efund_name Balance</div>
+				<div class="card-footer d-flex align-items-center justify-content-between">
+					<span class="usd_bal_now_user">$balance_format</span>
 					<div class="small"><i class="fas fa-angle-right"></i></div>
 				</div>
 			</div>

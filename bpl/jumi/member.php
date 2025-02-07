@@ -118,7 +118,7 @@ function view_direct_referral($user_id)
 				<div class="card-body">Direct Referral<span id="direct_referral" style="float:right">
 					$income_referral_ftp_format $currency</span></div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
-					<span>Referral Link:</span><a class="small text-white stretched-link" href="$link">$link</a>
+					<span class="small">Referral Link: <a class="text-white stretched-link" href="$link">$link</a></span>
 					<div class="small text-white"><i class="fas fa-angle-right"></i></div>
 				</div>
 			</div>

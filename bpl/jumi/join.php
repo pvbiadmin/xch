@@ -254,7 +254,10 @@ function insert_user($username, $password, $sponsor, $email, $admintype, $edit)
 {
 	$db = db();
 
-	$payment_mode = settings('ancillaries')->payment_mode;
+	$sp = settings('plans');
+	$sa = settings('ancillaries');
+
+	$payment_mode = $sa->payment_mode;
 
 	$email = substr($email, 0, 60);
 
@@ -263,7 +266,7 @@ function insert_user($username, $password, $sponsor, $email, $admintype, $edit)
 	// sponsor
 	$sponsor_id = '1';
 
-	if (settings('plans')->direct_referral || settings('plans')->echelon) {
+	if ($sp->direct_referral_fast_track_principal) {
 		$user_sponsor = user_username($sponsor);
 
 		if (!empty($user_sponsor)) {

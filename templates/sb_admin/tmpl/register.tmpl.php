@@ -140,11 +140,8 @@ function view_registration()
 
     // Sponsor field
     $sponsor_field = '';
-    if (
-        $settings_plans->direct_referral
-        || $settings_plans->echelon
-        || $settings_plans->direct_referral_fast_track_principal
-    ) {
+
+    if ($settings_plans->direct_referral_fast_track_principal) {
         $sponsor_value = $s_sponsor && !isset($sponsor) ? $s_sponsor : $sponsor;
         $readonly = $s_sponsor !== '' ? ' readonly' : '';
         $sponsor_field = <<<HTML
