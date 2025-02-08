@@ -33,7 +33,6 @@ master($content);
 function main()
 {
 	$user_id = session_get('user_id');
-	$usertype = session_get('usertype');
 
 	$uid = input_get('uid');
 
@@ -48,6 +47,7 @@ function main()
 	$account_information = account_information($user_id);
 	$referral_information = referral_information($user_id);
 	$contact_information = contact_information($user_id);
+	$btn_profile_update = btn_profile_update();
 
 	$str = "<style>$style_table</style>";
 
@@ -60,7 +60,7 @@ function main()
 	<div class="card mb-4">
 		<div class="card-body">
 			<div class="d-grid gap-2 d-md-flex justify-content-md-end mb-3">				
-				<a href="#" class="btn btn-primary" type="button">Update Profile</a>
+				$btn_profile_update
 			</div>
 
 			$account_information
@@ -70,6 +70,24 @@ function main()
 	</div>
 </div>
 HTML;
+
+	return $str;
+}
+
+function btn_profile_update()
+{
+	$user_id = session_get('user_id');
+	$uid = input_get('uid');
+
+	$user = user($user_id);
+
+	$str = '';
+
+	if (!empty($user_id) && (empty($uid) || $uid === $user_id)) {
+		$url = sef(60) . qs() . 'uid=' . $user->id;
+		$str .= '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') .
+			'" class="btn btn-primary">Update Profile</a>';
+	}
 
 	return $str;
 }
@@ -604,7 +622,7 @@ function get_formatted_address($address): string
 	$tmp = explode('|', $address);
 	$country = (isset($tmp[4]) && $tmp[4] !== '') ? (get_country_name($tmp[4])) : '';
 
-	return (!empty($address) ? $tmp[0] . ' ' . $tmp[1] . '<br>' . $tmp[2] . ', ' . $tmp[3] . '<br>' . $country : '-');
+	return (!empty($address) ? $tmp[0] . ' ' . $tmp[1] . '<br>' . $tmp[2] . ', ' . $tmp[3] . '<br>' . $country : '---');
 }
 
 function payment_info($payment_method): string
@@ -638,11 +656,11 @@ function payment_info($payment_method): string
 function contact_info($contact): string
 {
 	$ciu = json_decode($contact, true);
-	$str = '';
+	$str = '---';
 
 	if (!empty($ciu)) {
 		foreach ($ciu as $k => $v) {
-			$str .= '<div class="input-group mb-2">';
+			$str = '<div class="input-group mb-2">';
 			$str .= '<div class="input-group-text">' . ucwords(htmlspecialchars($k)) . '</div>';
 			$str .= '<input type="text" class="form-control" value="' . htmlspecialchars($v) . '" readonly>';
 			$str .= '</div>';

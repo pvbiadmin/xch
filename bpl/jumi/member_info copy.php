@@ -1,6 +1,6 @@
 <?php
 
-namespace BPL\Jumi\Member_Info;
+namespace BPL\Jumi\Member_Info_Copy;
 
 require_once 'bpl/mods/root_url_upline.php';
 require_once 'bpl/mods/helpers.php';
