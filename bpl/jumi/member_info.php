@@ -47,6 +47,7 @@ function main()
 	$account_information = account_information($user_id);
 	$referral_information = referral_information($user_id);
 	$contact_information = contact_information($user_id);
+	$payment_information = payment_information($user_id);
 	$btn_profile_update = btn_profile_update();
 
 	$str = "<style>$style_table</style>";
@@ -66,6 +67,7 @@ function main()
 			$account_information
 			$referral_information
 			$contact_information
+			$payment_information
 		</div>
 	</div>
 </div>
@@ -371,8 +373,39 @@ function contact_information($user_id)
 					</tr>
 					<tr>
 						<th scope="row">Contact</th>
-						<td colspan="2">$contact</td>                        
+						<td>$contact</td>                        
 					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+HTML;
+
+	return $str;
+}
+
+function payment_information($user_id)
+{
+	$user = user($user_id);
+	$payment_method = $user->payment_method;
+
+	$payment_info = payment_info2($payment_method);
+
+	$str = <<<HTML
+<div class="card mb-4">
+	<div class="card-header">
+		<i class="fas fa-table me-1"></i>
+		Payment Information
+	</div>
+	<div class="card-body">
+		<div class="row">
+			<table class="table table-hover table-responsive">            
+				<tbody>
+					<tr>
+						<th scope="row">Payment Methods</th>
+						<td>$payment_info</td>
+					</tr>					
 				</tbody>
 			</table>
 		</div>
@@ -615,8 +648,6 @@ function user_binary($user_id)
 	)->loadObject();
 }
 
-
-
 function get_formatted_address($address): string
 {
 	$tmp = explode('|', $address);
@@ -647,6 +678,39 @@ function payment_info($payment_method): string
 			}
 
 			$str .= '</p>';
+		}
+	}
+
+	return $str;
+}
+
+function payment_info2($payment_method): string
+{
+	$pmu = json_decode($payment_method, true);
+	$str = '---';
+
+	if (!empty($pmu)) {
+		$str = ''; // Reset string if we have content
+		foreach ($pmu as $k => $v) {
+			if (!is_array($v)) {
+				// Handle simple key-value pairs
+				$str .= '<div class="input-group mb-2">';
+				$str .= '<div class="input-group-text">' . ucwords(htmlspecialchars($k)) . '</div>';
+				$str .= '<input type="text" class="form-control" value="' . htmlspecialchars($v) . '" readonly>';
+				$str .= '</div>';
+			} else {
+				// Handle nested arrays
+				$str .= '<div class="input-group mb-2">';
+				$str .= '<div class="input-group-text">' . ucwords(htmlspecialchars($k)) . '</div>';
+
+				// Create a concatenated string of all nested values
+				$nested_values = [];
+				foreach ($v as $x => $y) {
+					$nested_values[] = ucwords(htmlspecialchars($x)) . ': ' . htmlspecialchars($y);
+				}
+				$str .= '<input type="text" class="form-control" value="' . implode(' | ', $nested_values) . '" readonly>';
+				$str .= '</div>';
+			}
 		}
 	}
 

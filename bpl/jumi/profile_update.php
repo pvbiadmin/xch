@@ -67,10 +67,101 @@ function main()
 	}
 
 	if ($final === '') {
-		$str .= view_form($user_id, $admintype, $usertype);
+		// $str .= view_form($user_id, $admintype, $usertype);
+		$str .= view_update_profile($user_id);
 	} else {
 		process_form($user_id, $usertype, $admintype);
 	}
+
+	return $str;
+}
+
+function view_update_profile($user_id)
+{
+	$account_information = account_information($user_id);
+	$str = <<<HTML
+<div class="container-fluid px-4">
+	<h1 class="mt-4">Update Profile</h1>
+	<ol class="breadcrumb mb-4">
+		<li class="breadcrumb-item active">Update User Information</li>
+	</ol>
+	<div class="card mb-4">
+		<div class="card-body">
+			$account_information			
+
+			<div class="d-grid gap-2 d-md-flex justify-content-md-center mb-3">				
+				<button type="submit" class="btn btn-primary">Update Profile</button>
+			</div>
+		</div>
+	</div>
+</div>
+HTML;
+
+	return $str;
+}
+
+function account_information($user_id)
+{
+	$user = user($user_id);
+
+	$username = $user->username;
+	$fullname = $user->fullname;
+	$address = explode('|', $user->address);
+	$email = $user->email;
+
+	$address_1 = htmlspecialchars(array_key_exists(0, $address) ? $address[0] : '');
+	$address_2 = htmlspecialchars(array_key_exists(1, $address) ? $address[1] : '');
+	$address_3 = htmlspecialchars(array_key_exists(2, $address) ? $address[2] : '');
+	$address_4 = htmlspecialchars(array_key_exists(3, $address) ? $address[3] : '');
+	$address_5 = htmlspecialchars(array_key_exists(4, $address) ? $address[4] : '');
+
+	$option_country_selected = option_country_selected($address);
+	$options_country = options_country();
+
+	$username_info = !empty($username) ? htmlspecialchars($username) : '---';
+	$fullname_info = !empty($fullname) ? htmlspecialchars($fullname) : '---';
+
+	$str = <<<HTML
+<div class="card mb-4">
+	<div class="card-header">
+		<i class="fas fa-table me-1"></i>
+		Account Information
+	</div>
+	<div class="card-body">
+		<div class="row">
+			<table class="table table-hover table-responsive">            
+				<tbody>
+					<tr>
+						<th scope="row">Username</th>
+						<td><input type="text" readonly class="form-control-plaintext" id="username" value="$username_info"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="fullname">Fullname</th>
+						<td><input id="fullname" class="form-control" type="text" value="$fullname_info"></td>                        
+					</tr>
+					<tr>
+						<th scope="row">Address</th>
+						<td>
+							<input class="form-control mb-2" type="text" name="address_1" value="$address_1" aria-label="address_1">
+							<input class="form-control mb-2" type="text" name="address_2" value="$address_2" aria-label="address_2">
+							<input class="form-control mb-2" type="text" name="address_3" value="$address_3" aria-label="address_3">
+							<input class="form-control mb-2" type="text" name="address_4" value="$address_4" aria-label="address_4">
+							<select class="form-control" name="address_5">
+								<option value="$address_5">$option_country_selected</option>
+								$options_country
+							</select>
+						</td>                        
+					</tr>
+					<tr>
+						<th scope="row"><label for="email">Email</th>
+						<td><input type="email" class="form-control" name="email" id="email" value="$email"></td>                        
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+HTML;
 
 	return $str;
 }
