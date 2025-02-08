@@ -2,6 +2,7 @@
 
 namespace BPL\Jumi\Withdrawal_Request;
 
+require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'bpl/mods/usdt_currency.php';
 require_once 'bpl/mods/payout_method.php';
 require_once 'bpl/menu.php';
@@ -17,6 +18,8 @@ use Joomla\CMS\Exception\ExceptionHandler;
 use function BPL\Menu\admin as menu_admin;
 use function BPL\Menu\member as menu_member;
 use function BPL\Menu\manager as menu_manager;
+
+use function Templates\SB_Admin\Tmpl\Master\main as master;
 
 use function BPL\Mods\Database\Query\insert;
 use function BPL\Mods\Database\Query\update;
@@ -40,7 +43,9 @@ use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\user;
 use function BPL\Mods\Helpers\application;
 
-main();
+$content = main();
+
+master($content);
 
 /**
  *
@@ -49,27 +54,27 @@ main();
  */
 function main()
 {
-	$username      = session_get('username');
-	$usertype      = session_get('usertype');
-	$admintype     = session_get('admintype');
-	$account_type  = session_get('account_type');
+	$username = session_get('username');
+	$usertype = session_get('usertype');
+	$admintype = session_get('admintype');
+	$account_type = session_get('account_type');
 	$merchant_type = session_get('merchant_type');
-	$amount        = input_get('amount');
-	$user_id       = session_get('user_id');
+	$amount = input_get('amount');
+	$user_id = session_get('user_id');
 
 	page_validate();
 
 	session_set('edit', false);
 
-	$str = menu($usertype, $admintype, $account_type, $username, $merchant_type, $user_id);
+	// $str = menu($usertype, $admintype, $account_type, $username, $merchant_type, $user_id);
+
+	$str = '';
 
 	$str .= '<h1>Payout Request</h1>';
 
-	if ($usertype === 'Member' || $usertype === 'Admin')
-	{
-		if ($amount !== '')
-		{
-			$amount_final     = input_get('amount_final');
+	if ($usertype === 'Member' || $usertype === 'Admin') {
+		if ($amount !== '') {
+			$amount_final = input_get('amount_final');
 			$deductions_total = input_get('total_deductions');
 
 			process_payout($amount, $amount_final, $deductions_total, $user_id);
@@ -84,7 +89,7 @@ function main()
 		$str .= view_pending($user_id);
 	}
 
-	echo $str;
+	return $str;
 }
 
 /**
@@ -103,8 +108,7 @@ function menu($usertype, $admintype, $account_type, $username, $merchant_type, $
 {
 	$str = '';
 
-	switch ($usertype)
-	{
+	switch ($usertype) {
 		case 'Admin':
 			$str .= menu_admin($admintype, $account_type, $user_id, $username);
 			break;
@@ -150,23 +154,21 @@ function validate_input($amount, $user_id, $edit)
 {
 	$settings_ancillaries = settings('ancillaries');
 
-	$currency       = $settings_ancillaries->currency;
-	$cybercharge    = $settings_ancillaries->cybercharge;
+	$currency = $settings_ancillaries->currency;
+	$cybercharge = $settings_ancillaries->cybercharge;
 	$processing_fee = $settings_ancillaries->processing_fee;
 
 	$user = user($user_id);
 
 	$minimum_withdraw = $settings_ancillaries->{$user->account_type . '_min_withdraw'}; // php
-	$minimum_bal_usd  = $settings_ancillaries->{$user->account_type . '_min_bal_usd'}; // php
+	$minimum_bal_usd = $settings_ancillaries->{$user->account_type . '_min_bal_usd'}; // php
 
 	$pending = user_payout_pending($user_id);
 
 	$pending_requests = 0;
 
-	if ($pending)
-	{
-		foreach ($pending as $requested)
-		{
+	if ($pending) {
+		foreach ($pending as $requested) {
 			$pending_requests += $requested->amount;
 		}
 	}
@@ -175,43 +177,48 @@ function validate_input($amount, $user_id, $edit)
 
 	$app = application();
 
-	if (empty($gcash[0]) || empty($gcash[1]))
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-			'Please Completely Fill Up G-Cash Name and G-Cash Number for Payout Method.', 'error');
+	if (empty($gcash[0]) || empty($gcash[1])) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
+			'Please Completely Fill Up G-Cash Name and G-Cash Number for Payout Method.',
+			'error'
+		);
 	}
 
-	if (empty($amount))
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(113),
-			'Enter any amount!', 'error');
+	if (empty($amount)) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(113),
+			'Enter any amount!',
+			'error'
+		);
 	}
 
-	if ($amount < $minimum_withdraw)
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(113),
-			'Minimum withdraw is ' . number_format($minimum_withdraw, 2), 'error');
+	if ($amount < $minimum_withdraw) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(113),
+			'Minimum withdraw is ' . number_format($minimum_withdraw, 2),
+			'error'
+		);
 	}
 
-	if (($user->balance - $pending_requests) < (
-			$amount * (1 + $cybercharge / 100) + $processing_fee + $minimum_bal_usd))
-	{
+	if (
+		($user->balance - $pending_requests) < (
+			$amount * (1 + $cybercharge / 100) + $processing_fee + $minimum_bal_usd)
+	) {
 		$err = 'Maintain at least ' . number_format(($amount * (
-					1 + $cybercharge / 100) + $processing_fee + $minimum_bal_usd), 2) .
+			1 + $cybercharge / 100) + $processing_fee + $minimum_bal_usd), 2) .
 			(!$pending_requests ? (' ' . $currency . '!') : (' ' . $currency .
-					' due to your pending requests amounting to ' .
-					number_format($pending_requests, 2)) . ' ' . $currency . '!');
+				' due to your pending requests amounting to ' .
+				number_format($pending_requests, 2)) . ' ' . $currency . '!');
 
 		$app->redirect(Uri::root(true) . '/' . sef(113), $err, 'error');
 	}
 
-	if ($edit)
-	{
+	if ($edit) {
 		$date = input_get('date', '', 'RAW');
 	}
 
-	if ($edit && $date === '')
-	{
+	if ($edit && $date === '') {
 		$app->redirect(Uri::root(true) . '/' . sef(113), 'Please specify Date!', 'error');
 	}
 }
@@ -286,7 +293,7 @@ function process_payout($amount, $amount_final, $deductions_total, $user_id)
 
 	$user = user($user_id);
 
-// mail admin and user
+	// mail admin and user
 	$message = 'Username: ' . $user->username . '<br>
 			Full Name: ' . $user->fullname . '<br>
 			Email: ' . $user->email . '<br>
@@ -297,8 +304,7 @@ function process_payout($amount, $amount_final, $deductions_total, $user_id)
 		$currency . '<br>
 			Method: ' . $user->bank;
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		insert_payout($amount, $amount_final, $deductions_total, $user_id, $edit);
@@ -308,18 +314,19 @@ function process_payout($amount, $amount_final, $deductions_total, $user_id)
 		send_mail($message, 'Payout Request', [$user->email]);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 
 		ExceptionHandler::render($e);
 	}
 
-	application()->redirect(Uri::root(true) . '/' . sef(113),
-		'Payout processing time: Within 48 hours', 'success');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(113),
+		'Payout processing time: Within 48 hours',
+		'success'
+	);
 
-//	send_mail($amount, $user_id);
+	//	send_mail($amount, $user_id);
 }
 
 /**
@@ -390,8 +397,8 @@ function header($user_id): string
 {
 	$settings_ancillaries = settings('ancillaries');
 
-	$currency       = $settings_ancillaries->currency;
-	$cybercharge    = $settings_ancillaries->cybercharge;
+	$currency = $settings_ancillaries->currency;
+	$cybercharge = $settings_ancillaries->cybercharge;
 	$processing_fee = $settings_ancillaries->processing_fee;
 
 	$minimum_withdraw = $settings_ancillaries->{user($user_id)->account_type . '_min_withdraw'}; // php
@@ -420,8 +427,8 @@ function view_form($user_id): string
 {
 	$settings_ancillaries = settings('ancillaries');
 
-	$currency       = $settings_ancillaries->currency;
-	$cybercharge    = $settings_ancillaries->cybercharge;
+	$currency = $settings_ancillaries->currency;
+	$cybercharge = $settings_ancillaries->cybercharge;
 	$processing_fee = $settings_ancillaries->processing_fee;
 
 	$user = user($user_id);
@@ -430,10 +437,8 @@ function view_form($user_id): string
 
 	$pending_requests = 0;
 
-	if ($pending)
-	{
-		foreach ($pending as $requested)
-		{
+	if ($pending) {
+		foreach ($pending as $requested) {
 			$pending_requests += $requested->amount;
 		}
 	}
@@ -450,7 +455,9 @@ function view_form($user_id): string
 
 	$str .= '<td>' . number_format($user->balance, 2) . ' ' . $currency . '<span
                 style="float:right;">Max. Withdraw: ' . number_format(
-			($max_withdraw > 0 ? $max_withdraw : 0), 2) . ' ' . $currency . '</span>
+		($max_withdraw > 0 ? $max_withdraw : 0),
+		2
+	) . ' ' . $currency . '</span>
     </td>
     </tr>
     <tr>
@@ -538,15 +545,13 @@ function request_cancel($uid, $user_id)
 
 	$result = user_payouts($uid);
 
-	if ($result->user_id !== $user_id)
-	{
+	if ($result->user_id !== $user_id) {
 		$app->redirect(Uri::root(true) . '/' . sef(113), 'Transaction Invalid!', 'error');
 	}
 
 	$db = db();
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		payout_cancel($uid);
@@ -556,9 +561,7 @@ function request_cancel($uid, $user_id)
 		logs_cancel($uid);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 
 		ExceptionHandler::render($e);
@@ -651,17 +654,13 @@ function view_pending($user_id): string
 
 	$str = '<h2>Pending Requests</h2>';
 
-	if (empty($pending))
-	{
+	if (empty($pending)) {
 		$str .= '<hr><p>No pending requests yet.</p>';
-	}
-	else
-	{
-		$uid    = input_get('uid');
+	} else {
+		$uid = input_get('uid');
 		$cancel = input_get('cancel', 0);
 
-		if ($cancel && $uid)
-		{
+		if ($cancel && $uid) {
 			request_cancel($uid, $user_id);
 		}
 
@@ -678,8 +677,7 @@ function view_pending($user_id): string
 		$str .= '</thead>';
 		$str .= '<tbody>';
 
-		foreach ($pending as $tmp)
-		{
+		foreach ($pending as $tmp) {
 			$payout_method = payout_method(user($user_id));
 
 			$str .= '<tr>';

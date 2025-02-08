@@ -39,49 +39,330 @@ function main()
 
 	page_validate();
 
-	// $str = menu();
-
-	$str = '';
+	$style_table = style_table();
 
 	if ($uid !== '') {
 		$user_id = $uid;
 	}
 
-	$str .= view_table($user_id, $usertype);
-	$str .= scripts();
+	$account_information = account_information($user_id);
+	$referral_information = referral_information($user_id);
+	$contact_information = contact_information($user_id);
+
+	$str = "<style>$style_table</style>";
+
+	$str .= <<<HTML
+<div class="container-fluid px-4">
+	<h1 class="mt-4">User Profile</h1>
+	<ol class="breadcrumb mb-4">
+		<li class="breadcrumb-item active">Member Info</li>
+	</ol>
+	<div class="card mb-4">
+		<div class="card-body">
+			<div class="d-grid gap-2 d-md-flex justify-content-md-end mb-3">				
+				<a href="#" class="btn btn-primary" type="button">Update Profile</a>
+			</div>
+
+			$account_information
+			$referral_information
+			$contact_information
+		</div>
+	</div>
+</div>
+HTML;
 
 	return $str;
 }
 
-/**
- * @param $user_id
- *
- * @return array|mixed
- *
- * @since version
- */
-function directs($user_id)
+function style_table()
 {
-	$db = db();
-
-	return $db->setQuery(
-		'SELECT * ' .
-		'FROM network_users ' .
-		'WHERE sponsor_id = ' . $db->quote($user_id)
-	)->loadObjectList();
+	$str = <<<CSS
+.table th, .table td {
+	padding: 10px;
+	vertical-align: middle;
+	text-align: left;
 }
 
-function user_binary($user_id)
-{
-	$db = db();
+.table th {
+	width: 30%;
+}
 
-	return $db->setQuery(
-		'SELECT * ' .
-		'FROM network_users u ' .
-		'INNER JOIN network_binary b ' .
-		'ON u.id = b.user_id ' .
-		'WHERE b.user_id = ' . $db->quote($user_id)
-	)->loadObject();
+.table td {
+	width: 70%;
+}
+
+.input-group {
+	display: flex;
+	align-items: center;
+	max-width: 400px;
+}
+
+.input-group input {
+	flex: 1;
+	min-width: 200px;
+}
+
+.input-group button {
+	white-space: nowrap;
+}
+CSS;
+
+	return $str;
+}
+
+function account_information($user_id)
+{
+	$sa = settings('ancillaries');
+
+	$currency = $sa->currency;
+	$currency_info = htmlspecialchars($currency);
+
+	$user = user($user_id);
+
+	$username = $user->username;
+	$fullname = $user->fullname;
+	$wallet_balance = $user->payout_transfer;
+
+	$username_info = !empty($username) ? htmlspecialchars($username) : '---';
+	$fullname_info = !empty($fullname) ? htmlspecialchars($fullname) : '---';
+	$wallet_balance_info = number_format($wallet_balance, 2);
+
+	$str = <<<HTML
+<div class="card mb-4">
+	<div class="card-header">
+		<i class="fas fa-table me-1"></i>
+		Account Information
+	</div>
+	<div class="card-body">
+		<div class="row">
+			<table class="table table-hover table-responsive">            
+				<tbody>
+					<tr>
+						<th scope="row">Username</th>
+						<td>$username_info</td>
+					</tr>
+					<tr>
+						<th scope="row">Fullname</th>
+						<td>$fullname_info</td>                        
+					</tr>
+					<tr>
+						<th scope="row">Wallet Balance</th>
+						<td colspan="2">$wallet_balance_info $currency_info</td>                        
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+HTML;
+
+	return $str;
+}
+
+function referral_information($user_id)
+{
+	$sp = settings('plans');
+
+	if (!$sp->direct_referral_fast_track_principal) {
+		return '';
+	}
+
+	$user = user($user_id);
+	$username = $user->username;
+	$sponsored_members = directs($user_id);
+	$count_sponsored_members = count($sponsored_members);
+	$sponsor_id = $user->sponsor_id;
+	$sponsor = user($sponsor_id);
+	$sponsor_info_link = sef(44) . qs() . 'uid=' . $sponsor_id;
+	$sponsor_username = htmlspecialchars($sponsor->username);
+	$link = 'http://' . $_SERVER['SERVER_NAME'] . root_url() . '/' . htmlspecialchars($username);
+	$script = script_copy_referral_link();
+
+	$str = <<<HTML
+<div class="card mb-4">
+	<div class="card-header">
+		<i class="fas fa-table me-1"></i>
+		Referral Information
+	</div>
+	<div class="card-body">
+		<div class="row">
+			<table class="table table-hover table-responsive">            
+				<tbody>
+					<tr>
+						<th scope="row">Referral Link</th>
+						<td>
+							<div class="input-group">
+								<input id="myLink" type="text" class="form-control" value="$link" 
+									aria-label="Referral Link" aria-describedby="button-referral-link" readonly>
+								<button class="btn btn-outline-secondary" type="button" id="button-referral-link" 
+									data-tooltip="Copy to clipboard">
+									Copy
+								</button>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">Sponsored Members</th>
+						<td>$count_sponsored_members</td>                        
+					</tr>
+					<tr>
+						<th scope="row">Sponsor</th>
+						<td colspan="2"><a href="$sponsor_info_link">$sponsor_username</a></td>                        
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+HTML;
+
+	$str .= "<script>$script</script>";
+	return $str;
+}
+
+function script_copy_referral_link()
+{
+	// JavaScript for tooltip and clipboard copy
+	$script = <<<JS
+document.addEventListener("DOMContentLoaded", function() {
+	const copyButton = document.getElementById('button-referral-link');
+	const copyInput = document.getElementById('myLink');
+	let tooltipTimeout;
+
+	// Create and append tooltip element
+	const tooltip = document.createElement('div');
+	tooltip.className = 'copy-tooltip';
+	tooltip.style.cssText = 'position: absolute; background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 0.2s; z-index: 1000;';
+	document.body.appendChild(tooltip);
+
+	// Show tooltip function
+	function showTooltip(element, message) {
+		const rect = element.getBoundingClientRect();
+		tooltip.textContent = message;
+		tooltip.style.opacity = '1';
+		tooltip.style.left = rect.left + (rect.width - tooltip.offsetWidth) / 2 + 'px';
+		tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+	}
+
+	// Hide tooltip function
+	function hideTooltip() {
+		tooltip.style.opacity = '0';
+	}
+
+	// Modern clipboard API with fallback
+	async function copyToClipboard(text) {
+		try {
+			if (navigator.clipboard && window.isSecureContext) {
+				await navigator.clipboard.writeText(text);
+				return true;
+			} else {
+				// Fallback for older browsers
+				const textArea = document.createElement('textarea');
+				textArea.value = text;
+				textArea.style.position = 'fixed';
+				textArea.style.left = '-999999px';
+				document.body.appendChild(textArea);
+				textArea.select();
+				try {
+					document.execCommand('copy');
+					textArea.remove();
+					return true;
+				} catch (error) {
+					console.error('Copy failed:', error);
+					textArea.remove();
+					return false;
+				}
+			}
+		} catch (error) {
+			console.error('Copy failed:', error);
+			return false;
+		}
+	}
+
+	// Event listeners
+	copyButton.addEventListener('mouseover', () => {
+		showTooltip(copyButton, copyButton.getAttribute('data-tooltip'));
+	});
+
+	copyButton.addEventListener('mouseout', () => {
+		if (!copyButton.matches(':active')) {
+			hideTooltip();
+		}
+	});
+
+	copyButton.addEventListener('click', async () => {
+		clearTimeout(tooltipTimeout);
+		const success = await copyToClipboard(copyInput.value);
+		
+		if (success) {
+			showTooltip(copyButton, 'Copied!');
+			tooltipTimeout = setTimeout(() => {
+				hideTooltip();
+				copyButton.setAttribute('data-tooltip', 'Copy to clipboard');
+			}, 1500);
+		} else {
+			showTooltip(copyButton, 'Copy failed');
+			tooltipTimeout = setTimeout(hideTooltip, 1500);
+		}
+	});
+
+	// Update tooltip position on scroll and resize
+	['scroll', 'resize'].forEach(event => {
+		window.addEventListener(event, () => {
+			if (tooltip.style.opacity !== '0') {
+				const rect = copyButton.getBoundingClientRect();
+				tooltip.style.left = rect.left + (rect.width - tooltip.offsetWidth) / 2 + 'px';
+				tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+			}
+		}, { passive: true });
+	});
+});
+JS;
+
+	return $script;
+}
+
+function contact_information($user_id)
+{
+	$user = user($user_id);
+	$user_address = $user->address;
+	$user_email = $user->email;
+	$user_contact = $user->contact;
+
+	$user_address_format = get_formatted_address($user_address);
+	$email_format = !empty($user_email) ? htmlspecialchars($user_email) : '---';
+	$contact = contact_info($user_contact);
+
+	$str = <<<HTML
+<div class="card mb-4">
+	<div class="card-header">
+		<i class="fas fa-table me-1"></i>
+		Contact Information
+	</div>
+	<div class="card-body">
+		<div class="row">
+			<table class="table table-hover table-responsive">            
+				<tbody>
+					<tr>
+						<th scope="row">Address</th>
+						<td>$user_address_format</td>
+					</tr>
+					<tr>
+						<th scope="row">Email</th>
+						<td>$email_format</td>                        
+					</tr>
+					<tr>
+						<th scope="row">Contact</th>
+						<td colspan="2">$contact</td>                        
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+HTML;
+
+	return $str;
 }
 
 function view_table($user_id, $usertype): string
@@ -285,6 +566,39 @@ function view_table($user_id, $usertype): string
 	return $str;
 }
 
+/**
+ * @param $user_id
+ *
+ * @return array|mixed
+ *
+ * @since version
+ */
+function directs($user_id)
+{
+	$db = db();
+
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_users ' .
+		'WHERE sponsor_id = ' . $db->quote($user_id)
+	)->loadObjectList();
+}
+
+function user_binary($user_id)
+{
+	$db = db();
+
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_users u ' .
+		'INNER JOIN network_binary b ' .
+		'ON u.id = b.user_id ' .
+		'WHERE b.user_id = ' . $db->quote($user_id)
+	)->loadObject();
+}
+
+
+
 function get_formatted_address($address): string
 {
 	$tmp = explode('|', $address);
@@ -324,21 +638,14 @@ function payment_info($payment_method): string
 function contact_info($contact): string
 {
 	$ciu = json_decode($contact, true);
-
 	$str = '';
 
 	if (!empty($ciu)) {
 		foreach ($ciu as $k => $v) {
-			$str .= '<p class="category table table-bordered">';
-			$str .= '<a class="uk-button uk-button-small" href="javascript:void(0)">';
-			$str .= strtoupper($k);
-			$str .= '</a>';
-
-			if (!is_array($v)) {
-				$str .= '<small style="padding-left: 7px"><b>' . $v . '</b></small>';
-			}
-
-			$str .= '</p>';
+			$str .= '<div class="input-group mb-2">';
+			$str .= '<div class="input-group-text">' . ucwords(htmlspecialchars($k)) . '</div>';
+			$str .= '<input type="text" class="form-control" value="' . htmlspecialchars($v) . '" readonly>';
+			$str .= '</div>';
 		}
 	}
 

@@ -2,6 +2,7 @@
 
 namespace BPL\Jumi\Withdrawal_Completed;
 
+require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'bpl/menu.php';
 require_once 'bpl/mods/payout_method.php';
 require_once 'bpl/mods/helpers.php';
@@ -9,6 +10,8 @@ require_once 'bpl/mods/helpers.php';
 use function BPL\Menu\admin as menu_admin;
 use function BPL\Menu\member as menu_member;
 use function BPL\Menu\manager as menu_manager;
+
+use function Templates\SB_Admin\Tmpl\Master\main as master;
 
 use function BPL\Mods\Payout_Method\main as payout_method;
 
@@ -21,7 +24,9 @@ use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\page_reload;
 
-main();
+$content = main();
+
+master($content);
 
 /**
  *
@@ -30,22 +35,24 @@ main();
  */
 function main()
 {
-	$username      = session_get('username');
-	$usertype      = session_get('usertype');
-	$account_type  = session_get('account_type');
+	$username = session_get('username');
+	$usertype = session_get('usertype');
+	$account_type = session_get('account_type');
 	$merchant_type = session_get('merchant_type');
-	$user_id       = session_get('user_id');
-	$admintype     = session_get('admintype');
+	$user_id = session_get('user_id');
+	$admintype = session_get('admintype');
 
 	page_validate();
 
-	$str = menu($usertype, $admintype, $account_type, $username, $merchant_type, $user_id);
+	// $str = menu($usertype, $admintype, $account_type, $username, $merchant_type, $user_id);
+
+	$str = '';
 
 	$str .= page_reload();
 
 	$str .= view_table($user_id, $usertype);
 
-	echo $str;
+	return $str;
 }
 
 /**
@@ -83,8 +90,7 @@ function menu($usertype, $admintype, $account_type, $username, $merchant_type, $
 {
 	$str = '';
 
-	switch ($usertype)
-	{
+	switch ($usertype) {
 		case 'Admin':
 			$str .= menu_admin($admintype, $account_type, $user_id, $username);
 			break;
@@ -137,8 +143,7 @@ function view_table_admin(): string
 
 	$str = '<h1>Completed Payouts</h1>';
 
-	if (!empty($results))
-	{
+	if (!empty($results)) {
 		$str .= '<table class="category table table-striped table-bordered table-hover">
 	            <thead>
 	            <tr>
@@ -152,8 +157,7 @@ function view_table_admin(): string
 	            </thead>
 	            <tbody>';
 
-		foreach ($results as $result)
-		{
+		foreach ($results as $result) {
 			$str .= '<tr>';
 			$str .= '<td>' . date('M j, Y - g:i A', $result->date_requested) . '</td>';
 			$str .= '<td><a href="' . sef(9) . qs() . 'uid=' . $result->id . '">' . $result->username . '</a></td>';
@@ -166,9 +170,7 @@ function view_table_admin(): string
 
 		$str .= '</tbody>
         		</table>';
-	}
-	else
-	{
+	} else {
 		$str .= '<hr><p>No payouts yet.</p>';
 	}
 
@@ -192,8 +194,7 @@ function view_table_user($user_id): string
 
 	$str = '<h1>Completed Payouts</h1>';
 
-	if (!empty($results))
-	{
+	if (!empty($results)) {
 		$str .= '<table class="category table table-striped table-bordered table-hover">
 	            <thead>
 	            <tr>
@@ -205,8 +206,7 @@ function view_table_user($user_id): string
 	            </thead>
 	            <tbody>';
 
-		foreach ($results as $result)
-		{
+		foreach ($results as $result) {
 			$str .= '<tr>
 		                <td>' . date('M j, Y - g:i A', $result->date_requested) . '</td>
 		                <td>' . number_format($result->amount, 2) . '</td>
@@ -219,9 +219,7 @@ function view_table_user($user_id): string
 
 		$str .= '</tbody>
         		</table>';
-	}
-	else
-	{
+	} else {
 		$str .= '<hr>No payouts yet.';
 	}
 
@@ -240,12 +238,9 @@ function view_table($user_id, $usertype): string
 {
 	$str = '';
 
-	if ($usertype === 'Admin' || $usertype === 'manager')
-	{
+	if ($usertype === 'Admin' || $usertype === 'manager') {
 		$str .= view_table_admin();
-	}
-	else
-	{
+	} else {
 		$str .= view_table_user($user_id);
 	}
 

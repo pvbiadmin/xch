@@ -2,12 +2,15 @@
 
 namespace BPL\Jumi\Payout_Log;
 
+require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'bpl/menu.php';
 require_once 'bpl/mods/helpers.php';
 
 use function BPL\Menu\admin as menu_admin;
 use function BPL\Menu\manager as menu_manager;
 use function BPL\Menu\member as menu_member;
+
+use function Templates\SB_Admin\Tmpl\Master\main as master;
 
 use function BPL\Mods\Url_SEF\qs;
 use function BPL\Mods\Url_SEF\sef;
@@ -19,7 +22,9 @@ use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\user;
 
-main();
+$content = main();
+
+master($content);
 
 /**
  *
@@ -28,22 +33,23 @@ main();
  */
 function main()
 {
-	$username      = session_get('username');
-	$usertype      = session_get('usertype');
-	$admintype     = session_get('admintype');
-	$user_id       = session_get('user_id');
-	$account_type  = session_get('account_type');
+	$username = session_get('username');
+	$usertype = session_get('usertype');
+	$admintype = session_get('admintype');
+	$user_id = session_get('user_id');
+	$account_type = session_get('account_type');
 	$merchant_type = session_get('merchant_type');
 
 	page_validate();
 
-	$str = menu($usertype, $admintype, $account_type, $username, $merchant_type, $user_id);
+	// $str = menu($usertype, $admintype, $account_type, $username, $merchant_type, $user_id);
 
+	$str = '';
 	$str .= page_reload();
 
 	$str .= view_payouts(session_get('user_id'), $usertype, session_get('admintype'));
 
-	echo $str;
+	return $str;
 }
 
 /**
@@ -62,8 +68,7 @@ function menu($usertype, $admintype, $account_type, $username, $merchant_type, $
 {
 	$str = '';
 
-	switch ($usertype)
-	{
+	switch ($usertype) {
 		case 'Admin':
 			$str .= menu_admin($admintype, $account_type, $user_id, $username);
 			break;
@@ -127,8 +132,7 @@ function payout_method($user): string
 {
 	$payout_member = explode('|', $user->bank);
 
-	switch ($payout_member[0])
-	{
+	switch ($payout_member[0]) {
 		case 'bank':
 			[, $bank_type, $bank_name, $bank_account] = $payout_member;
 
@@ -163,8 +167,7 @@ function view_payouts_admin(): string
 
 	$str = '';
 
-	if (!empty($payouts))
-	{
+	if (!empty($payouts)) {
 		$str .= '<table class="category table table-striped table-bordered table-hover">
             <thead>
             <tr>
@@ -178,8 +181,7 @@ function view_payouts_admin(): string
             </thead>
             <tbody>';
 
-		foreach ($payouts as $payout)
-		{
+		foreach ($payouts as $payout) {
 			$user = user($payout->user_id);
 
 			$str .= '<tr>';
@@ -195,9 +197,7 @@ function view_payouts_admin(): string
 
 		$str .= '</tbody>
         </table>';
-	}
-	else
-	{
+	} else {
 		$str .= '<hr><p>No payouts yet.</p>';
 	}
 
@@ -215,16 +215,15 @@ function view_payouts_user($user_id): string
 {
 	$setting_ancillaries = settings('ancillaries');
 
-	$cybercharge    = $setting_ancillaries->cybercharge / 100;
+	$cybercharge = $setting_ancillaries->cybercharge / 100;
 	$processing_fee = $setting_ancillaries->processing_fee;
-	$currency       = $setting_ancillaries->currency;
+	$currency = $setting_ancillaries->currency;
 
 	$payouts = payouts_user($user_id);
 
 	$str = '';
 
-	if (!empty($payouts))
-	{
+	if (!empty($payouts)) {
 		$str .= '<table class="category table table-striped table-bordered table-hover">
             <thead>
             <tr>
@@ -237,8 +236,7 @@ function view_payouts_user($user_id): string
 
 		$total = 0;
 
-		foreach ($payouts as $payout)
-		{
+		foreach ($payouts as $payout) {
 			$user = user($payout->user_id);
 
 			$str .= '<tr>';
@@ -246,7 +244,7 @@ function view_payouts_user($user_id): string
 
 			$str .= payout_method($user);
 			$str .= '<td>' . number_format($payout->amount - (
-						($payout->amount * $cybercharge) + $processing_fee), 2) . '</td>';
+				($payout->amount * $cybercharge) + $processing_fee), 2) . '</td>';
 			$str .= '</tr>';
 
 			$total += ($payout->amount - (($payout->amount * $cybercharge) + $processing_fee));
@@ -255,9 +253,7 @@ function view_payouts_user($user_id): string
 		$str .= '</tbody>
 	        </table>
 	        <p><strong>Total Paid: </strong>' . number_format($total, 2) . ' ' . $currency;
-	}
-	else
-	{
+	} else {
 		$str .= '<hr><p>No payouts yet.</p>';
 	}
 
@@ -277,12 +273,9 @@ function view_payouts($user_id, $usertype, $admintype): string
 {
 	$str = '<h1>Payout Logs</h1>';
 
-	if ($usertype === 'Admin' && $admintype === 'Super')
-	{
+	if ($usertype === 'Admin' && $admintype === 'Super') {
 		$str .= view_payouts_admin();
-	}
-	else
-	{
+	} else {
 		$str .= view_payouts_user($user_id);
 	}
 

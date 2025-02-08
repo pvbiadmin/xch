@@ -308,7 +308,7 @@ function wallet_member($user_id)
     <div class="collapse" id="collapseWalletMember" aria-labelledby="headingOne"
         data-bs-parent="#sidenavAccordion">
         <nav class="sb-sidenav-menu-nested nav">
-            <a class="nav-link" href="{$convert_to_efund_link}">Convert to Efund</a>
+            <a class="nav-link" href="{$convert_to_efund_link}">Transfer Efund</a>
             <a class="nav-link" href="{$payout_logs_link}">Payout Logs</a>
             <a class="nav-link" href="{$withdrawal_request_link}">Withdrawal Request</a>
             <a class="nav-link" href="{$withdrawal_completed_link}">Withdrawal Completed</a>

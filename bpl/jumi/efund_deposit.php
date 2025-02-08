@@ -516,7 +516,7 @@ function view_transfer_efund($user_id)
 
 	return <<<HTML
     <div class="container-fluid px-4">
-        <h1 class="mt-4">Deposit Efund</h1>
+        <h1 class="mt-4">Transfer Efund</h1>
         <ol class="breadcrumb mb-4">
             <li class="breadcrumb-item active">Deposit your $efund_name to another user</li>
         </ol>

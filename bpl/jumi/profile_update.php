@@ -2,6 +2,7 @@
 
 namespace BPL\Jumi\Profile_Update;
 
+require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'bpl/menu.php';
 require_once 'bpl/mods/query.php';
 require_once 'bpl/mods/helpers.php';
@@ -11,6 +12,8 @@ use Exception;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Exception\ExceptionHandler;
 use Joomla\CMS\HTML\HTMLHelper;
+
+use function Templates\SB_Admin\Tmpl\Master\main as master;
 
 use function BPL\Menu\admin as menu_admin;
 use function BPL\Menu\member as menu_member;
@@ -32,7 +35,9 @@ use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\application;
 use function BPL\Mods\Helpers\time;
 
-main();
+$content = main();
+
+master($content);
 
 /**
  *
@@ -53,7 +58,9 @@ function main()
 
 	page_validate();
 
-	$str = menu($usertype, $admintype, $account_type, $username, $user_id);
+	// $str = menu($usertype, $admintype, $account_type, $username, $user_id);
+
+	$str = '';
 
 	if ($uid !== '') {
 		$user_id = $uid;
@@ -65,7 +72,7 @@ function main()
 		process_form($user_id, $usertype, $admintype);
 	}
 
-	echo $str;
+	return $str;
 }
 
 /**
