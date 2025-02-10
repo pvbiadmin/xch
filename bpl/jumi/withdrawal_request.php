@@ -12,6 +12,8 @@ require_once 'bpl/mods/helpers.php';
 
 use Exception;
 
+use Joomla\CMS\HTML\HTMLHelper;
+
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Exception\ExceptionHandler;
 
@@ -25,9 +27,9 @@ use function BPL\Mods\Database\Query\insert;
 use function BPL\Mods\Database\Query\update;
 use function BPL\Mods\Database\Query\delete;
 
-use function BPL\Mods\Payout_Method\main as payout_method;
+// use function BPL\Mods\Payout_Method\main as payout_method;
 
-use function BPL\Mods\USDT_Currency\main as usdt_currency;
+// use function BPL\Mods\USDT_Currency\main as usdt_currency;
 
 use function BPL\Mods\Mailer\main as send_mail;
 
@@ -54,11 +56,11 @@ master($content);
  */
 function main()
 {
-	$username = session_get('username');
+	// $username = session_get('username');
 	$usertype = session_get('usertype');
-	$admintype = session_get('admintype');
-	$account_type = session_get('account_type');
-	$merchant_type = session_get('merchant_type');
+	// $admintype = session_get('admintype');
+	// $account_type = session_get('account_type');
+	// $merchant_type = session_get('merchant_type');
 	$amount = input_get('amount');
 	$user_id = session_get('user_id');
 
@@ -70,26 +72,188 @@ function main()
 
 	$str = '';
 
-	$str .= '<h1>Payout Request</h1>';
-
 	if ($usertype === 'Member' || $usertype === 'Admin') {
 		if ($amount !== '') {
 			$amount_final = input_get('amount_final');
 			$deductions_total = input_get('total_deductions');
+			$method = input_get('method');
 
-			process_payout($amount, $amount_final, $deductions_total, $user_id);
+			process_payout(
+				$amount,
+				$amount_final,
+				$deductions_total,
+				$method,
+				$user_id
+			);
+		}
+
+		$uid = input_get('uid');
+		$cancel = input_get('cancel', 0);
+
+		if ($cancel && $uid) {
+			request_cancel($uid, $user_id);
 		}
 
 		$str .= js();
 
-		$str .= header($user_id);
+		// $str .= header($user_id);
 
-		$str .= view_form($user_id);
-
-		$str .= view_pending($user_id);
+		$str .= view_withdrawal_request($user_id);
 	}
 
 	return $str;
+}
+
+function view_withdrawal_request($user_id)
+{
+	$view_form = view_form($user_id);
+	$view_pending_requests = view_pending($user_id);
+	$notifications = notifications();
+
+	$header = header($user_id);
+
+	return <<<HTML
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Payout Request</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">$header</li>
+        </ol>
+		<div class="row justify-content-center">
+			<div class="col-lg-5">
+				$notifications
+				<div class="card mb-4">
+					$view_form
+				</div>
+        	</div>		
+		</div>
+        $view_pending_requests
+    </div>
+HTML;
+}
+
+function view_form($user_id): string
+{
+	$sa = settings('ancillaries');
+
+	$currency = $sa->currency;
+	$processing_fee = $sa->processing_fee;
+	$processing_fee_format = number_format($processing_fee, 2);
+
+	$user = user($user_id);
+	$efund = $user->payout_transfer;
+	$efund_format = number_format($efund, 2);
+
+	$form_token = HTMLHelper::_('form.token');
+
+	return <<<HTML
+    <div class="card-header">
+        <i class="fas fa-money-bill me-1"></i>
+        Wallet Available Balance: $efund_format $currency
+    </div>
+    <div class="card-body">
+        <form method="post" onsubmit="submit.disabled = true;">
+            $form_token
+            <input type="hidden" readonly="readonly" name="amount_final" id="input_amount_final">
+			<input type="hidden" readonly="readonly" name="total_deductions" id="input_total_deductions">
+
+            <div class="input-group mb-3">
+                <span class="input-group-text"><label for="amount">Amount</label></span>
+                <input type="text" name="amount" id="amount" class="form-control" placeholder="Enter Amount" required aria-label="Amount">
+                <span class="input-group-text">$currency</span>
+            </div>
+
+			<div class="input-group mb-3">
+				<select class="form-select" name="method" id="method">
+					<option selected value="">Choose...</option>
+					<option value="gcash">Gcash</option>
+					<option value="maya">Maya</option>
+					<option value="bank">Bank</option>
+				</select>
+				<label class="input-group-text" for="method">Method</label>
+			</div>
+
+            <button type="button" class="btn btn-default mb-3 border">
+                Service Charge <span class="badge text-bg-secondary"><span id="tax">0.00</span> $currency</span>
+            </button>
+
+            <button type="button" class="btn btn-default mb-3 border">
+                Processing Fee <span class="badge text-bg-secondary"><span id="fee">$processing_fee_format</span> $currency</span>
+            </button>
+
+            <button type="button" class="btn btn-default mb-3 border">
+                Total Deductions <span class="badge text-bg-secondary"><span id="total_deductions">0.00</span> $currency</span>
+            </button>
+
+			<button type="button" class="btn btn-default mb-3 border">
+                Final Amount <span class="badge text-bg-secondary"><span id="amount_final">0.00</span> $currency</span>
+            </button>
+
+            <div class="form-group actions">
+                <button type="submit" class="btn btn-primary">Submit</button>                
+            </div>
+        </form>
+    </div>
+HTML;
+}
+
+function notifications(): string
+{
+	$app = application();
+
+	// Display Joomla messages as dismissible alerts
+	$messages = $app->getMessageQueue(true);
+	$notification_str = fade_effect(); // Initialize the notification string
+
+	if (!empty($messages)) {
+		foreach ($messages as $message) {
+			// Map Joomla message types to Bootstrap alert classes
+			$alert_class = '';
+			switch ($message['type']) {
+				case 'error':
+					$alert_class = 'danger'; // Bootstrap uses 'danger' instead of 'error'
+					break;
+				case 'warning':
+					$alert_class = 'warning';
+					break;
+				case 'notice':
+					$alert_class = 'info'; // Joomla 'notice' maps to Bootstrap 'info'
+					break;
+				case 'message':
+				default:
+					$alert_class = 'success'; // Joomla 'message' maps to Bootstrap 'success'
+					break;
+			}
+
+			$notification_str .= <<<HTML
+            <div class="alert alert-{$alert_class} alert-dismissible fade show mt-5" role="alert">
+                {$message['message']}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+HTML;
+		}
+	}
+
+	return $notification_str;
+}
+
+function fade_effect(int $duration = 10000)
+{
+	return <<<HTML
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Select all alert elements
+      const alerts = document.querySelectorAll('.alert');
+
+      // Loop through each alert and set a timeout to dismiss it
+      alerts.forEach(function (alert) {
+        setTimeout(function () {
+          // Use Bootstrap's alert method to close the alert
+          bootstrap.Alert.getOrCreateInstance(alert).close();
+        }, $duration);
+      });
+    });
+  </script>
+HTML;
 }
 
 /**
@@ -142,28 +306,29 @@ function user_payout_pending($user_id)
 	)->loadObjectList();
 }
 
-/**
- * @param $amount
- * @param $user_id
- * @param $edit
- *
- *
- * @since version
- */
-function validate_input($amount, $user_id, $edit)
+function validate_input($amount, $user_id, $method, $edit)
 {
-	$settings_ancillaries = settings('ancillaries');
+	$sa = settings('ancillaries');
 
-	$currency = $settings_ancillaries->currency;
-	$cybercharge = $settings_ancillaries->cybercharge;
-	$processing_fee = $settings_ancillaries->processing_fee;
+	$currency = $sa->currency;
+	$cybercharge = $sa->cybercharge;
+	$processing_fee = $sa->processing_fee;
 
 	$user = user($user_id);
 
-	$minimum_withdraw = $settings_ancillaries->{$user->account_type . '_min_withdraw'}; // php
-	$minimum_bal_usd = $settings_ancillaries->{$user->account_type . '_min_bal_usd'}; // php
+	$minimum_withdraw = $sa->{$user->account_type . '_min_withdraw'}; // php
+	$minimum_bal_usd = $sa->{$user->account_type . '_min_bal_usd'}; // php
+
+	$minimum_withdraw_format = number_format($minimum_withdraw, 2);
 
 	$pending = user_payout_pending($user_id);
+
+	$app = application();
+
+	if (empty($method)) {
+		$app->enqueueMessage("Please Fillup Payment Method!", 'error');
+		$app->redirect(Uri::current());
+	}
 
 	$pending_requests = 0;
 
@@ -173,45 +338,109 @@ function validate_input($amount, $user_id, $edit)
 		}
 	}
 
-	$gcash = explode('|', $user->bank);
+	$pending_requests_format = number_format($pending_requests, 2);
 
-	$app = application();
+	// $gcash = explode('|', $user->bank);
 
-	if (empty($gcash[0]) || empty($gcash[1])) {
-		$app->redirect(
-			Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-			'Please Completely Fill Up G-Cash Name and G-Cash Number for Payout Method.',
-			'error'
-		);
+	$user = user($user_id);
+
+	$payment_method = arr_payment_method($user);
+
+	$bank_name = '';
+	$account_number = '';
+
+	$gcash_name = '';
+	$gcash_number = '';
+
+	$maya_name = '';
+	$maya_number = '';
+
+	if (!empty($payment_method['bank'])) {
+		foreach ($payment_method['bank'] as $k => $v) {
+			$bank_name = $k;
+			$account_number = $v;
+		}
 	}
 
+	if (!empty($payment_method['gcash'])) {
+		foreach ($payment_method['gcash'] as $k => $v) {
+			$gcash_name = $k;
+			$gcash_number = $v;
+		}
+	}
+
+	if (!empty($payment_method['maya'])) {
+		foreach ($payment_method['maya'] as $k => $v) {
+			$maya_name = $k;
+			$maya_number = $v;
+		}
+	}
+
+	$has_bank = !empty($bank_name) && !empty($account_number);
+	$has_gcash = !empty($gcash_name) && !empty($gcash_number);
+	$has_maya = !empty($maya_name) && !empty($maya_number);
+
+	if (!$has_bank && !$has_gcash && !$has_maya) {
+		$app->enqueueMessage('Please Completely Fillup Your Gcash, Maya, or Bank Details.', 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
+	}
+
+	if ($method === 'bank' && !$has_bank) {
+		$app->enqueueMessage('Please Completely Fillup Your Bank Details.', 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
+	}
+
+	if ($method === 'gcash' && !$has_gcash) {
+		$app->enqueueMessage('Please Completely Fillup Your Gcash Details.', 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
+	}
+
+	if ($method === 'maya' && !$has_maya) {
+		$app->enqueueMessage('Please Completely Fillup Your Maya Details.', 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
+	}
+
+	// if (!empty($bank_name) && !empty($account_number)) {
+	// 	$app->enqueueMessage('Please Completely Fillup Your Gcash, Maya, or Bank Details.', 'error');
+	// 	$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
+	// }
+
 	if (empty($amount)) {
-		$app->redirect(
-			Uri::root(true) . '/' . sef(113),
-			'Enter any amount!',
-			'error'
-		);
+		// $app->redirect(
+		// 	Uri::root(true) . '/' . sef(113),
+		// 	'Enter any amount!',
+		// 	'error'
+		// );
+
+		$app->enqueueMessage('Amount is required!', 'error');
+		$app->redirect(Uri::current());
 	}
 
 	if ($amount < $minimum_withdraw) {
-		$app->redirect(
-			Uri::root(true) . '/' . sef(113),
-			'Minimum withdraw is ' . number_format($minimum_withdraw, 2),
-			'error'
-		);
+		// $app->redirect(
+		// 	Uri::root(true) . '/' . sef(113),
+		// 	"Minimum withdraw is $minimum_withdraw_format",
+		// 	'error'
+		// );
+
+		$app->enqueueMessage("Minimum withdraw is $minimum_withdraw_format", 'error');
+		$app->redirect(Uri::current());
 	}
 
 	if (
-		($user->balance - $pending_requests) < (
+		($user->payout_transfer - $pending_requests) < (
 			$amount * (1 + $cybercharge / 100) + $processing_fee + $minimum_bal_usd)
 	) {
 		$err = 'Maintain at least ' . number_format(($amount * (
 			1 + $cybercharge / 100) + $processing_fee + $minimum_bal_usd), 2) .
 			(!$pending_requests ? (' ' . $currency . '!') : (' ' . $currency .
 				' due to your pending requests amounting to ' .
-				number_format($pending_requests, 2)) . ' ' . $currency . '!');
+				$pending_requests_format) . ' ' . $currency . '!');
 
-		$app->redirect(Uri::root(true) . '/' . sef(113), $err, 'error');
+		// $app->redirect(Uri::root(true) . '/' . sef(113), $err, 'error');
+
+		$app->enqueueMessage($err, 'error');
+		$app->redirect(Uri::current());
 	}
 
 	if ($edit) {
@@ -219,21 +448,21 @@ function validate_input($amount, $user_id, $edit)
 	}
 
 	if ($edit && $date === '') {
-		$app->redirect(Uri::root(true) . '/' . sef(113), 'Please specify Date!', 'error');
+		// $app->redirect(Uri::root(true) . '/' . sef(113), 'Please specify Date!', 'error');
+
+		$app->enqueueMessage('Please specify Date!', 'error');
+		$app->redirect(Uri::current());
 	}
 }
 
-/**
- * @param $amount
- * @param $amount_final
- * @param $deductions_total
- * @param $user_id
- * @param $edit
- *
- *
- * @since version
- */
-function insert_payout($amount, $amount_final, $deductions_total, $user_id, $edit)
+function arr_payment_method($user)
+{
+	$payout_method = empty($user->payment_method) ? '{}' : $user->payment_method;
+
+	return json_decode($payout_method, true);
+}
+
+function insert_payout($amount, $amount_final, $deductions_total, $method, $user_id, $edit)
 {
 	$db = db();
 
@@ -244,6 +473,7 @@ function insert_payout($amount, $amount_final, $deductions_total, $user_id, $edi
 			'amount',
 			'amount_final',
 			'deductions_total',
+			'method',
 			'date_requested'
 		],
 		[
@@ -251,6 +481,7 @@ function insert_payout($amount, $amount_final, $deductions_total, $user_id, $edi
 			$db->quote($amount),
 			$db->quote($amount_final),
 			$db->quote($deductions_total),
+			$db->quote($method),
 			$db->quote(date_get($edit))
 		]
 	);
@@ -270,26 +501,20 @@ function date_get($edit)
 	return $edit && isset($date) ? $date : time();
 }
 
-/**
- * @param $amount
- * @param $amount_final
- * @param $deductions_total
- * @param $user_id
- *
- *
- * @since version
- */
-function process_payout($amount, $amount_final, $deductions_total, $user_id)
+
+function process_payout($amount, $amount_final, $deductions_total, $method, $user_id)
 {
 	$db = db();
 
+	$app = application();
+
 	$edit = session_get('edit', false);
 
-	validate_input($amount, $user_id, $edit);
+	validate_input($amount, $user_id, $method, $edit);
 
-	$settings_ancillaries = settings('ancillaries');
+	$sa = settings('ancillaries');
 
-	$currency = $settings_ancillaries->currency;
+	$currency = $sa->currency;
 
 	$user = user($user_id);
 
@@ -299,15 +524,15 @@ function process_payout($amount, $amount_final, $deductions_total, $user_id)
 			Email: ' . $user->email . '<br>
 			Contact Number: ' . $user->contact . '<br><br>
 			
-			e-Wallet Balance: ' . $user->balance . ' ' . $currency . '<br>
+			e-Wallet Balance: ' . $user->payout_transfer . ' ' . $currency . '<br>
 			Amount Requested: ' . $amount . ' ' .
 		$currency . '<br>
-			Method: ' . $user->bank;
+			Method: ' . ucwords($method);
 
 	try {
 		$db->transactionStart();
 
-		insert_payout($amount, $amount_final, $deductions_total, $user_id, $edit);
+		insert_payout($amount, $amount_final, $deductions_total, $method, $user_id, $edit);
 
 		update_payout_user($db->insertid());
 
@@ -320,11 +545,14 @@ function process_payout($amount, $amount_final, $deductions_total, $user_id)
 		ExceptionHandler::render($e);
 	}
 
-	application()->redirect(
-		Uri::root(true) . '/' . sef(113),
-		'Payout processing time: Within 48 hours',
-		'success'
-	);
+	// application()->redirect(
+	// 	Uri::root(true) . '/' . sef(113),
+	// 	'Payout processing time: Within 48 hours',
+	// 	'success'
+	// );
+
+	$app->enqueueMessage('Payout processing time: Within 48 hours', 'success');
+	$app->redirect(Uri::current());
 
 	//	send_mail($amount, $user_id);
 }
@@ -344,46 +572,52 @@ function update_payout_user($uid)
 	update(
 		'network_users',
 		[
-			'balance = balance - ' . ($payout->amount + $payout->deductions_total),
+			'payout_transfer = payout_transfer - ' . ($payout->amount + $payout->deductions_total),
 			'payout_total = payout_total + ' . $payout->amount
 		],
 		['id = ' . $db->quote($payout->user_id)]
 	);
 }
 
-/**
- *
- * @return string
- *
- * @since version
- */
 function js(): string
 {
-	$settings_ancillaries = settings('ancillaries');
+	$sa = settings('ancillaries');
 
-	$str = '<script>';
-	$str .= '(function ($) {
-		$(document).ready(function () {
-			$("#amount").keyup(function () {
-				const amount = parseFloat($("#amount").val()),
-	            cybercharge = parseFloat(' . ($settings_ancillaries->cybercharge / 100) . '),
-	            processing_fee = parseFloat(' . $settings_ancillaries->processing_fee . '),
-	            tax = amount * cybercharge,
-	            deductions = amount * cybercharge + processing_fee,
-				final_btc = amount / ' . (usdt_currency() / settings('trading')->fmc_to_usd) . ';' .
-		'$("#amount_final").val($.number((final_btc > 0 ? final_btc : 0), 8));' .
-		'$("#tax").val($.number(tax, 2));
-				$("#total_deductions").val($.number(deductions, 2));
-			});
-		});
-	})(jQuery);';
-	$str .= '</script>';
+	$cybercharge = $sa->cybercharge / 100;
+	$processing_fee = $sa->processing_fee;
 
-	$jquery_number = 'bpl/plugins/jquery.number.js';
+	$script = <<<JS
+    document.addEventListener('DOMContentLoaded', function () {
+        const amountInput = document.getElementById('amount');
+        const taxSpan = document.getElementById('tax');
+        const feeSpan = document.getElementById('fee');
 
-	$str .= '<script src="' . $jquery_number . '"></script>';
+        const totalDeductionsSpan = document.getElementById('total_deductions');
+		const totalDeductionsInput = document.getElementById('input_total_deductions');
 
-	return $str;
+        const amountFinalSpan = document.getElementById('amount_final');
+		const amountFinalInput = document.getElementById('input_amount_final');
+
+        amountInput.addEventListener('input', function () {
+            const amount = parseFloat(amountInput.value) || 0;
+            const cybercharge = $cybercharge;
+            const processingFee = $processing_fee;
+            const tax = amount * cybercharge;
+            const deductions = tax + processingFee;
+			const amountFinal = amount - deductions;
+            
+            taxSpan.textContent = tax.toFixed(2);
+
+            totalDeductionsSpan.textContent = deductions.toFixed(2);
+			totalDeductionsInput.value = deductions.toFixed(2);      
+
+			amountFinalSpan.textContent = amountFinal.toFixed(2);
+			amountFinalInput.value = amountFinal.toFixed(2);
+        });
+    });
+JS;
+
+	return "<script>$script</script>";
 }
 
 /**
@@ -395,43 +629,21 @@ function js(): string
  */
 function header($user_id): string
 {
-	$settings_ancillaries = settings('ancillaries');
-
-	$currency = $settings_ancillaries->currency;
-	$cybercharge = $settings_ancillaries->cybercharge;
-	$processing_fee = $settings_ancillaries->processing_fee;
-
-	$minimum_withdraw = $settings_ancillaries->{user($user_id)->account_type . '_min_withdraw'}; // php
-
-	$str = $cybercharge || $processing_fee ? '<p>Payouts are subject to ' : '';
-	$str .= $cybercharge ? $cybercharge . '% cybercharge ' : '';
-	$str .= $cybercharge && $processing_fee ? '+ ' : '';
-	$str .= $processing_fee ? number_format($processing_fee, 2) .
-		' ' . $currency . ' ' . 'processing fee ' : '';
-	$str .= $cybercharge || $processing_fee ? 'per withdrawal transaction, and is non-refundable' : '';
-	$str .= $minimum_withdraw ? '<br>Minimum request is ' . number_format($minimum_withdraw, 2) .
-		' ' . $currency . '.' : '.';
-	$str .= '</p>';
-
-	return $str;
-}
-
-/**
- * @param $user_id
- *
- * @return string
- *
- * @since version
- */
-function view_form($user_id): string
-{
-	$settings_ancillaries = settings('ancillaries');
-
-	$currency = $settings_ancillaries->currency;
-	$cybercharge = $settings_ancillaries->cybercharge;
-	$processing_fee = $settings_ancillaries->processing_fee;
+	$sa = settings('ancillaries');
 
 	$user = user($user_id);
+	$account_type = $user->account_type;
+
+	$currency = $sa->currency;
+	$cybercharge = $sa->cybercharge;
+	$processing_fee = $sa->processing_fee;
+	$min_bal_usd = $sa->{$account_type . '_min_bal_usd'};
+
+	$processing_fee_format = number_format($processing_fee, 2);
+
+	$minimum_withdraw = $sa->{$account_type . '_min_withdraw'};
+
+	$minimum_withdraw_format = number_format($minimum_withdraw, 2);
 
 	$pending = user_payout_pending($user_id);
 
@@ -443,74 +655,127 @@ function view_form($user_id): string
 		}
 	}
 
-	$str = '<form method="post" onsubmit="submit.disabled = true; return true;">
-        <table class="category table table-striped table-bordered table-hover">
-            <tr>
-                <td style="width: 150px">
-                    <div style="text-align: right"><strong>Balance</strong>:</div>
-                </td>';
+	$max_withdraw = ($user->payout_transfer - $pending_requests) * (1 - $cybercharge / 100) -
+		$processing_fee - $min_bal_usd;
 
-	$max_withdraw = (($user->balance - $pending_requests) * (1 - $cybercharge / 100) -
-		$processing_fee - $settings_ancillaries->{$user->account_type . '_min_bal_usd'});
+	$max_withdraw_format = number_format($max_withdraw, 2);
 
-	$str .= '<td>' . number_format($user->balance, 2) . ' ' . $currency . '<span
-                style="float:right;">Max. Withdraw: ' . number_format(
-		($max_withdraw > 0 ? $max_withdraw : 0),
-		2
-	) . ' ' . $currency . '</span>
-    </td>
-    </tr>
-    <tr>
-        <td>
-            <div style="text-align: right"><strong><label for="amount">Amount Requested:</label></strong></div>
-        </td>
-        <td><input style="text-align: center" type="text" name="amount" id="amount"> ' . $currency . '</td>
-    </tr>
-    <tr>
-        <td colspan="2"><strong>Service Charge</strong></td>
-    </tr>
-    <tr>
-        <td>
-            <div style="text-align: right"><label for="tax">Cybercharge:</label></div>
-        </td>
-        <td><input type="text" name="tax" style="text-align: center" id="tax" value="0.00"
-                   readonly> ' . $currency .
-		'</td>
-    </tr>
-    <tr>
-        <td>
-            <div style="text-align: right"><label for="fee">Processing Fee:</label></div>
-        </td>
-        <td><input type="text" id="fee" style="text-align: center"
-                   value="' . number_format($processing_fee, 2) . '" readonly> ' . $currency .
-		'</td>
-    </tr>
-    <tr>
-        <td>
-            <div style="text-align: right"><label for="total_deductions">Total Deductions:</label></div>
-        </td>
-        <td>
-            <input type="text" style="text-align: center" readonly="readonly" name="total_deductions" id="total_deductions"> ' .
-		$currency . '</td>
-    </tr>';
+	$cybercharge_note = "$cybercharge% cybercharge";
+	$processing_fee_note = "+ $processing_fee_format $currency processing fee";
 
-	$str .= (settings('plans')->trading ? '<tr>
-        <td><strong><label for="amount_final">Final amount:</strong></label></td>
-        <td>
-            <input type="text" readonly="readonly" name="amount_final" id="amount_final" style="text-align: center"> BTC
-        </td>
-    </tr>' : '<input type="hidden" readonly="readonly" name="amount_final" id="amount_final">');
-	$str .= '<tr>
-        <td colspan="2">
-            <div style="text-align: center"><input type="submit" name="submit" value="Submit Request"
-                                       class="uk-button uk-button-primary"></div>
-        </td>
-    </tr>
-    </table>
-    </form>';
+	$str = '<p>';
+
+	if ($cybercharge || $processing_fee) {
+		$str .= <<<HTML
+			Payouts are subject to $cybercharge_note $processing_fee_note per withdrawal transaction, and is non-refundable.
+		HTML;
+	}
+
+	if ($minimum_withdraw > 0 || $max_withdraw > 0) {
+		$str .= $max_withdraw ? " Maximum request is $max_withdraw_format $currency" : '';
+		$str .= $minimum_withdraw ? " and Minimum request is $minimum_withdraw_format $currency." : '';
+	}
+
+	$str .= '</p>';
 
 	return $str;
 }
+
+// /**
+//  * @param $user_id
+//  *
+//  * @return string
+//  *
+//  * @since version
+//  */
+// function view_form_old($user_id): string
+// {
+// 	$settings_ancillaries = settings('ancillaries');
+
+// 	$currency = $settings_ancillaries->currency;
+// 	$cybercharge = $settings_ancillaries->cybercharge;
+// 	$processing_fee = $settings_ancillaries->processing_fee;
+
+// 	$user = user($user_id);
+
+// 	$pending = user_payout_pending($user_id);
+
+// 	$pending_requests = 0;
+
+// 	if ($pending) {
+// 		foreach ($pending as $requested) {
+// 			$pending_requests += $requested->amount;
+// 		}
+// 	}
+
+// 	$str = '<form method="post" onsubmit="submit.disabled = true; return true;">
+//         <table class="category table table-striped table-bordered table-hover">
+//             <tr>
+//                 <td style="width: 150px">
+//                     <div style="text-align: right"><strong>Balance</strong>:</div>
+//                 </td>';
+
+// 	$max_withdraw = (($user->balance - $pending_requests) * (1 - $cybercharge / 100) -
+// 		$processing_fee - $settings_ancillaries->{$user->account_type . '_min_bal_usd'});
+
+// 	$str .= '<td>' . number_format($user->balance, 2) . ' ' . $currency . '<span
+//                 style="float:right;">Max. Withdraw: ' . number_format(
+// 		($max_withdraw > 0 ? $max_withdraw : 0),
+// 		2
+// 	) . ' ' . $currency . '</span>
+//     </td>
+//     </tr>
+//     <tr>
+//         <td>
+//             <div style="text-align: right"><strong><label for="amount">Amount Requested:</label></strong></div>
+//         </td>
+//         <td><input style="text-align: center" type="text" name="amount" id="amount"> ' . $currency . '</td>
+//     </tr>
+//     <tr>
+//         <td colspan="2"><strong>Service Charge</strong></td>
+//     </tr>
+//     <tr>
+//         <td>
+//             <div style="text-align: right"><label for="tax">Cybercharge:</label></div>
+//         </td>
+//         <td><input type="text" name="tax" style="text-align: center" id="tax" value="0.00"
+//                    readonly> ' . $currency .
+// 		'</td>
+//     </tr>
+//     <tr>
+//         <td>
+//             <div style="text-align: right"><label for="fee">Processing Fee:</label></div>
+//         </td>
+//         <td><input type="text" id="fee" style="text-align: center"
+//                    value="' . number_format($processing_fee, 2) . '" readonly> ' . $currency .
+// 		'</td>
+//     </tr>
+//     <tr>
+//         <td>
+//             <div style="text-align: right"><label for="total_deductions">Total Deductions:</label></div>
+//         </td>
+//         <td>
+//             <input type="text" style="text-align: center" readonly="readonly" name="total_deductions" id="total_deductions"> ' .
+// 		$currency . '</td>
+//     </tr>';
+
+// 	$str .= (settings('plans')->trading ? '<tr>
+//         <td><strong><label for="amount_final">Final amount:</strong></label></td>
+//         <td>
+//             <input type="text" readonly="readonly" name="amount_final" id="amount_final" style="text-align: center"> BTC
+//         </td>
+//     </tr>' : '<input type="hidden" readonly="readonly" name="amount_final" id="amount_final">');
+// 	$str .= '<tr>
+//         <td colspan="2">
+//             <div style="text-align: center"><input type="submit" name="submit" value="Submit Request"
+//                                        class="uk-button uk-button-primary"></div>
+//         </td>
+//     </tr>
+//     </table>
+//     </form>';
+
+// 	return $str;
+// }
 
 /**
  * @param $uid
@@ -546,7 +811,9 @@ function request_cancel($uid, $user_id)
 	$result = user_payouts($uid);
 
 	if ($result->user_id !== $user_id) {
-		$app->redirect(Uri::root(true) . '/' . sef(113), 'Transaction Invalid!', 'error');
+
+		$app->enqueueMessage('Transaction Invalid!', 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(113));
 	}
 
 	$db = db();
@@ -567,7 +834,8 @@ function request_cancel($uid, $user_id)
 		ExceptionHandler::render($e);
 	}
 
-	$app->redirect(Uri::root(true) . '/' . sef(113), 'Payout Request Cancelled!', 'notice');
+	$app->enqueueMessage('Payout Request Cancelled!', 'info');
+	$app->redirect(Uri::root(true) . '/' . sef(113));
 }
 
 /**
@@ -597,7 +865,7 @@ function update_user_payout_cancel($amount, $user_id)
 	update(
 		'network_users',
 		[
-			'balance = balance + ' . $amount,
+			'payout_transfer = payout_transfer + ' . $amount,
 			'payout_total = payout_total - ' . $amount
 		],
 		['id = ' . $db->quote($user_id)]
@@ -648,50 +916,89 @@ function logs_cancel($uid)
  */
 function view_pending($user_id): string
 {
-	$settings_plans = settings('plans');
+	$table_pending = table_pending($user_id);
 
-	$pending = user_payout_pending($user_id);
+	return <<<HTML
+		<div class="card mb-4">
+			<div class="card-header">
+				<i class="fas fa-hourglass me-1"></i>
+				Pending Requests
+			</div>
+			<div class="card-body">
+				<table id="datatablesSimple">
+					$table_pending
+				</table>
+			</div>
+		</div>
+	HTML;
+}
 
-	$str = '<h2>Pending Requests</h2>';
+function table_pending($user_id)
+{
+	$sa = settings('ancillaries');
+	$currency = $sa->currency;
 
-	if (empty($pending)) {
-		$str .= '<hr><p>No pending requests yet.</p>';
+	$row_pending = row_pending($user_id);
+
+	$str = <<<HTML
+		<thead>
+			<tr>
+				<th>Date</th>
+				<th>Amount ($currency)</th>
+				<th>Deductions ($currency)</th>
+				<th>Final Amount ($currency)</th>
+				<th>Method</th>
+				<th>Action</th>
+			</tr>
+		</thead>
+		<tfoot>
+			<tr>
+				<th>Date</th>
+				<th>Amount ($currency)</th>
+				<th>Deductions ($currency)</th>
+				<th>Final Amount ($currency)</th>
+				<th>Method</th>
+				<th>Action</th>
+			</tr>
+		</tfoot>
+		<tbody>
+			$row_pending						
+		</tbody>
+	HTML;
+
+	return $str;
+}
+
+function row_pending($user_id)
+{
+	$pendings = user_payout_pending($user_id);
+
+	$str = '';
+
+	if (empty($pendings)) {
+		$str .= <<<HTML
+			<tr>
+				<td>n/a</td>
+				<td>0</td>
+				<td>0</td>
+				<td>0</td>
+				<td>n/a</td>
+				<td>n/a</td>							
+			</tr>					
+		HTML;
 	} else {
-		$uid = input_get('uid');
-		$cancel = input_get('cancel', 0);
-
-		if ($cancel && $uid) {
-			request_cancel($uid, $user_id);
-		}
-
-		$str .= '<table class="category table table-striped table-bordered table-hover">';
-		$str .= '<thead>';
-		$str .= '<tr>';
-		$str .= '<th>Date Requested</th>';
-		$str .= '<th>Amount (' . settings('ancillaries')->currency . ')</th>';
-		$str .= '<th>Deductions (' . settings('ancillaries')->currency . ')</th>';
-		$str .= ($settings_plans->trading ? '<th>Final Amount (BTC)</th>' : '');
-		$str .= '<th>Method</th>';
-		$str .= '<th>Action</th>';
-		$str .= '</tr>';
-		$str .= '</thead>';
-		$str .= '<tbody>';
-
-		foreach ($pending as $tmp) {
-			$payout_method = payout_method(user($user_id));
+		foreach ($pendings as $pending) {
+			// $payout_method = payout_method(user($user_id));
 
 			$str .= '<tr>';
-			$str .= '<td>' . date('M j, Y - g:i A', $tmp->date_requested) . '</td>';
-			$str .= '<td>' . number_format($tmp->amount, 2) . '</td>';
-			$str .= '<td>' . number_format($tmp->deductions_total, 2) . '</td>';
-			$str .= ($settings_plans->trading ? '<td>' . number_format($tmp->amount_final, 8) . '</td>' : '');
-			$str .= '<td>' . $payout_method . '</td>';
-			$str .= '<td><a href="' . sef(113) . qs() . 'uid=' . $tmp->withdrawal_id . '&cancel=1">Cancel</a></td>';
+			$str .= '<td>' . date('M j, Y - g:i A', $pending->date_requested) . '</td>';
+			$str .= '<td>' . number_format($pending->amount, 2) . '</td>';
+			$str .= '<td>' . number_format($pending->deductions_total, 2) . '</td>';
+			$str .= '<td>' . number_format($pending->amount_final, 2) . '</td>';
+			$str .= '<td>' . strtoupper($pending->method) . '</td>';
+			$str .= '<td><a href="' . sef(113) . qs() . 'uid=' . $pending->withdrawal_id . '&cancel=1">Cancel</a></td>';
 			$str .= '</tr>';
 		}
-
-		$str .= '</tbody>
-        </table>';
 	}
 
 	return $str;

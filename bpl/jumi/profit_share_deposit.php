@@ -32,7 +32,7 @@ main();
  */
 function main()
 {
-	$user_id  = session_get('user_id');
+	$user_id = session_get('user_id');
 
 	page_validate();
 
@@ -46,31 +46,30 @@ function main()
 
 	$str .= '<h1>' . $settings_plans->table_matrix_name . ' Deposit</h1>';
 
-	if ($amount !== '')
-	{
+	if ($amount !== '') {
 		$app = application();
 
 		validate_amount($user_id, $amount);
 
-		try
-		{
+		try {
 			$db->transactionStart();
 
 			update_user($user_id, $amount);
 
 			$db->transactionCommit();
-		}
-		catch (Exception $e)
-		{
+		} catch (Exception $e) {
 			$db->transactionRollback();
 			ExceptionHandler::render($e);
 		}
 
-		$app->redirect(Uri::root(true) . '/' . sef(61),
-			$settings_plans->table_matrix_name . ' Deposit Completed Successfully!', 'success');
+		$app->redirect(
+			Uri::root(true) . '/' . sef(61),
+			$settings_plans->table_matrix_name . ' Deposit Completed Successfully!',
+			'success'
+		);
 	}
 
-	$str .= view_form($user_id);
+	$str .= view_request_efund($user_id);
 
 	echo $str;
 }
@@ -127,11 +126,13 @@ function view_form($user_id): string
  */
 function validate_amount($user_id, $amount)
 {
-	if ($amount > user($user_id)->bonus_share)
-	{
-		application()->redirect(Uri::root(true) . '/' . sef(61),
+	if ($amount > user($user_id)->bonus_share) {
+		application()->redirect(
+			Uri::root(true) . '/' . sef(61),
 			'Maintain at least ' . $amount .
-			' ' . settings('ancillaries')->currenc . '!', 'error');
+			' ' . settings('ancillaries')->currenc . '!',
+			'error'
+		);
 	}
 }
 
@@ -148,12 +149,9 @@ function update_user($user_id, $amount)
 
 	$field_user = ['bonus_share = bonus_share - ' . $amount];
 
-	if (settings('ancillaries')->withdrawal_mode === 'standard')
-	{
+	if (settings('ancillaries')->withdrawal_mode === 'standard') {
 		$field_user[] = 'balance = balance + ' . $amount;
-	}
-	else
-	{
+	} else {
 		$field_user[] = 'payout_transfer = payout_transfer + ' . $amount;
 	}
 

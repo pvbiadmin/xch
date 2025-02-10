@@ -29,12 +29,9 @@ function main()
 
 	$str = menu();
 
-	if ($code === '')
-	{
-		$str .= view_form();
-	}
-	else
-	{
+	if ($code === '') {
+		$str .= view_request_efund();
+	} else {
 		$str .= view_result($code);
 	}
 
@@ -91,8 +88,7 @@ function view_result($code): string
 
 	$result = get_code($code);
 
-	if (!empty($result))
-	{
+	if (!empty($result)) {
 		$str .= '<table class="category table table-striped table-bordered table-hover">
             <tr>
                 <td style="width: 150px">Code:</td>
@@ -102,15 +98,12 @@ function view_result($code): string
                 <td style="width: 150px">User:</td>
                 <td>';
 
-		if ($result->user_id)
-		{
+		if ($result->user_id) {
 			$member = user($result->user_id);
 
 			$str .= '<a href="' . sef(44) . qs() . 'uid=' .
 				$member->id . '">' . $member->username . '</a>';
-		}
-		else
-		{
+		} else {
 			$str .= ' --- ';
 		}
 
@@ -121,7 +114,7 @@ function view_result($code): string
                 <td>';
 
 		$type_arr = explode('_', $result->type);
-		$cd_type  = in_array('cd', $type_arr, true);
+		$cd_type = in_array('cd', $type_arr, true);
 
 		$settings_entry = settings('entry');
 
@@ -131,9 +124,7 @@ function view_result($code): string
 		$str .= '</td>
             </tr>
         </table>';
-	}
-	else
-	{
+	} else {
 		$str .= '<p>Code not found!</p>';
 	}
 

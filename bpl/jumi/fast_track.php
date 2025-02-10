@@ -54,7 +54,7 @@ function main()
     page_validate();
 
     $notifications = notifications();
-    $view_form = view_form();
+    $view_form = view_request_efund();
     $view_shares = view_shares($user_id);
     $view_principal = view_principal($user_id);
     $view_balance = view_balance($user_id);

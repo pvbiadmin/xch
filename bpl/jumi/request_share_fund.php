@@ -49,14 +49,14 @@ main();
  */
 function main()
 {
-	$username     = session_get('username');
-	$usertype     = session_get('usertype');
-	$admintype    = session_get('admintype');
+	$username = session_get('username');
+	$usertype = session_get('usertype');
+	$admintype = session_get('admintype');
 	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$amount       = input_get('amount');
-	$method       = input_get('method');
-	$cid          = input_get('cid');
+	$user_id = session_get('user_id');
+	$amount = input_get('amount');
+	$method = input_get('method');
+	$cid = input_get('cid');
 
 	page_validate();
 
@@ -72,67 +72,72 @@ function main()
 
 	$currency = $sa->currency;
 
-//	$currency_upper = settings('ancillaries')->currency;
+	//	$currency_upper = settings('ancillaries')->currency;
 //	$currency_lower = strtolower(settings('ancillaries')->currency);
 
-	if (empty($arr_payment_method))
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-			'Please Fill Up Your Payment Method.', 'error');
+	if (empty($arr_payment_method)) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
+			'Please Fill Up Your Payment Method.',
+			'error'
+		);
 	}
 
-	if ($currency === 'PHP')
-	{
-		if (!array_key_exists('gcash', $arr_payment_method) && !array_key_exists('bank', $arr_payment_method))
-		{
-			$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-				'Please Fill Up Your G-Cash or Bank Details.', 'error');
+	if ($currency === 'PHP') {
+		if (!array_key_exists('gcash', $arr_payment_method) && !array_key_exists('bank', $arr_payment_method)) {
+			$app->redirect(
+				Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
+				'Please Fill Up Your G-Cash or Bank Details.',
+				'error'
+			);
 		}
 	}
 
-	if ($currency === 'USD' && !array_key_exists('bank', $arr_payment_method))
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-			'Please Fill Up Your Bank Details.', 'error');
+	if ($currency === 'USD' && !array_key_exists('bank', $arr_payment_method)) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
+			'Please Fill Up Your Bank Details.',
+			'error'
+		);
 	}
 
-	if (!in_array($currency, ['PHP', 'USD']))
-	{
-		if (!array_key_exists(strtolower($currency), $arr_payment_method))
-		{
-			$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-				'Please Fill Up Your ' . $currency . ' Payment Method.', 'error');
+	if (!in_array($currency, ['PHP', 'USD'])) {
+		if (!array_key_exists(strtolower($currency), $arr_payment_method)) {
+			$app->redirect(
+				Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
+				'Please Fill Up Your ' . $currency . ' Payment Method.',
+				'error'
+			);
 		}
 	}
 
-//	if (empty($arr_payment_method) || !array_key_exists($currency_lower, $arr_payment_method))
+	//	if (empty($arr_payment_method) || !array_key_exists($currency_lower, $arr_payment_method))
 //	{
 //		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
 //			'Required to fill up your ' . $currency_upper . ' Token', 'error');
 //	}
 
-	if ($user->account_type !== 'starter')
-	{
+	if ($user->account_type !== 'starter') {
 		$max_request = settings('ancillaries')->{$user->account_type . '_max_request_usd'};
 
-		if ($max_request > 0 && ((double) $user->requested_today + (double) $amount) > $max_request)
-		{
-			$app->redirect(Uri::root(true) . '/' . sef(135) . qs() . 'uid=' . $user_id,
-				'Exceeded Maximum Request for today!', 'error');
+		if ($max_request > 0 && ((double) $user->requested_today + (double) $amount) > $max_request) {
+			$app->redirect(
+				Uri::root(true) . '/' . sef(135) . qs() . 'uid=' . $user_id,
+				'Exceeded Maximum Request for today!',
+				'error'
+			);
 		}
 	}
 
-	if ($cid !== '')
-	{
+	if ($cid !== '') {
 		process_delete_request($cid);
 	}
 
-	if ($amount !== '')
-	{
+	if ($amount !== '') {
 		process_request($user_id, $amount, $method);
 	}
 
-	$str .= view_form($user_id);
+	$str .= view_request_efund($user_id);
 	$str .= view_pending_requests();
 
 	echo $str;
@@ -142,8 +147,7 @@ function process_delete_request($cid)
 {
 	$db = db();
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		delete(
@@ -152,16 +156,17 @@ function process_delete_request($cid)
 		);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 
 		ExceptionHandler::render($e);
 	}
 
-	application()->redirect(Uri::root(true) . '/' . sef(135),
-		'Request Cancelled!', 'notice');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(135),
+		'Request Cancelled!',
+		'notice'
+	);
 }
 
 /**
@@ -180,8 +185,7 @@ function menu($usertype, $admintype, $account_type, $username, $user_id): string
 {
 	$str = '';
 
-	switch ($usertype)
-	{
+	switch ($usertype) {
 		case 'Admin':
 			$str .= menu_admin($admintype, $account_type, $user_id, $username);
 			break;
@@ -218,28 +222,36 @@ function validate_input($user_id, $amount, $method)
 
 	$arr_payment_method = arr_payment_method($user);
 
-	if (empty($arr_payment_method) || empty($arr_payment_method[$method]))
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-			'Your Wallet Address for ' . strtoupper($method) . ' is Required.', 'error');
+	if (empty($arr_payment_method) || empty($arr_payment_method[$method])) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
+			'Your Wallet Address for ' . strtoupper($method) . ' is Required.',
+			'error'
+		);
 	}
 
-	if ($method === 'none')
-	{
-		application()->redirect(Uri::root(true) . '/' . sef(135),
-			'Please Select Payment Method!', 'error');
+	if ($method === 'none') {
+		application()->redirect(
+			Uri::root(true) . '/' . sef(135),
+			'Please Select Payment Method!',
+			'error'
+		);
 	}
 
-	if ($amount <= 0)
-	{
-		application()->redirect(Uri::root(true) . '/' . sef(135),
-			'Please enter valid amount!', 'error');
+	if ($amount <= 0) {
+		application()->redirect(
+			Uri::root(true) . '/' . sef(135),
+			'Please enter valid amount!',
+			'error'
+		);
 	}
 
-	if ($amount < $minimum_request)
-	{
-		application()->redirect(Uri::root(true) . '/' . sef(135),
-			'Minimum Amount is ' . $minimum_request . '.', 'error');
+	if ($amount < $minimum_request) {
+		application()->redirect(
+			Uri::root(true) . '/' . sef(135),
+			'Minimum Amount is ' . $minimum_request . '.',
+			'error'
+		);
 	}
 }
 
@@ -300,17 +312,14 @@ function php_price_usd()
 
 	$data = [];
 
-	try
-	{
+	try {
 		$json = /*!in_array('curl', get_loaded_extensions()) || is_localhost() ?
-			*/
+		   */
 			@file_get_contents($url)/* : file_get_contents_curl($url)*/
 		;
 
 		$data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 
 	}
 
@@ -323,22 +332,16 @@ function price_token_method($value, $method)
 
 	$token_price = token_price($currency)['price'];
 
-	if (in_array($currency, ['GOLD', 'P2P', 'BTCW', 'PAC', 'PESO']))
-	{
+	if (in_array($currency, ['GOLD', 'P2P', 'BTCW', 'PAC', 'PESO'])) {
 		$token_price = price_coinbrain($currency); // usd
-	}
-	elseif (in_array($currency, ['BNB', 'SHIB', 'TRX', 'BUSD', 'BCH', 'TWT', 'CAKE']))
-	{
+	} elseif (in_array($currency, ['BNB', 'SHIB', 'TRX', 'BUSD', 'BCH', 'TWT', 'CAKE'])) {
 		$token_price = token_price($currency)['price']; // usd
-	}
-	elseif ($currency === 'PHP')
-	{
+	} elseif ($currency === 'PHP') {
 		$php_price_usd = php_price_usd();
 
 		$price_php = 0;
 
-		if ($php_price_usd)
-		{
+		if ($php_price_usd) {
 			$ask = $php_price_usd['market']['ask'];
 			$bid = $php_price_usd['market']['bid'];
 
@@ -346,45 +349,33 @@ function price_token_method($value, $method)
 		}
 
 		$token_price = 1 / $price_php;
-	}
-	elseif ($currency === 'USD')
-	{
+	} elseif ($currency === 'USD') {
 		$token_price = 1;
 	}
 
-	if (in_array($method, ['bank', 'gcash']))
-	{
+	if (in_array($method, ['bank', 'gcash'])) {
 		$php_price_usd = php_price_usd();
 
 		$price_php = 0;
 
-		if ($php_price_usd)
-		{
+		if ($php_price_usd) {
 			$ask = $php_price_usd['market']['ask'];
 			$bid = $php_price_usd['market']['bid'];
 
 			$price_php = ($ask + $bid) / 2;
 		}
 
-		if ($currency === 'PHP')
-		{
+		if ($currency === 'PHP') {
 			$price_total = $value;
-		}
-		else
-		{
+		} else {
 			$price_total = $value * $price_php * $token_price; // PHP
 		}
-	}
-	else
-	{
+	} else {
 		$method = strtoupper($method);
 
-		if (in_array($method, ['BTC', 'BTC3', 'BTCB', 'BTCW', 'GOLD', 'PAC', 'P2P', 'PESO']))
-		{
+		if (in_array($method, ['BTC', 'BTC3', 'BTCB', 'BTCW', 'GOLD', 'PAC', 'P2P', 'PESO'])) {
 			$price_total = $token_price * $value / price_coinbrain($method);
-		}
-		else
-		{
+		} else {
 			$price_total = ($token_price / token_price($method)['price']) * $value;
 		}
 	}
@@ -425,23 +416,23 @@ function process_request($user_id, $amount, $method)
 		'<br>
 			Payment Method: ' . strtoupper($method) . '<br>';
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		insert_request($user_id, $amount, $price_total, $method);
 		send_mail($message, settings('ancillaries')->share_fund_name . ' Request', [$user->email]);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 		ExceptionHandler::render($e);
 	}
 
-	$app->redirect(Uri::root(true) . '/' . sef(135),
-		'Your transaction will appear below as a pending request. Please press \'Method\' at the bottom and pay your pending entry.', 'success');
+	$app->redirect(
+		Uri::root(true) . '/' . sef(135),
+		'Your transaction will appear below as a pending request. Please press \'Method\' at the bottom and pay your pending entry.',
+		'success'
+	);
 }
 
 /**
@@ -461,17 +452,17 @@ function view_form($user_id): string
 	$share_fund_name = settings('ancillaries')->share_fund_name;
 
 	$str = ' <h1>Request ' . $share_fund_name . /*'<span style="float: right">
- 		
- 		<div class="uk-width-1-1">
-	        <div class="uk-button-group uk-margin-small-top">
-	            <a class="uk-button uk-button-primary" style="float:right;" 
-		href="https://bitkeep.com/en/swap/bnb/0x4A0bfC65fEb6F477E3944906Fb09652d2d8b5f0d">Buy GOLD Token</a>
-	        </div>
-	        <div class="uk-button-group uk-margin-small-top">
-	            <a class="uk-button uk-button-primary" style="float:right;" 
-		href="https://bitkeep.com/en/swap/eth/0x4fabb145d64652a948d72533023f6e7a623c7c53">Buy BUSD Token</a>
-		</div>
-	        </div></span>' .*/
+
+<div class="uk-width-1-1">
+<div class="uk-button-group uk-margin-small-top">
+<a class="uk-button uk-button-primary" style="float:right;" 
+href="https://bitkeep.com/en/swap/bnb/0x4A0bfC65fEb6F477E3944906Fb09652d2d8b5f0d">Buy GOLD Token</a>
+</div>
+<div class="uk-button-group uk-margin-small-top">
+<a class="uk-button uk-button-primary" style="float:right;" 
+href="https://bitkeep.com/en/swap/eth/0x4fabb145d64652a948d72533023f6e7a623c7c53">Buy BUSD Token</a>
+</div>
+</div></span>' .*/
 		'</h1>';
 
 	$min_request = $sa->{$user->account_type . '_min_request_usd'};
@@ -492,7 +483,7 @@ function view_form($user_id): string
 		$share_fund_name . ')" id="amount" style = "float:left">';
 	$str .= view_method_select($user_id);
 	$str .= '<input type="submit" name="submit" value="Submit" class="uk-button uk-button-primary">';
-//	$str .= '<a class="uk-button uk-button-primary" style="float:right"
+	//	$str .= '<a class="uk-button uk-button-primary" style="float:right"
 //		href="https://study.bitkeep.com/en/?ht_kb=create-your-first-wallet">Create Your Smart Wallet</a>';
 	$str .= '</td>';
 	$str .= '</tr>
@@ -513,15 +504,25 @@ function view_method_select($user_id): string
 	$str = '<select name="method" id="method" style="float:left">';
 	$str .= '<option value="none" selected>Currency Payment Method</option>';
 
-	if (!empty($pmu))
-	{
-		$allowedCurrencies = ['busd', 'gold', 'usdt', 'bnb', 'btcb', 'btcw',
-			'pac', 'shib', 'doge', 'trx', 'usdc', 'gcash', 'bank'];
+	if (!empty($pmu)) {
+		$allowedCurrencies = [
+			'busd',
+			'gold',
+			'usdt',
+			'bnb',
+			'btcb',
+			'btcw',
+			'pac',
+			'shib',
+			'doge',
+			'trx',
+			'usdc',
+			'gcash',
+			'bank'
+		];
 
-		foreach ($pmu as $k => $v)
-		{
-			if (in_array($k, $allowedCurrencies))
-			{
+		foreach ($pmu as $k => $v) {
+			if (in_array($k, $allowedCurrencies)) {
 				$str .= '<option value="' . $k . '">' . strtoupper($k) . '</option>';
 			}
 		}
@@ -541,9 +542,9 @@ function view_method_select($user_id): string
  */
 function qr_code_generate($address): string
 {
-	$cht  = "qr";
-	$chs  = "300x300";
-	$chl  = $address;
+	$cht = "qr";
+	$chs = "300x300";
+	$chl = $address;
 	$choe = "UTF-8";
 
 	return 'https://chart.googleapis.com/chart?cht=' . $cht . '&chs=' . $chs . '&chl=' . $chl . '&choe=' . $choe;
@@ -572,12 +573,9 @@ function view_pending_requests(): string
 
 	$str = '<h2>Pending ' . $share_fund_name . ' Requests</h2>';
 
-	if (empty($pending))
-	{
+	if (empty($pending)) {
 		$str .= '<hr><p>No pending ' . $share_fund_name . ' requests yet.</p>';
-	}
-	else
-	{
+	} else {
 		$str .= '<table class="category table table-striped table-bordered table-hover">';
 		$str .= '<thead>';
 		$str .= '<tr>';
@@ -590,20 +588,17 @@ function view_pending_requests(): string
 		$str .= '</thead>';
 		$str .= '<tbody>';
 
-		foreach ($pending as $tmp)
-		{
+		foreach ($pending as $tmp) {
 			$user_admin = user(1);
 
-			$admin_arr_payment     = arr_payment_method($user_admin);
+			$admin_arr_payment = arr_payment_method($user_admin);
 			$admin_payment_address = $admin_arr_payment[$tmp->method];
 
 			$payment_method = strtoupper($tmp->method);
 
-			if (is_array($admin_arr_payment[$tmp->method]))
-			{
-				foreach ($admin_arr_payment[$tmp->method] as $k => $v)
-				{
-					$payment_method        = strtoupper($k);
+			if (is_array($admin_arr_payment[$tmp->method])) {
+				foreach ($admin_arr_payment[$tmp->method] as $k => $v) {
+					$payment_method = strtoupper($k);
 					$admin_payment_address = $v;
 
 					break;
@@ -629,16 +624,14 @@ function view_pending_requests(): string
 
 			$messenger = '';
 
-			if (!empty($contact_info))
-			{
+			if (!empty($contact_info)) {
 				$messenger = $contact_info['messenger'] ?? '';
 			}
 
 			$contact = $messenger ? '<p><b>Admin Messenger URL:</b> ' . $messenger . '</p>' : '';
 			$contact .= $user_admin->email ? '<p><b>Admin Email Address:</b> ' . $user_admin->email . '</p>' : '';
 
-			if (!in_array($tmp->method, ['bank', 'gcash']))
-			{
+			if (!in_array($tmp->method, ['bank', 'gcash'])) {
 				$str .= '<img src="images/trust-wallet.svg" alt="" width="150px">';
 
 				$message = "After a successful transaction, please take a screenshot of the transaction ' . 
@@ -658,20 +651,15 @@ function view_pending_requests(): string
 	                <p><b>' . $admin_payment_address . '</b></p>
 	            </div>
 	        </div>';
-			}
-			else
-			{
-				if ($tmp->method === 'gcash')
-				{
+			} else {
+				if ($tmp->method === 'gcash') {
 					$str .= $contact;
 					$str .= '<p>Please pay <b>' . number_format($tmp->price, 2) . '</b> ' .
 						strtoupper($currency) . ' to the following G-Cash Number:</p>';
 					$str .= '<p><b>' . $admin_payment_address . '</b></p>';
 					$str .= '</div>';
 					$str .= '</div>';
-				}
-				elseif ($tmp->method === 'bank')
-				{
+				} elseif ($tmp->method === 'bank') {
 					$str .= $contact;
 					$str .= '<p>Please pay <b>' . number_format($tmp->price, 2) . '</b> ' . strtoupper($currency) .
 						' to the following ' . strtoupper($payment_method) . ' Bank Account:</p>';
@@ -731,10 +719,10 @@ function modal_buy_token($admin_payment_address): string
 
 	$str .= '</div>';
 
-//	$str .= '<div class="uk-modal-dialog" style="text-align: center">';
+	//	$str .= '<div class="uk-modal-dialog" style="text-align: center">';
 //	$str .= '<button type="button" class="uk-modal-close uk-close"></button>';
 
-//	$str .= '<div class="uk-form-row">
+	//	$str .= '<div class="uk-form-row">
 //                                <input type="text" value="' . $admin_payment_address . '" class="uk-form-large uk-form-width-small">
 //                                <button class="uk-button uk-button-large" type="reset">Large</button>
 //                            </div>';
@@ -766,9 +754,8 @@ function user_request($user_id)
 
 function price_coinbrain($token = 'BTC3')
 {
-	switch ($token)
-	{
-//        case 'BUSD':
+	switch ($token) {
+		//        case 'BUSD':
 //            $contract = '0xe9e7cea3dedca5984780bafc599bd69add087d56';
 //	        break;
 		case 'BTC':
@@ -809,10 +796,9 @@ function price_coinbrain($token = 'BTC3')
 		coinbrain_price_token('https://api.coinbrain.com/public/coin-info', $data)
 	);
 
-	if (!empty($results))
-	{
+	if (!empty($results)) {
 		$results = (array) $results[0];
-		$price   = $results['priceUsd'];
+		$price = $results['priceUsd'];
 	}
 
 	return $price;

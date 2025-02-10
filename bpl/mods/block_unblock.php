@@ -28,24 +28,19 @@ function main($type = 'block')
 
 	page_validate();
 
-	if (session_get('usertype') !== 'Admin')
-	{
+	if (session_get('usertype') !== 'Admin') {
 		die("Access denied: Admins only.");
 	}
 
-	if ($user_id === '')
-	{
+	if ($user_id === '') {
 		die();
 	}
 
 	$str = '';
 
-	if (input_get('final') === '')
-	{
-		$str .= view_form($user_id, $type);
-	}
-	else
-	{
+	if (input_get('final') === '') {
+		$str .= view_request_efund($user_id, $type);
+	} else {
 		process_form($user_id, $type);
 	}
 
@@ -86,8 +81,11 @@ function process_form($user_id, string $type = 'block')
 {
 	update_users($user_id, $type);
 
-	application()->redirect(Uri::root(true) . '/' . sef(40),
-		user($user_id)->username . ' has been ' . $type . 'ed', 'notice');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(40),
+		user($user_id)->username . ' has been ' . $type . 'ed',
+		'notice'
+	);
 }
 
 /**

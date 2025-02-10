@@ -41,7 +41,7 @@ function main()
     $amount = input_get('amount_ftk');
     session_set('ftk', $amount);
 
-//    page_validate();
+    //    page_validate();
     restrict_page();
 
     $str = page_reload();
@@ -55,7 +55,7 @@ function main()
         process_deposit($user_id, $amount);
     }
 
-    $str .= view_form($user_id);
+    $str .= view_request_efund($user_id);
 
     echo $str;
 }
@@ -69,40 +69,40 @@ function main()
  */
 function process_deposit($user_id, $amount)
 {
-	$db = db();
+    $db = db();
 
     validate_input($user_id, $amount);
 
-	try
-	{
-		$db->transactionStart();
+    try {
+        $db->transactionStart();
 
-		$field_user   = ['fast_track_balance = fast_track_balance - ' . $amount];
-//		$field_user[] = (settings('ancillaries')->withdrawal_mode === 'standard' ?
+        $field_user = ['fast_track_balance = fast_track_balance - ' . $amount];
+        //		$field_user[] = (settings('ancillaries')->withdrawal_mode === 'standard' ?
 //				'balance = balance + ' : 'payout_transfer = payout_transfer + ') . $amount;
 
         $field_user[] = 'points = points + ' . $amount;
 
-		update(
-			'network_users',
-			$field_user,
-			['id = ' . $db->quote($user_id)]
-		);
+        update(
+            'network_users',
+            $field_user,
+            ['id = ' . $db->quote($user_id)]
+        );
 
-		logs($user_id, $amount);
+        logs($user_id, $amount);
 
-		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
-		$db->transactionRollback();
-		ExceptionHandler::render($e);
-	}
+        $db->transactionCommit();
+    } catch (Exception $e) {
+        $db->transactionRollback();
+        ExceptionHandler::render($e);
+    }
 
-	application()->redirect(Uri::root(true) . '/' . sef(20),
-		settings('plans')->fast_track_name . ' Conversion Completed Successfully!', 'success');
+    application()->redirect(
+        Uri::root(true) . '/' . sef(20),
+        settings('plans')->fast_track_name . ' Conversion Completed Successfully!',
+        'success'
+    );
 
-//    application()->redirect(Uri::root(true) . '/' . sef(57)/* . qs() . 'fdp=' . $amount*//*,
+    //    application()->redirect(Uri::root(true) . '/' . sef(57)/* . qs() . 'fdp=' . $amount*//*,
 //		'We\'ll Process your conversion within 24 hours.<br>Thank You.', 'success'*/);
 }
 
@@ -124,8 +124,11 @@ function validate_input($user_id, $amount)
     $app = application();
 
     if ($amount > $user->fast_track_balance) {
-        $app->redirect(Uri::root(true) . '/' . sef(20),
-            'Exceeds ' . settings('plans')->fast_track_name . '!', 'error');
+        $app->redirect(
+            Uri::root(true) . '/' . sef(20),
+            'Exceeds ' . settings('plans')->fast_track_name . '!',
+            'error'
+        );
     }
 
     if ($amount < $minimum_deposit) {
@@ -134,9 +137,12 @@ function validate_input($user_id, $amount)
             settings('ancillaries')->currency . '!', 'error');
     }
 
-    if (((double)$user->fast_track_deposit_today + (double)$amount) > $si->{$user->account_type . '_fast_track_maximum_deposit'}) {
-        $app->redirect(Uri::root(true) . '/' . sef(20) . qs() . 'uid=' . $user_id,
-            'Exceeded Maximum Conversion!', 'error');
+    if (((double) $user->fast_track_deposit_today + (double) $amount) > $si->{$user->account_type . '_fast_track_maximum_deposit'}) {
+        $app->redirect(
+            Uri::root(true) . '/' . sef(20) . qs() . 'uid=' . $user_id,
+            'Exceeded Maximum Conversion!',
+            'error'
+        );
     }
 }
 
@@ -152,9 +158,9 @@ function logs($user_id, $amount)
     $db = db();
 
     $sp = settings('plans');
-//    $sa = settings('ancillaries');
+    //    $sa = settings('ancillaries');
 
-//    $currency = $sa->currency;
+    //    $currency = $sa->currency;
 
     $user = user($user_id);
 
@@ -173,7 +179,7 @@ function logs($user_id, $amount)
             $db->quote($user_id),
             $db->quote('<b>' . $sp->fast_track_name . ' Conversion: </b> <a href="' .
                 sef(44) . qs() . 'uid=' . $user_id . '">' . $user->username . '</a> converted ' .
-                number_format($amount, 2) . ' ' . /*$currency*//*'pts.' .*/ /*' to credit.'*/' to points.'),
+                number_format($amount, 2) . ' ' . /*$currency*//*'pts.' .*/ /*' to credit.'*/ ' to points.'),
             $db->quote(time())
         ]
     );
@@ -193,9 +199,9 @@ function logs($user_id, $amount)
             $db->quote($sp->fast_track_name . ' Conversion'),
             $db->quote('<b>' . $sp->fast_track_name . ' Conversion: </b> <a href="' .
                 sef(44) . qs() . 'uid=' . $user_id . '">' . $user->username . '</a> converted ' .
-                number_format($amount, 2) . ' ' . /*$currency . ' to credit.'*/'to points.'),
+                number_format($amount, 2) . ' ' . /*$currency . ' to credit.'*/ 'to points.'),
             $amount,
-            ((double)$user->payout_transfer + (double)$amount),
+            ((double) $user->payout_transfer + (double) $amount),
             $db->quote(time())
         ]
     );
@@ -211,9 +217,9 @@ function logs($user_id, $amount)
 function view_form($user_id): string
 {
     $sp = settings('plans');
-//    $sa = settings('ancillaries');
+    //    $sa = settings('ancillaries');
 
-//    $currency = $sa->currency;
+    //    $currency = $sa->currency;
 
     $user = user($user_id);
 

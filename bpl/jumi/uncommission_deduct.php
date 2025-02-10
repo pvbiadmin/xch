@@ -30,28 +30,23 @@ function main()
 	$usertype = session_get('usertype');
 
 	$user_id = input_get('uid');
-	$final   = input_get('final');
+	$final = input_get('final');
 
 	page_validate();
 
-	if ($usertype !== 'Admin')
-	{
+	if ($usertype !== 'Admin') {
 		die("Access denied: Admins only.");
 	}
 
-	if ($user_id === '')
-	{
+	if ($user_id === '') {
 		die();
 	}
 
 	$str = '';
 
-	if ($final === '')
-	{
-		$str .= view_form($user_id);
-	}
-	else
-	{
+	if ($final === '') {
+		$str .= view_request_efund($user_id);
+	} else {
 		process_uncommission($user_id);
 	}
 
@@ -92,6 +87,9 @@ function process_uncommission($user_id)
 		['id = ' . db()->quote($user_id)]
 	);
 
-	application()->redirect(Uri::root(true) . '/' . sef(40),
-		user($user_id)->username . ' has been removed from CD', 'notice');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(40),
+		user($user_id)->username . ' has been removed from CD',
+		'notice'
+	);
 }

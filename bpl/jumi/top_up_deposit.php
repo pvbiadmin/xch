@@ -43,14 +43,13 @@ function main()
 
 	$str = menu();
 
-	if ($amount !== '')
-	{
+	if ($amount !== '') {
 		validate_input($user_id, $amount);
 
 		process_deposit($user_id, $amount);
 	}
 
-	$str .= view_form($user_id);
+	$str .= view_request_efund($user_id);
 
 	echo $str;
 }
@@ -72,25 +71,25 @@ function validate_input($user_id, $amount)
 
 	$app = application();
 
-	if ($amount > $user->top_up_balance)
-	{
+	if ($amount > $user->top_up_balance) {
 		$err = 'Deposit exceeds ' . settings('plans')->top_up_name . ' balance!';
 
 		$app->redirect(Uri::root(true) . '/' . sef(104), $err, 'error');
 	}
 
-	if ($amount < $minimum_deposit)
-	{
+	if ($amount < $minimum_deposit) {
 		$err = 'Deposit at least ' . number_format($minimum_deposit, 2) .
 			' ' . settings('ancillaries')->currency . '!';
 
 		$app->redirect(Uri::root(true) . '/' . sef(104), $err, 'error');
 	}
 
-	if (((double) $user->top_up_deposit_today + (double) $amount) > $si->{$user->account_type . '_top_up_maximum_deposit'})
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(104) . qs() . 'uid=' . $user_id,
-			'Exceeded Maximum Deposit!', 'error');
+	if (((double) $user->top_up_deposit_today + (double) $amount) > $si->{$user->account_type . '_top_up_maximum_deposit'}) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(104) . qs() . 'uid=' . $user_id,
+			'Exceeded Maximum Deposit!',
+			'error'
+		);
 	}
 }
 
@@ -129,8 +128,8 @@ function log_activity($user_id, $amount)
 	$user = user($user_id);
 
 	$activity = '<b>' . settings('plans')->top_up_name . ' Deposit: </b> <a href="' .
-		sef(44) . qs() . 'uid=' . $user_id . '">' . $user->username . '</a> deposited ' .
-		number_format($amount, 2) . ' ' . settings('ancillaries')->currency . ' to e-wallet.';
+	sef(44) . qs() . 'uid=' . $user_id . '">' . $user->username . '</a> deposited ' .
+	number_format($amount, 2) . ' ' . settings('ancillaries')->currency . ' to e-wallet.';
 
 	insert(
 		'network_activity',
@@ -213,8 +212,7 @@ function process_deposit($user_id, $amount)
 {
 	$db = db();
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		update_user($user_id, $amount);
@@ -222,15 +220,16 @@ function process_deposit($user_id, $amount)
 		logs($user_id, $amount);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 		ExceptionHandler::render($e);
 	}
 
-	application()->redirect(Uri::root(true) . '/' . sef(104),
-		settings('plans')->top_up_name . ' deposit completed successfully!', 'success');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(104),
+		settings('plans')->top_up_name . ' deposit completed successfully!',
+		'success'
+	);
 }
 
 /**
@@ -254,7 +253,7 @@ function view_form($user_id): string
 	    <table class="category table table-striped table-bordered table-hover">
 	        <tr>
 	            <td><strong>' . settings('plans')->top_up_name . ' Balance: ' .
-		number_format($user->top_up_balance, 2) . ' ' . $currency .
+	number_format($user->top_up_balance, 2) . ' ' . $currency .
 		'</strong>
 	                <strong style="float: right">
 	                    ' . $sa->efund_name . ' Balance: ' . number_format($user->payout_transfer, 2) . ' ' . $currency .

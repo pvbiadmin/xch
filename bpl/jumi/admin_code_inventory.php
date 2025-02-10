@@ -19,20 +19,20 @@ main();
  */
 function main()
 {
-	$admintype    = session_get('admintype');
-	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$username     = session_get('username');
+    $admintype = session_get('admintype');
+    $account_type = session_get('account_type');
+    $user_id = session_get('user_id');
+    $username = session_get('username');
 
-	page_validate();
+    page_validate();
 
-	$str = menu_admin($admintype, $account_type, $user_id, $username);
+    $str = menu_admin($admintype, $account_type, $user_id, $username);
 
-	$str .= ajax_check_input4();
+    $str .= ajax_check_input4();
 
-	$str .= view_form();
+    $str .= view_request_efund();
 
-	echo $str;
+    echo $str;
 }
 
 /**
@@ -43,7 +43,7 @@ function main()
  */
 function view_form(): string
 {
-	return '<h1>Check Member Code Inventory</h1>
+    return '<h1>Check Member Code Inventory</h1>
 		<p>Enter Member\'s Username.</p>
 		    <table class="category table table-striped table-bordered table-hover">
 		        <tr>
@@ -75,8 +75,8 @@ function view_form(): string
  */
 function ajax_check_input4(): string
 {
-	$str = '<script>';
-	$str .= 'function fadeUp(obj) {
+    $str = '<script>';
+    $str .= 'function fadeUp(obj) {
         if (typeof(obj) === "string") {
             obj = document.getElementById(obj);
         }
@@ -98,7 +98,7 @@ function ajax_check_input4(): string
         };
         doFade();
     }';
-	$str .= 'function checkInput(inputID) {
+    $str .= 'function checkInput(inputID) {
         var ajaxRequest;
         var divID = inputID + "Div";
 
@@ -136,7 +136,7 @@ function ajax_check_input4(): string
         ajaxRequest.send(null);
     }';
 
-	$str .= '</script>';
+    $str .= '</script>';
 
-	return $str;
+    return $str;
 }

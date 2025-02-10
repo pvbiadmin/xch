@@ -79,19 +79,42 @@ function main()
 function view_update_profile($user_id)
 {
 	$account_information = account_information($user_id);
-	$str = <<<HTML
+	$contact_information = contact_information($user_id);
+	$payment_information = payment_information($user_id);
+	$change_password = change_password($user_id);
+
+	$view_form_hidden_input = view_form_input_hidden($user_id);
+
+	$notifications = notifications();
+
+	$str = ajax_check_input();
+
+	$form_token = HTMLHelper::_('form.token');
+
+	$str .= <<<HTML
 <div class="container-fluid px-4">
 	<h1 class="mt-4">Update Profile</h1>
 	<ol class="breadcrumb mb-4">
 		<li class="breadcrumb-item active">Update User Information</li>
 	</ol>
+	<div class="row justify-content-center">
+			<div class="col-lg-5">
+				$notifications				
+        	</div>		
+		</div>
 	<div class="card mb-4">
 		<div class="card-body">
-			$account_information			
-
-			<div class="d-grid gap-2 d-md-flex justify-content-md-center mb-3">				
-				<button type="submit" class="btn btn-primary">Update Profile</button>
-			</div>
+			<form method="post">
+				$view_form_hidden_input
+				$form_token
+				$account_information			
+				$contact_information
+				$payment_information
+				$change_password
+				<div class="d-grid gap-2 d-md-flex justify-content-md-center mb-3">				
+					<button type="submit" class="btn btn-primary">Update Profile</button>
+				</div>
+			</form>
 		</div>
 	</div>
 </div>
@@ -100,23 +123,72 @@ HTML;
 	return $str;
 }
 
+function notifications(): string
+{
+	$app = application();
+
+	// Display Joomla messages as dismissible alerts
+	$messages = $app->getMessageQueue(true);
+	$notification_str = fade_effect(); // Initialize the notification string
+
+	if (!empty($messages)) {
+		foreach ($messages as $message) {
+			// Map Joomla message types to Bootstrap alert classes
+			$alert_class = '';
+			switch ($message['type']) {
+				case 'error':
+					$alert_class = 'danger'; // Bootstrap uses 'danger' instead of 'error'
+					break;
+				case 'warning':
+					$alert_class = 'warning';
+					break;
+				case 'notice':
+					$alert_class = 'info'; // Joomla 'notice' maps to Bootstrap 'info'
+					break;
+				case 'message':
+				default:
+					$alert_class = 'success'; // Joomla 'message' maps to Bootstrap 'success'
+					break;
+			}
+
+			$notification_str .= <<<HTML
+            <div class="alert alert-{$alert_class} alert-dismissible fade show mt-5" role="alert">
+                {$message['message']}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+HTML;
+		}
+	}
+
+	return $notification_str;
+}
+
+function fade_effect(int $duration = 10000)
+{
+	return <<<HTML
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Select all alert elements
+      const alerts = document.querySelectorAll('.alert');
+
+      // Loop through each alert and set a timeout to dismiss it
+      alerts.forEach(function (alert) {
+        setTimeout(function () {
+          // Use Bootstrap's alert method to close the alert
+          bootstrap.Alert.getOrCreateInstance(alert).close();
+        }, $duration);
+      });
+    });
+  </script>
+HTML;
+}
+
 function account_information($user_id)
 {
 	$user = user($user_id);
 
 	$username = $user->username;
 	$fullname = $user->fullname;
-	$address = explode('|', $user->address);
-	$email = $user->email;
-
-	$address_1 = htmlspecialchars(array_key_exists(0, $address) ? $address[0] : '');
-	$address_2 = htmlspecialchars(array_key_exists(1, $address) ? $address[1] : '');
-	$address_3 = htmlspecialchars(array_key_exists(2, $address) ? $address[2] : '');
-	$address_4 = htmlspecialchars(array_key_exists(3, $address) ? $address[3] : '');
-	$address_5 = htmlspecialchars(array_key_exists(4, $address) ? $address[4] : '');
-
-	$option_country_selected = option_country_selected($address);
-	$options_country = options_country();
 
 	$username_info = !empty($username) ? htmlspecialchars($username) : '---';
 	$fullname_info = !empty($fullname) ? htmlspecialchars($fullname) : '---';
@@ -137,24 +209,219 @@ function account_information($user_id)
 					</tr>
 					<tr>
 						<th scope="row"><label for="fullname">Fullname</th>
-						<td><input id="fullname" class="form-control" type="text" value="$fullname_info"></td>                        
+						<td><input id="fullname" class="form-control" name="fullname" type="text" value="$fullname_info"></td>                        
 					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+HTML;
+
+	return $str;
+}
+
+function contact_information($user_id)
+{
+	$user = user($user_id);
+
+	$address = explode('|', $user->address);
+	$email = $user->email;
+
+	$address_1 = htmlspecialchars(array_key_exists(0, $address) ? $address[0] : '');
+	$address_2 = htmlspecialchars(array_key_exists(1, $address) ? $address[1] : '');
+	$address_3 = htmlspecialchars(array_key_exists(2, $address) ? $address[2] : '');
+	$address_4 = htmlspecialchars(array_key_exists(3, $address) ? $address[3] : '');
+	$address_5 = htmlspecialchars(array_key_exists(4, $address) ? $address[4] : '');
+
+	$option_country_selected = option_country_selected($address);
+	$options_country = options_country();
+
+	$contact = arr_contact_info($user);
+
+	$whatsapp = htmlspecialchars($contact['whatsapp'] ?? '', ENT_QUOTES, 'UTF-8');
+	$telegram = htmlspecialchars($contact['telegram'] ?? '', ENT_QUOTES, 'UTF-8');
+	$messenger = htmlspecialchars($contact['messenger'] ?? '', ENT_QUOTES, 'UTF-8');
+	$mobile = htmlspecialchars($contact['mobile'] ?? '', ENT_QUOTES, 'UTF-8');
+	$landline = htmlspecialchars($contact['landline'] ?? '', ENT_QUOTES, 'UTF-8');
+
+	$str = <<<HTML
+<div class="card mb-4">
+	<div class="card-header">
+		<i class="fas fa-table me-1"></i>
+		Contact Information
+	</div>
+	<div class="card-body">
+		<div class="row">
+			<table class="table table-hover table-responsive">            
+				<tbody>
 					<tr>
 						<th scope="row">Address</th>
 						<td>
-							<input class="form-control mb-2" type="text" name="address_1" value="$address_1" aria-label="address_1">
-							<input class="form-control mb-2" type="text" name="address_2" value="$address_2" aria-label="address_2">
-							<input class="form-control mb-2" type="text" name="address_3" value="$address_3" aria-label="address_3">
-							<input class="form-control mb-2" type="text" name="address_4" value="$address_4" aria-label="address_4">
-							<select class="form-control" name="address_5">
-								<option value="$address_5">$option_country_selected</option>
-								$options_country
-							</select>
+							<div class="input-group mb-2">
+								<div class="input-group-text">House/Bldg. No.</div>
+								<input class="form-control" type="text" name="address_1" value="$address_1" aria-label="address_1">
+							</div>
+							<div class="input-group mb-2">
+								<div class="input-group-text">Street/Subdivision</div>
+								<input class="form-control" type="text" name="address_2" value="$address_2" aria-label="address_2">
+							</div>
+							<div class="input-group mb-2">
+								<div class="input-group-text">City/Town</div>
+								<input class="form-control" type="text" name="address_3" value="$address_3" aria-label="address_3">
+							</div>
+							<div class="input-group mb-2">
+								<div class="input-group-text">State/Region</div>
+								<input class="form-control" type="text" name="address_4" value="$address_4" aria-label="address_4">
+							</div>
+							<div class="input-group mb-2">
+								<div class="input-group-text">Country</div>
+								<select class="form-control" name="address_5">
+									<option value="$address_5">$option_country_selected</option>
+									$options_country
+								</select>
+							</div>							
 						</td>                        
 					</tr>
 					<tr>
 						<th scope="row"><label for="email">Email</th>
 						<td><input type="email" class="form-control" name="email" id="email" value="$email"></td>                        
+					</tr>
+					<tr>
+						<th scope="row"><label for="email">Contacts</th>
+						<td>
+							<div class="input-group mb-2">
+								<div class="input-group-text">Whatsapp</div>
+								<input class="form-control" type="text" name="whatsapp_url" value="$whatsapp" aria-label="whatsapp_url">
+							</div>
+							<div class="input-group mb-2">
+								<div class="input-group-text">Telegram</div>
+								<input class="form-control" type="text" name="telegram_url" value="$telegram" aria-label="telegram_url">
+							</div>
+							<div class="input-group mb-2">
+								<div class="input-group-text">Messenger</div>
+								<input class="form-control" type="text" name="messenger_url" value="$messenger" aria-label="messenger_url">
+							</div>
+							<div class="input-group mb-2">
+								<div class="input-group-text">Mobile</div>
+								<input class="form-control" type="text" name="mobile_number" value="$mobile" aria-label="mobile_number">
+							</div>
+							<div class="input-group mb-2">
+								<div class="input-group-text">Whatsapp</div>
+								<input class="form-control" type="text" name="landline_number" value="$landline" aria-label="landline_number">
+							</div>
+						</td>						                     
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+HTML;
+
+	return $str;
+}
+
+function payment_information($user_id)
+{
+	$user = user($user_id);
+
+	$payment_method = arr_payment_method($user);
+
+	$bank_name = '';
+	$account_number = '';
+
+	$gcash_name = '';
+	$gcash_number = '';
+
+	$maya_name = '';
+	$maya_number = '';
+
+
+
+	if (!empty($payment_method['bank'])) {
+		foreach ($payment_method['bank'] as $k => $v) {
+			$bank_name = $k;
+			$account_number = $v;
+		}
+	}
+
+	if (!empty($payment_method['gcash'])) {
+		foreach ($payment_method['gcash'] as $k => $v) {
+			$gcash_name = $k;
+			$gcash_number = $v;
+		}
+	}
+
+	if (!empty($payment_method['maya'])) {
+		foreach ($payment_method['maya'] as $k => $v) {
+			$maya_name = $k;
+			$maya_number = $v;
+		}
+	}
+
+	// print_r($payment_method);
+	// exit;
+
+	$str = <<<HTML
+<div class="card mb-4">
+	<div class="card-header">
+		<i class="fas fa-table me-1"></i>
+		Payment Information
+	</div>
+	<div class="card-body">
+		<div class="row">
+			<table class="table table-hover table-responsive">            
+				<tbody>
+					<tr>
+						<th scope="row">Payment Methods</th>
+						<td>
+							<div class="input-group mb-2">
+								<span class="input-group-text">Bank</span>
+								<input type="text" name="bank_name" placeholder="Bank Name" value="$bank_name" aria-label="bank_name" class="form-control">
+								<input type="text" name="bank_account_number" placeholder="Account Number" value="$account_number" aria-label="bank_account_number" class="form-control">
+							</div>				
+							<div class="input-group mb-2">
+								<div class="input-group-text">Gcash</div>							
+								<input type="text" name="gcash_name" placeholder="Name" value="$gcash_name" aria-label="gcash_name" class="form-control">
+								<input type="text" name="gcash_number" placeholder="Number" value="$gcash_number" aria-label="gcash_number" class="form-control">
+							</div>
+							<div class="input-group mb-2">
+								<div class="input-group-text">Maya</div>								
+								<input type="text" name="maya_name" placeholder="Name" value="$maya_name" aria-label="maya_name" class="form-control">
+								<input type="text" name="maya_number" placeholder="Number" value="$maya_number" aria-label="maya_number" class="form-control">
+							</div>														
+						</td>                        
+					</tr>					
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+HTML;
+
+	return $str;
+}
+
+function change_password($user_id)
+{
+	$str = <<<HTML
+<div class="card mb-4">
+	<div class="card-header">
+		<i class="fas fa-table me-1"></i>
+		Change Password
+	</div>
+	<div class="card-body">
+		<div class="row">
+			<table class="table table-hover table-responsive">            
+				<tbody>
+					<tr>
+						<th scope="row">Password</th>
+						<td><input type="password" class="form-control" name="password" id="password"></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="fullname">Confirm Password</th>
+						<td><input type="password" class="form-control" name="password2" id="password2"></td>                        
 					</tr>
 				</tbody>
 			</table>
@@ -852,40 +1119,43 @@ function const_script_token(): string
 
 function fill_payout_method($user)
 {
-	$payout_method = input_get('payout_method');
+	/* $payout_method = input_get('payout_method'); */
 
 	$payout_method_user = arr_payment_method($user);
 
-	$tokens = list_token();
+	/* $tokens = list_token(); */
 
-	if ($payout_method === 'bank') {
-		$bank_name = input_get('bank_name', '', 'RAW');
-		$account_number = input_get('bank_account_number', '', 'RAW');
+	/* if ($payout_method === 'bank') { */
+	$bank_name = input_get('bank_name', '', 'RAW');
+	$account_number = input_get('bank_account_number', '', 'RAW');
 
-		if (!empty($bank_name) && !empty($account_number)) {
-			$payout_method_user['bank'] = [$bank_name => $account_number];
-		}
-	} elseif ($payout_method === 'gcash') {
-		$gcash_number = input_get('gcash_number', '', 'RAW');
-
-		if (!empty($gcash_number)) {
-			$payout_method_user['gcash'] = $gcash_number;
-		}
-	} elseif ($payout_method === 'maya') {
-		$maya_number = input_get('maya_number', '', 'RAW');
-
-		if (!empty($maya_number)) {
-			$payout_method_user['maya'] = $maya_number;
-		}
-	} else if ($tokens) {
-		foreach ($tokens as $token) {
-			$strl_token = strtolower($token);
-
-			if ($payout_method === $strl_token) {
-				$payout_method_user[$strl_token] = input_get($strl_token . '_address', '', 'RAW');
-			}
-		}
+	if (!empty($bank_name) && !empty($account_number)) {
+		$payout_method_user['bank'] = [$bank_name => $account_number];
 	}
+	/* } elseif ($payout_method === 'gcash') { */
+	$gcash_name = input_get('gcash_name', '', 'RAW');
+	$gcash_number = input_get('gcash_number', '', 'RAW');
+
+	if (!empty($gcash_name) && !empty($gcash_number)) {
+		$payout_method_user['gcash'] = [$gcash_name => $gcash_number];
+	}
+
+	/* } elseif ($payout_method === 'maya') { */
+	$maya_name = input_get('maya_name', '', 'RAW');
+	$maya_number = input_get('maya_number', '', 'RAW');
+
+	if (!empty($maya_name) && !empty($maya_number)) {
+		$payout_method_user['maya'] = [$maya_name => $maya_number];
+	}
+	/* } else if ($tokens) { */
+	/* foreach ($tokens as $token) {
+											   $strl_token = strtolower($token);
+
+											   if ($payout_method === $strl_token) {
+												   $payout_method_user[$strl_token] = input_get($strl_token . '_address', '', 'RAW');
+											   }
+										   } */
+	/* } */
 
 	return $payout_method_user;
 }
@@ -1318,7 +1588,7 @@ function process_form($user_id, $usertype, $admintype)
 	$email = input_get('email', '', 'RAW');
 
 	$contact_info_user = arr_contact_info($user);
-	$contact = input_get('contact', '', 'RAW');
+	/* $contact = input_get('contact', '', 'RAW'); */
 
 	$input_whatsapp = input_get('whatsapp_url', '', 'RAW');
 	$input_telegram = input_get('telegram_url', '', 'RAW');
@@ -1326,62 +1596,68 @@ function process_form($user_id, $usertype, $admintype)
 	$input_mobile = input_get('mobile_number', '', 'RAW');
 	$input_landline = input_get('landline_number', '', 'RAW');
 
-	switch ($contact) {
-		case 'whatsapp':
-			if (!empty($input_whatsapp)) {
-				$contact_info_user['whatsapp'] = $input_whatsapp;
-			}
+	$contact_info_user['whatsapp'] = $input_whatsapp;
+	$contact_info_user['telegram'] = $input_telegram;
+	$contact_info_user['messenger'] = $input_messenger;
+	$contact_info_user['mobile'] = $input_mobile;
+	$contact_info_user['landline'] = $input_landline;
 
-			break;
-		case 'telegram':
-			if (!empty($input_telegram)) {
-				$contact_info_user['telegram'] = $input_telegram;
-			}
+	/* switch ($contact) {
+										 case 'whatsapp':
+											 if (!empty($input_whatsapp)) {
+												 $contact_info_user['whatsapp'] = $input_whatsapp;
+											 }
 
-			break;
-		case 'messenger':
-			if (!empty($input_messenger)) {
-				$contact_info_user['messenger'] = $input_messenger;
-			}
+											 break;
+										 case 'telegram':
+											 if (!empty($input_telegram)) {
+												 $contact_info_user['telegram'] = $input_telegram;
+											 }
 
-			break;
-		case 'mobile':
-			if (!empty($input_mobile)) {
-				$contact_info_user['mobile'] = $input_mobile;
-			}
+											 break;
+										 case 'messenger':
+											 if (!empty($input_messenger)) {
+												 $contact_info_user['messenger'] = $input_messenger;
+											 }
 
-			break;
-		case 'landline':
-			if (!empty($input_landline)) {
-				$contact_info_user['landline'] = $input_landline;
-			}
+											 break;
+										 case 'mobile':
+											 if (!empty($input_mobile)) {
+												 $contact_info_user['mobile'] = $input_mobile;
+											 }
 
-			break;
-	}
+											 break;
+										 case 'landline':
+											 if (!empty($input_landline)) {
+												 $contact_info_user['landline'] = $input_landline;
+											 }
 
-	//	$beneficiary_info_user = arr_beneficiary_info($user);
-//	$beneficiary           = input_get('beneficiary', '', 'RAW');
-//
-//	$beneficiary_name    = input_get('beneficiary_name_input', '', 'RAW');
-//	$beneficiary_contact = input_get('beneficiary_contact_input', '', 'RAW');
-//
-//	switch ($beneficiary)
-//	{
-//		case 'beneficiary_name':
-//			if (!empty($beneficiary_name))
-//			{
-//				$beneficiary_info_user['name'] = $beneficiary_name;
-//			}
-//
-//			break;
-//		case 'beneficiary_contact':
-//			if (!empty($beneficiary_contact))
-//			{
-//				$beneficiary_info_user['contact'] = $beneficiary_contact;
-//			}
-//
-//			break;
-//	}
+											 break;
+									 } */
+
+	/* //	$beneficiary_info_user = arr_beneficiary_info($user);
+			   //	$beneficiary           = input_get('beneficiary', '', 'RAW');
+			   //
+			   //	$beneficiary_name    = input_get('beneficiary_name_input', '', 'RAW');
+			   //	$beneficiary_contact = input_get('beneficiary_contact_input', '', 'RAW');
+			   //
+			   //	switch ($beneficiary)
+			   //	{
+			   //		case 'beneficiary_name':
+			   //			if (!empty($beneficiary_name))
+			   //			{
+			   //				$beneficiary_info_user['name'] = $beneficiary_name;
+			   //			}
+			   //
+			   //			break;
+			   //		case 'beneficiary_contact':
+			   //			if (!empty($beneficiary_contact))
+			   //			{
+			   //				$beneficiary_info_user['contact'] = $beneficiary_contact;
+			   //			}
+			   //
+			   //			break;
+			   //	} */
 
 	$password1 = input_get('password1');
 	$password2 = input_get('password2');
@@ -1399,13 +1675,15 @@ function process_form($user_id, $usertype, $admintype)
 	if ($password1 !== '' && $password2 !== '' && $password1 !== $password2) {
 		$err = 'Your Passwords do not match.';
 
-		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id, $err, 'error');
+		$app->enqueueMessage($err, 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
 	}
 
 	if ($user->username !== $username && user_username($username)->username !== '') {
 		$err = 'Username already in use. Please use another username.';
 
-		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id, $err, 'error');
+		$app->enqueueMessage($err, 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
 	}
 
 	try {
@@ -1532,9 +1810,9 @@ function process_form($user_id, $usertype, $admintype)
 		ExceptionHandler::render($e);
 	}
 
+	$app->enqueueMessage('Profile updated.', 'success');
+
 	$app->redirect(
-		Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-		'Profile updated.',
-		'notice'
+		Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id
 	);
 }

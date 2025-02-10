@@ -78,6 +78,34 @@ function main()
 	return $str;
 }
 
+function view_transfer_efund($user_id)
+{
+	$sa = settings('ancillaries');
+	$efund_name = $sa->efund_name;
+
+	$view_form = view_request_efund($user_id);
+	$view_transfer_history = view_transfer_history($user_id);
+	$notifications = notifications();
+
+	return <<<HTML
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Transfer Efund</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">Deposit your $efund_name to another user</li>
+        </ol>
+		<div class="row justify-content-center">
+			<div class="col-lg-5">
+				$notifications
+				<div class="card mb-4">
+					$view_form
+				</div>
+        	</div>		
+		</div>
+        $view_transfer_history
+    </div>
+HTML;
+}
+
 function notifications(): string
 {
 	$app = application();
@@ -476,10 +504,11 @@ function process_efund_deposit($user_id, $amount, $username_to, $edit)
 
 	//	send_mail($user_id, $amount, $username_to);
 
-	application()->redirect(Uri::root(true) . '/' . sef(15), number_format($amount, 2) .
-		' ' . settings('ancillaries')->currency . ' deposited to ' . $username_to . '\'s ' . $efund_name, 'notice');
+	// application()->redirect(Uri::root(true) . '/' . sef(15), number_format($amount, 2) .
+	// 	' ' . settings('ancillaries')->currency . ' deposited to ' . $username_to . '\'s ' . $efund_name, 'notice');
 
 	$msg = number_format($amount, 2) . ' ' . $sa->currency . ' deposited to ' . $username_to . '\'s ' . $efund_name;
+
 	$app->enqueueMessage($msg, 'success');
 	$app->redirect(Uri::current());
 }
@@ -505,34 +534,6 @@ function user_deposits($user_id)
 	)->loadObjectList();
 }
 
-function view_transfer_efund($user_id)
-{
-	$sa = settings('ancillaries');
-	$efund_name = $sa->efund_name;
-
-	$view_form = view_form($user_id);
-	$view_transfer_history = view_transfer_history($user_id);
-	$notifications = notifications();
-
-	return <<<HTML
-    <div class="container-fluid px-4">
-        <h1 class="mt-4">Transfer Efund</h1>
-        <ol class="breadcrumb mb-4">
-            <li class="breadcrumb-item active">Deposit your $efund_name to another user</li>
-        </ol>
-		<div class="row justify-content-center">
-			<div class="col-lg-5">
-				$notifications
-				<div class="card mb-4">
-					$view_form
-				</div>
-        	</div>		
-		</div>
-        $view_transfer_history
-    </div>
-HTML;
-}
-
 /**
  *
  * @param $user_id
@@ -544,6 +545,7 @@ HTML;
 function view_form($user_id): string
 {
 	$sa = settings('ancillaries');
+
 	$efund_name = $sa->efund_name;
 	$currency = $sa->currency;
 	$processing_fee = $sa->processing_fee;

@@ -22,11 +22,11 @@ main();
  */
 function main()
 {
-	$usertype     = session_get('usertype');
-	$admintype    = session_get('admintype');
+	$usertype = session_get('usertype');
+	$admintype = session_get('admintype');
 	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$username     = session_get('username');
+	$user_id = session_get('user_id');
+	$username = session_get('username');
 
 	page_validate_admin($usertype, $admintype);
 
@@ -34,7 +34,7 @@ function main()
 
 	$str .= check_input3();
 
-	$str .= view_form();
+	$str .= view_request_efund();
 
 	echo $str;
 }

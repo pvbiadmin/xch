@@ -35,19 +35,16 @@ main();
 function main()
 {
 	$usertype = session_get('usertype');
-	$user_id  = session_get('user_id');
-	$final    = input_get('final');
+	$user_id = session_get('user_id');
+	$final = input_get('final');
 
 	page_validate($usertype, $user_id);
 
 	$str = menu();
 
-	if ($final === '')
-	{
-		$str .= view_form($user_id);
-	}
-	else
-	{
+	if ($final === '') {
+		$str .= view_request_efund($user_id);
+	} else {
 		process_reactivation($user_id);
 	}
 
@@ -103,18 +100,22 @@ function validate($user_id)
 	$cost_reactivate = $sb->{$account_type . '_pairs_reactivate'};
 	$capping_cycle_max = $sb->{$account_type . '_capping_cycle_max'};
 
-	if ($reactivate_count >= $capping_cycle_max)
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(120),
-			'Maximum reactivation reached!', 'error');
+	if ($reactivate_count >= $capping_cycle_max) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(120),
+			'Maximum reactivation reached!',
+			'error'
+		);
 	}
 
 	// check stock fund balance
-	if ($binary_user->payout_transfer < $cost_reactivate)
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(120),
+	if ($binary_user->payout_transfer < $cost_reactivate) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(120),
 			'Maintain at least an ' . $sa->efund_name . ' amount of ' .
-			number_format($cost_reactivate, 2) . ' ' . settings('ancillaries')->currency, 'error');
+			number_format($cost_reactivate, 2) . ' ' . settings('ancillaries')->currency,
+			'error'
+		);
 	}
 }
 
@@ -149,23 +150,19 @@ function process_reactivation($user_id)
 
 	validate($user_id);
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		update_users($user_id);
 
-		if (update_binary($user_id))
-		{
+		if (update_binary($user_id)) {
 			process_binary($user_id);
 		}
 
 		logs($user_id);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 		ExceptionHandler::render($e);
 	}
@@ -183,8 +180,7 @@ function process_reactivation($user_id)
  */
 function process_binary($user_id)
 {
-	if (settings('plans')->binary_pair)
-	{
+	if (settings('plans')->binary_pair) {
 		binary($user_id/*, 'reactivate'*/);
 	}
 }
@@ -201,9 +197,11 @@ function update_users($user_id)
 
 	$cost_reactivate = settings('binary')->{$binary_user->account_type . '_pairs_reactivate'};
 
-	update('network_users',
+	update(
+		'network_users',
 		['payout_transfer = payout_transfer - ' . $cost_reactivate],
-		['id = ' . db()->quote($user_id)]);
+		['id = ' . db()->quote($user_id)]
+	);
 }
 
 /**
@@ -219,15 +217,22 @@ function update_binary($user_id)
 
 	$reactivate_count = $binary_user->reactivate_count;
 
-	return update('network_binary',
+	return update(
+		'network_binary',
 		[
-			'status = ' . $db->quote(/*'reactivated'*/'active')
-			, 'capping_cycle = ' . $db->quote(0)
-			, 'status_cycle = ' . $db->quote(1)
-			, 'ctr_left = ' . $db->quote(0)
-			, 'ctr_right = ' . $db->quote(0)
-			, 'pairs_today = ' . $db->quote(0)
-			, 'reactivate_count = ' . $db->quote($reactivate_count + 1)
+			'status = ' . $db->quote(/*'reactivated'*/ 'active')
+			,
+			'capping_cycle = ' . $db->quote(0)
+			,
+			'status_cycle = ' . $db->quote(1)
+			,
+			'ctr_left = ' . $db->quote(0)
+			,
+			'ctr_right = ' . $db->quote(0)
+			,
+			'pairs_today = ' . $db->quote(0)
+			,
+			'reactivate_count = ' . $db->quote($reactivate_count + 1)
 		],
 		[
 			'user_id = ' . $db->quote($user_id)
@@ -251,14 +256,18 @@ function logs($user_id)
 
 	$cost_reactivate = settings('binary')->{$binary_user->account_type . '_pairs_reactivate'};
 
-	insert('network_transactions',
-		['user_id',
+	insert(
+		'network_transactions',
+		[
+			'user_id',
 			'transaction',
 			'details',
 			'value',
 			'balance',
-			'transaction_date'],
-		[$db->quote($binary_user->user_id),
+			'transaction_date'
+		],
+		[
+			$db->quote($binary_user->user_id),
 			$db->quote('Binary Reactivation'),
 			$db->quote(number_format($cost_reactivate, 2) . ' ' . $currency .
 				' deducted to <a href="' . sef(44) . qs() . 'uid=' . $binary_user->user_id . '">' .
@@ -269,13 +278,17 @@ function logs($user_id)
 		]
 	);
 
-	insert('network_activity',
-		['user_id',
+	insert(
+		'network_activity',
+		[
+			'user_id',
 			'sponsor_id',
 			'upline_id',
 			'activity',
-			'activity_date'],
-		[$db->quote($binary_user->user_id),
+			'activity_date'
+		],
+		[
+			$db->quote($binary_user->user_id),
 			$db->quote($binary_user->user_id),
 			1,
 			$db->quote('<b>Binary Reactivation: ' .
@@ -283,7 +296,8 @@ function logs($user_id)
 				' deducted to <a href="' . sef(44) . qs() . 'uid=' .
 				$binary_user->user_id . '">' . $binary_user->username .
 				'</a> for Binary Reactivation.'),
-			$db->quote(time())]
+			$db->quote(time())
+		]
 	);
 }
 
@@ -298,8 +312,7 @@ function page_validate($usertype, $user_id)
 {
 	$binary_user = binary_user($user_id);
 
-	if ($usertype === '' || $binary_user->status === 'active')
-	{
+	if ($usertype === '' || $binary_user->status === 'active') {
 		application()->redirect(Uri::root(true) . '/' . sef(43));
 	}
 }

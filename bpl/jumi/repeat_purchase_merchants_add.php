@@ -55,8 +55,8 @@ function main()
     $str = menu($usertype, $admintype, $account_type, $user_id, $username);
 
     if ($usertype === 'Admin' || $usertype === 'manager') {
-        if ((int)input_get('final') !== 1) {
-            $str .= view_form();
+        if ((int) input_get('final') !== 1) {
+            $str .= view_request_efund();
         } else {
             $merchant = substr(input_get('merchant_name_add', '', 'RAW'), 0, 150);
             $description = substr(input_get('description_add', '', 'RAW'), 0, 1000);
@@ -155,14 +155,14 @@ function process_merchant_add($avatar, $merchant_name, $description, $details)
 
     validate_input($merchant_name);
 
-//    try {
+    //    try {
 //        $db->transactionStart();
 
-        insert_merchant($merchant_name, $description, $details);
+    insert_merchant($merchant_name, $description, $details);
 
-        upload_image($db->insertid(), $avatar, 'merchant');
+    upload_image($db->insertid(), $avatar, 'merchant');
 
-//        $db->transactionCommit();
+    //        $db->transactionCommit();
 //    } catch (Exception $e) {
 //        $db->transactionRollback();
 //        ExceptionHandler::render($e);

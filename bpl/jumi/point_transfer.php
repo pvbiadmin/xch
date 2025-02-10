@@ -47,7 +47,7 @@ main();
 function main()
 {
 	$user_id = session_get('user_id');
-	$final   = input_get('final');
+	$final = input_get('final');
 
 	page_validate();
 
@@ -55,16 +55,13 @@ function main()
 
 	$str = menu();
 
-	if ((int) $final !== 1)
-	{
+	if ((int) $final !== 1) {
 		$str .= check_input2();
-		$str .= view_form($user_id);
-	}
-	else
-	{
-		$amount   = input_get('amount');
+		$str .= view_request_efund($user_id);
+	} else {
+		$amount = input_get('amount');
 		$username = input_get('username');
-		$edit     = session_get('edit', false);
+		$edit = session_get('edit', false);
 
 		$date = input_get_date($edit);
 
@@ -88,7 +85,7 @@ function view_form($user_id): string
 {
 	$settings_ancillaries = settings('ancillaries');
 
-//	$efund_name = $settings_ancillaries->efund_name;
+	//	$efund_name = $settings_ancillaries->efund_name;
 //
 //	$currency = $settings_ancillaries->currency;
 
@@ -105,8 +102,8 @@ function view_form($user_id): string
         <input type="hidden" name="final" value="1">
         <table class="category table table-striped table-bordered table-hover">
             <tr>
-                <td colspan="2"><strong>' . /*$efund_name*/'Token' . ': </strong>' .
-		number_format(/*$transfer_from->payout_transfer*/$transfer_from->points, 5) . '</td>
+                <td colspan="2"><strong>' . /*$efund_name*/ 'Token' . ': </strong>' .
+		number_format(/*$transfer_from->payout_transfer*/ $transfer_from->points, 5) . '</td>
             </tr>
             <tr>
                 <td><label for="username">Recipient Username:</label></a></td>
@@ -152,17 +149,17 @@ function validate_input($user_id, $amount, $username)
 
 	$app = application();
 
-	if ($amount === '' ||
+	if (
+		$amount === '' ||
 		!is_numeric($amount) ||
 		$username === '' ||
-		$username === $transfer_from->username)
-	{
+		$username === $transfer_from->username
+	) {
 		$app->redirect(Uri::root(true) .
 			'/' . sef(133), 'Invalid Amount or Username!', 'error');
 	}
 
-	if ($transfer_from->payout_transfer < ($amount + $processing_fee))
-	{
+	if ($transfer_from->payout_transfer < ($amount + $processing_fee)) {
 		$app->redirect(Uri::root(true) .
 			'/' . sef(133), 'Please maintain at least ' .
 			number_format($amount + $processing_fee, 5) .
@@ -171,22 +168,22 @@ function validate_input($user_id, $amount, $username)
 
 	$transfer_to = user_username($username);
 
-	if (!$transfer_to->id)
-	{
+	if (!$transfer_to->id) {
 		$app->redirect(Uri::root(true) .
 			'/' . sef(133), 'Invalid user!', 'error');
 	}
 
 	$edit = session_get('edit', false);
 
-	if ($edit)
-	{
+	if ($edit) {
 		$date = input_get('date', '', 'RAW');
 
-		if ($date === '')
-		{
-			$app->redirect(Uri::root(true) . '/' . sef(133),
-				'Please specify the Current Date!', 'error');
+		if ($date === '') {
+			$app->redirect(
+				Uri::root(true) . '/' . sef(133),
+				'Please specify the Current Date!',
+				'error'
+			);
 		}
 	}
 }
@@ -203,7 +200,7 @@ function update_user_transfer_from($user_id, $amount)
 	update(
 		'network_users',
 		[
-			/*'payout_transfer = payout_transfer - '*/'points = points - ' . ((double) $amount),
+			/*'payout_transfer = payout_transfer - '*/ 'points = points - ' . ((double) $amount),
 			'payout_transfer = payout_transfer - ' . ((double) settings('ancillaries')->processing_fee)
 		],
 		['id = ' . db()->quote(user($user_id)->id)]
@@ -221,7 +218,7 @@ function update_user_transfer_to($username, $amount)
 {
 	update(
 		'network_users',
-		[/*'payout_transfer = payout_transfer + '*/'points = points + ' . $amount],
+		[/*'payout_transfer = payout_transfer + '*/ 'points = points + ' . $amount],
 		['id = ' . db()->quote(user_username($username)->id)]
 	);
 }
@@ -239,14 +236,14 @@ function log_activity($user_id, $username, $amount, $date)
 {
 	$db = db();
 
-//	$sa = settings('ancillaries');
+	//	$sa = settings('ancillaries');
 
 	$transfer_from = user($user_id);
-	$transfer_to   = user_username($username);
+	$transfer_to = user_username($username);
 
-	$activity = '<b>' . /*$sa->efund_name*/'Points' . ' Transfer: </b> <a href="' . sef(44) . qs() . 'uid=' .
+	$activity = '<b>' . /*$sa->efund_name*/ 'Points' . ' Transfer: </b> <a href="' . sef(44) . qs() . 'uid=' .
 		$user_id . '">' . $transfer_from->username . '</a> transferred ' . number_format($amount, 5) . ' ' .
-		/*settings('ancillaries')->currency*/'Points' . ' to <a href="' . sef(44) . qs() . 'uid=' .
+		/*settings('ancillaries')->currency*/ 'Points' . ' to <a href="' . sef(44) . qs() . 'uid=' .
 		$transfer_to->id . '">' . $transfer_to->username . '</a>.';
 
 	insert(
@@ -283,17 +280,17 @@ function log_transactions($user_id, $username, $amount, $date)
 
 	$sa = settings('ancillaries');
 
-//	$efund_name = $sa->efund_name;
+	//	$efund_name = $sa->efund_name;
 
 	$transfer_from = user($user_id);
-	$transfer_to   = user_username($username);
+	$transfer_to = user_username($username);
 
-	$details = '<b>' . /*$efund_name*/'Points' . ' Transfer: </b> <a href="' . sef(44) . qs() . 'uid=' . $user_id .
+	$details = '<b>' . /*$efund_name*/ 'Points' . ' Transfer: </b> <a href="' . sef(44) . qs() . 'uid=' . $user_id .
 		'">' . $transfer_from->username . '</a> transferred ' . number_format($amount, 5) . ' ' .
-		/*$settings_ancillaries->currency*/'Points' . ' to <a href="' . sef(44) . qs() . 'uid=' .
+		/*$settings_ancillaries->currency*/ 'Points' . ' to <a href="' . sef(44) . qs() . 'uid=' .
 		$transfer_to->id . '">' . $transfer_to->username . '</a>.';
 
-	$balance = $transfer_from->payout_transfer - (/*(double) $amount + */(double) $sa->processing_fee);
+	$balance = $transfer_from->payout_transfer - (/*(double) $amount + */ (double) $sa->processing_fee);
 
 	insert(
 		'network_transactions',
@@ -307,7 +304,7 @@ function log_transactions($user_id, $username, $amount, $date)
 		],
 		[
 			$db->quote($user_id),
-			$db->quote(/*$efund_name*/'Points' . ' Transfer'),
+			$db->quote(/*$efund_name*/ 'Points' . ' Transfer'),
 			$db->quote($details),
 			$db->quote($amount),
 			$db->quote($balance),
@@ -423,12 +420,12 @@ function process_form($user_id, $amount, $username, $date)
 {
 	$db = db();
 
-//	$sa = settings('ancillaries');
+	//	$sa = settings('ancillaries');
 
 	validate_input($user_id, $amount, $username);
 
 	$transfer_from = user($user_id);
-	$transfer_to   = user_username($username);
+	$transfer_to = user_username($username);
 
 	// mail admin and user
 	$message = '<strong>Sender</strong>
@@ -446,8 +443,7 @@ function process_form($user_id, $amount, $username, $date)
 			<strong>Amount Transferred</strong><br>
 			' . $amount . ' tkn.<br>';
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		update_user_transfer_from($user_id, $amount);
@@ -455,20 +451,18 @@ function process_form($user_id, $amount, $username, $date)
 
 		logs($user_id, $username, $amount, $date);
 
-		send_mail($message, /*$sa->efund_name*/'Points' .
+		send_mail($message, /*$sa->efund_name*/ 'Points' .
 			' Transferred Successfully!', [$transfer_from->email, $transfer_to->email]);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 
 		ExceptionHandler::render($e);
 	}
 
 	application()->redirect(Uri::root(true) . '/' . sef(133), number_format($amount, 5) .
-		' ' . /*settings('ancillaries')->currency*/'tkn.' . ' transferred to ' . $username . '.', 'success');
+		' ' . /*settings('ancillaries')->currency*/ 'tkn.' . ' transferred to ' . $username . '.', 'success');
 }
 
 /**
@@ -482,8 +476,7 @@ function input_get_date($edit): string
 {
 	$date = time();
 
-	if ($edit)
-	{
+	if ($edit) {
 		$date = input_get('date', '0', 'RAW');
 	}
 
@@ -525,12 +518,9 @@ function view_transfer_history($user_id): string
 
 	$str = '<h2>Transfer History</h2>';
 
-	if (empty($transfers))
-	{
+	if (empty($transfers)) {
 		$str .= '<hr><p>No transfers yet.</p>';
-	}
-	else
-	{
+	} else {
 		$str .= '<div class="table-responsive">';
 		$str .= '<table class="category table table-striped table-bordered table-hover">
         <thead>

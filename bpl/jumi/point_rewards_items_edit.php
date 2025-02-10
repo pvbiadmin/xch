@@ -40,37 +40,32 @@ main();
  */
 function main()
 {
-	$admintype    = session_get('admintype');
+	$admintype = session_get('admintype');
 	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$username     = session_get('username');
-	$usertype     = session_get('usertype');
-	$final        = input_get('final');
+	$user_id = session_get('user_id');
+	$username = session_get('username');
+	$usertype = session_get('usertype');
+	$final = input_get('final');
 
 	page_validate();
 
 	$str = menu($usertype, $admintype, $account_type, $user_id, $username);
 
-	if ($usertype === 'Admin' || $usertype === 'manager')
-	{
+	if ($usertype === 'Admin' || $usertype === 'manager') {
 		$uid = input_get('uid');
 
-		if ($uid === '')
-		{
+		if ($uid === '') {
 			application()->redirect(Uri::root(true) . '/' . sef(50), 'No item selected.', 'error');
 		}
 
-		if ((int) $final !== 1)
-		{
-			$str .= view_form($uid);
-		}
-		else
-		{
-			$item_name   = substr(input_get('item_name', '', 'RAW'), 0, 150);
+		if ((int) $final !== 1) {
+			$str .= view_request_efund($uid);
+		} else {
+			$item_name = substr(input_get('item_name', '', 'RAW'), 0, 150);
 			$description = substr(input_get('description', '', 'RAW'), 0, 1000);
-			$price       = input_get('price');
-			$quantity    = input_get('quantity');
-			$avatar      = application()->input->files->get('picture');
+			$price = input_get('price');
+			$quantity = input_get('quantity');
+			$avatar = application()->input->files->get('picture');
 
 			process_rewards_edit($avatar, $uid, $item_name, $description, $price, $quantity);
 		}
@@ -94,8 +89,7 @@ function menu($usertype, $admintype, $account_type, $user_id, $username): string
 {
 	$str = '';
 
-	switch ($usertype)
-	{
+	switch ($usertype) {
 		case 'Admin':
 			$str .= menu_admin($admintype, $account_type, $user_id, $username);
 			break;
@@ -144,8 +138,7 @@ function view_form($uid): string
                     <td>
                         <select name="quantity" id="quantity">';
 
-	for ($ctr = 0; $ctr <= 100; $ctr++)
-	{
+	for ($ctr = 0; $ctr <= 100; $ctr++) {
 		$str .= '<option value="' . $ctr . '">' . $ctr . '</option>';
 	}
 
@@ -156,8 +149,7 @@ function view_form($uid): string
                     <td>Picture:</td>
                     <td>';
 
-	if ($item->picture !== '')
-	{
+	if ($item->picture !== '') {
 		$str .= 'Current Picture:<br>
                             <img src="images/incentive/tmb_' . $item->picture . '" alt=""><br>
                             *Changing picture might require a browser refresh (F5) to reload image.<br>';
@@ -191,21 +183,21 @@ function view_form($uid): string
  */
 function process_rewards_edit($avatar, $uid, $item_name, $description, $price, $quantity)
 {
-//	$db = db();
+	//	$db = db();
 
 	Session::checkToken() or die(Text::_('Invalid Token'));
 
 	validate_input($uid, $item_name, $price, $quantity);
 
-//	try
+	//	try
 //	{
 //		$db->transactionStart();
 
-		update_incentives($uid, $item_name, $description, $price, $quantity);
+	update_incentives($uid, $item_name, $description, $price, $quantity);
 
-		upload_image($uid, $avatar, 'incentive');
+	upload_image($uid, $avatar, 'incentive');
 
-//		$db->transactionCommit();
+	//		$db->transactionCommit();
 //	}
 //	catch (Exception $e)
 //	{
@@ -214,8 +206,11 @@ function process_rewards_edit($avatar, $uid, $item_name, $description, $price, $
 //		ExceptionHandler::render($e);
 //	}
 
-	application()->redirect(Uri::root(true) . '/' . sef(52) . qs() . 'uid=' . $uid,
-		'Incentive item updated.', 'notice');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(52) . qs() . 'uid=' . $uid,
+		'Incentive item updated.',
+		'notice'
+	);
 }
 
 /**
@@ -257,22 +252,19 @@ function validate_input($uid, $item_name, $price, $quantity)
 {
 	$app = application();
 
-	if ($item_name === '')
-	{
+	if ($item_name === '') {
 		$err = 'Please specify Item Name';
 
 		$app->redirect(Uri::root(true) . '/' . sef(52) . qs() . 'uid=' . $uid, $err, 'error');
 	}
 
-	if ($price === '')
-	{
+	if ($price === '') {
 		$err = 'Please specify Price';
 
 		$app->redirect(Uri::root(true) . '/' . sef(52) . qs() . 'uid=' . $uid, $err, 'error');
 	}
 
-	if ($quantity === '')
-	{
+	if ($quantity === '') {
 		$err = 'Please specify quantity';
 
 		$app->redirect(Uri::root(true) . '/' . sef(52) . qs() . 'uid=' . $uid, $err, 'error');

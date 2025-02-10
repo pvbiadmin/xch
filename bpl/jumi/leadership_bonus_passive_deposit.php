@@ -46,12 +46,11 @@ function main()
 
 	$str .= '<h1>' . settings('plans')->leadership_passive_name . ' Wallet</h1>';
 
-	if ($amount !== '')
-	{
+	if ($amount !== '') {
 		process_form($user_id, $amount);
 	}
 
-	$str .= view_form($user_id);
+	$str .= view_request_efund($user_id);
 
 	echo $str;
 }
@@ -72,16 +71,17 @@ function validate_input($user_id, $amount)
 	$count_directs = count(directs($user_id));
 
 	$minimum_deposit = settings('leadership_passive')
-		->{$user->account_type . '_leadership_passive_minimum_deposit'};
+	->{$user->account_type . '_leadership_passive_minimum_deposit'};
 
-	if ($amount > $user->bonus_leadership_passive_balance)
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(39),
-			'Amount exceeds available balance!', 'error');
+	if ($amount > $user->bonus_leadership_passive_balance) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(39),
+			'Amount exceeds available balance!',
+			'error'
+		);
 	}
 
-	if (round($amount, 2) !== round($minimum_deposit * $count_directs, 2))
-	{
+	if (round($amount, 2) !== round($minimum_deposit * $count_directs, 2)) {
 		$app->redirect(Uri::root(true) . '/' . sef(39), 'Deposit only ' .
 			number_format($minimum_deposit * $count_directs, 2) .
 			' ' . settings('ancillaries')->currency . '!', 'error');
@@ -101,12 +101,9 @@ function update_user($user_id, $amount)
 
 	$field_user = ['bonus_leadership_passive_balance = bonus_leadership_passive_balance - ' . $amount];
 
-	if (settings('ancillaries')->withdrawal_mode === 'standard')
-	{
+	if (settings('ancillaries')->withdrawal_mode === 'standard') {
 		$field_user[] = 'balance = balance + ' . $amount;
-	}
-	else
-	{
+	} else {
 		$field_user[] = 'payout_transfer = payout_transfer + ' . $amount;
 	}
 
@@ -126,11 +123,11 @@ function update_user($user_id, $amount)
  */
 function process_form($user_id, $amount)
 {
-//	$db = db();
+	//	$db = db();
 
 	validate_input($user_id, $amount);
 
-//	try
+	//	try
 //	{
 //		$db->transactionStart();
 //

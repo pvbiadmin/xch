@@ -44,12 +44,12 @@ main();
  */
 function main()
 {
-	$admintype    = session_get('admintype');
+	$admintype = session_get('admintype');
 	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$username     = session_get('username');
-	$final        = input_get('final');
-	$usertype     = session_get('usertype');
+	$user_id = session_get('user_id');
+	$username = session_get('username');
+	$final = input_get('final');
+	$usertype = session_get('usertype');
 
 	session_set('edit', false);
 
@@ -57,16 +57,13 @@ function main()
 
 	$str = menu_admin($admintype, $account_type, $user_id, $username);
 
-	if ((int) $final !== 1)
-	{
+	if ((int) $final !== 1) {
 		$str .= check_input5();
-		$str .= view_form();
-	}
-	else
-	{
+		$str .= view_request_efund();
+	} else {
 		$username = input_get('username');
-		$amount   = input_get('amount');
-		$edit     = session_get('edit', false);
+		$amount = input_get('amount');
+		$edit = session_get('edit', false);
 
 		process_add_tokens($username, $amount, $edit);
 	}
@@ -134,8 +131,7 @@ function process_add_tokens($username, $amount, $edit)
 		'<strong>Tokens Added</strong><br>' . $amount . ' ' .
 		settings('trading')->token_name . '<br>';
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		update_users($username, $amount);
@@ -147,9 +143,7 @@ function process_add_tokens($username, $amount, $edit)
 		send_mail($message, settings('trading')->token_name . ' Added Successfully!', [$transfer_to->email]);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 
 		ExceptionHandler::render($e);
@@ -170,37 +164,37 @@ function validate_input($username, $amount, $edit)
 {
 	$app = application();
 
-	if ($amount === '' || !is_numeric($amount) || $username === '')
-	{
+	if ($amount === '' || !is_numeric($amount) || $username === '') {
 		$app->redirect(Uri::root(true) . '/' . sef(5), 'Invalid Transaction!', 'error');
 	}
 
-	if ($username === 'admin')
-	{
+	if ($username === 'admin') {
 		$app->redirect(Uri::root(true) . '/' . sef(5), 'Invalid Username!', 'error');
 	}
 
-	if ($amount !== '' && $amount < 0)
-	{
+	if ($amount !== '' && $amount < 0) {
 		$app->redirect(Uri::root(true) . '/' . sef(5), 'Invalid Amount!', 'error');
 	}
 
 	$transfer_to = user_username($username);
 
-	if ($transfer_to->id === '')
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(5),
-			'User to transfer to does not exist.', 'error');
+	if ($transfer_to->id === '') {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(5),
+			'User to transfer to does not exist.',
+			'error'
+		);
 	}
 
-	if ($edit)
-	{
+	if ($edit) {
 		$date = input_get('date', '', 'RAW');
 
-		if ($date === '')
-		{
-			$app->redirect(Uri::root(true) . '/' . sef(5),
-				'Please specify the Current Date!', 'error');
+		if ($date === '') {
+			$app->redirect(
+				Uri::root(true) . '/' . sef(5),
+				'Please specify the Current Date!',
+				'error'
+			);
 		}
 	}
 }
@@ -232,8 +226,7 @@ function date_get($edit): string
 {
 	$date = time();
 
-	if ($edit)
-	{
+	if ($edit) {
 		$date = input_get('date', '0', 'RAW');
 	}
 
@@ -337,8 +330,7 @@ function logs_activity($username, $amount, $edit)
 
 	$date = time();
 
-	if ($edit)
-	{
+	if ($edit) {
 		$date = input_get('date', '0', 'RAW');
 	}
 

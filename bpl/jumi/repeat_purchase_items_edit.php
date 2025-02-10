@@ -45,43 +45,41 @@ main();
  */
 function main()
 {
-	$usertype     = session_get('usertype');
-	$admintype    = session_get('admintype');
+	$usertype = session_get('usertype');
+	$admintype = session_get('admintype');
 	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$username     = session_get('username');
+	$user_id = session_get('user_id');
+	$username = session_get('username');
 
 	$uid = input_get('uid');
 
-	if ($uid === '')
-	{
-		application()->redirect(Uri::root(true) . '/' . sef(69),
-			'Please select an item to edit.', 'error');
+	if ($uid === '') {
+		application()->redirect(
+			Uri::root(true) . '/' . sef(69),
+			'Please select an item to edit.',
+			'error'
+		);
 	}
 
 	page_validate();
 
 	$str = menu($usertype, $admintype, $account_type, $user_id, $username);
 
-	if ($usertype === 'Admin' || $usertype === 'manager')
-	{
-		if ((int) input_get('final') !== 1)
-		{
-			$str .= view_form($uid);
-		}
-		else
-		{
-			$item         = substr(input_get('item_name_edit', '', 'RAW'), 0, 150);
-			$category     = input_get('item_cat_add', 'none', 'RAW');
-			$description  = substr(input_get('description_edit', '', 'RAW'), 0, 1000);
-			$details      = substr(input_get('details_edit', '', 'RAW'), 0, 1000);
-			$price        = input_get('price_edit');
+	if ($usertype === 'Admin' || $usertype === 'manager') {
+		if ((int) input_get('final') !== 1) {
+			$str .= view_request_efund($uid);
+		} else {
+			$item = substr(input_get('item_name_edit', '', 'RAW'), 0, 150);
+			$category = input_get('item_cat_add', 'none', 'RAW');
+			$description = substr(input_get('description_edit', '', 'RAW'), 0, 1000);
+			$details = substr(input_get('details_edit', '', 'RAW'), 0, 1000);
+			$price = input_get('price_edit');
 			$price_retail = input_get('price_retail_edit');
-			$qty          = input_get('quantity_edit');
-			$binary_pts   = input_get('binary_points_edit');
+			$qty = input_get('quantity_edit');
+			$binary_pts = input_get('binary_points_edit');
 			$unilevel_pts = input_get('unilevel_points_edit');
-			$reward_pts   = input_get('reward_points_edit');
-			$avatar       = application()->input->files->get('picture_edit');
+			$reward_pts = input_get('reward_points_edit');
+			$avatar = application()->input->files->get('picture_edit');
 
 			process_items_edit(
 				$avatar,
@@ -118,8 +116,7 @@ function menu($usertype, $admintype, $account_type, $user_id, $username): string
 {
 	$str = '';
 
-	switch ($usertype)
-	{
+	switch ($usertype) {
 		case 'Admin':
 			$str .= menu_admin($admintype, $account_type, $user_id, $username);
 			break;
@@ -215,8 +212,7 @@ function view_form($uid): string
 	$str .= '<td>';
 	$str .= '<select name="quantity_edit" id="quantity_edit">';
 
-	for ($ctr = 0; $ctr <= 100; $ctr++)
-	{
+	for ($ctr = 0; $ctr <= 100; $ctr++) {
 		$str .= '<option value="' . $ctr . '">' . $ctr . '</option>';
 	}
 
@@ -228,8 +224,7 @@ function view_form($uid): string
 	$str .= '<td>Picture:</td>';
 	$str .= '<td>';
 
-	if ($item->picture !== '')
-	{
+	if ($item->picture !== '') {
 		$str .= 'Current Picture:<br>';
 		$str .= '<img src="images/repeat/tmb_' . $item->picture . '" alt=""><br>';
 		$str .= '*Changing picture might require a browser refresh (F5) to reload image.<br>';
@@ -258,16 +253,13 @@ function view_option_cat($category): string
 
 	$str = '';
 
-	if (!empty($cat_list))
-	{
-		if ($category === 'none')
-		{
+	if (!empty($cat_list)) {
+		if ($category === 'none') {
 			$str .= '<option value="none" selected="" disabled>Select Category</option>';
 		}
 
-		foreach ($cat_list as $cat)
-		{
-			$value  = $cat->category;
+		foreach ($cat_list as $cat) {
+			$value = $cat->category;
 			$option = ucwords($value);
 
 			$str .= '<option value="' . $cat->cat_id . '" ' .
@@ -331,9 +323,8 @@ function process_items_edit(
 	$binary_points,
 	$unilevel_points,
 	$reward_points
-)
-{
-//	$db = db();
+) {
+	//	$db = db();
 
 	Session::checkToken() or die(Text::_('Invalid Token'));
 
@@ -349,7 +340,7 @@ function process_items_edit(
 		$reward_points
 	);
 
-//	try
+	//	try
 //	{
 //		$db->transactionStart();
 
@@ -369,7 +360,7 @@ function process_items_edit(
 
 	upload_image($uid, $avatar);
 
-//		$db->transactionCommit();
+	//		$db->transactionCommit();
 //	}
 //	catch (Exception $e)
 //	{
@@ -410,8 +401,7 @@ function update_items(
 	$binary_points,
 	$unilevel_points,
 	$reward_points
-)
-{
+) {
 	$db = db();
 
 	update(
@@ -456,67 +446,58 @@ function validate_input(
 	$binary_points,
 	$unilevel_points,
 	$reward_points
-)
-{
+) {
 	$app = application();
 
-//    if ($uid === '') {
+	//    if ($uid === '') {
 //        $err = 'No item selected.';
 //
 //        $app->redirect(Uri::root(true) . '/' . sef(71) . qs() . 'uid=' . $uid, $err, 'error');
 //    }
 
-	if ($item_name === '')
-	{
+	if ($item_name === '') {
 		$err = 'Please specify Item Name';
 
 		$app->redirect(Uri::root(true) . '/' . sef(71) . qs() . 'uid=' . $uid, $err, 'error');
 	}
 
-	if ($category === 'none')
-	{
+	if ($category === 'none') {
 		$err = 'Please specify Item Category';
 
 		$app->redirect(Uri::root(true) . '/' . sef(71) . qs() . 'uid=' . $uid, $err, 'error');
 	}
 
-	if ($price === '')
-	{
+	if ($price === '') {
 		$err = 'Please specify Price';
 
 		$app->redirect(Uri::root(true) . '/' . sef(71) . qs() . 'uid=' . $uid, $err, 'error');
 	}
 
-	if ($price_retail === '')
-	{
+	if ($price_retail === '') {
 		$err = 'Please specify Retail Price';
 
 		$app->redirect(Uri::root(true) . '/' . sef(71) . qs() . 'uid=' . $uid, $err, 'error');
 	}
 
-	if ($quantity === '')
-	{
+	if ($quantity === '') {
 		$err = 'Please specify quantity';
 
 		$app->redirect(Uri::root(true) . '/' . sef(71) . qs() . 'uid=' . $uid, $err, 'error');
 	}
 
-	if ($binary_points === '')
-	{
+	if ($binary_points === '') {
 		$err = 'Please specify Binary points';
 
 		$app->redirect(Uri::root(true) . '/' . sef(71) . qs() . 'uid=' . $uid, $err, 'error');
 	}
 
-	if ($unilevel_points === '')
-	{
+	if ($unilevel_points === '') {
 		$err = 'Please specify Unilevel points';
 
 		$app->redirect(Uri::root(true) . '/' . sef(71) . qs() . 'uid=' . $uid, $err, 'error');
 	}
 
-	if ($reward_points === '')
-	{
+	if ($reward_points === '') {
 		$err = 'Please specify Reward points';
 
 		$app->redirect(Uri::root(true) . '/' . sef(71) . qs() . 'uid=' . $uid, $err, 'error');

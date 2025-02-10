@@ -43,14 +43,14 @@ main();
  */
 function main()
 {
-	$usertype     = session_get('usertype');
-	$admintype    = session_get('admintype');
+	$usertype = session_get('usertype');
+	$admintype = session_get('admintype');
 	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$username     = session_get('username');
-	$uid          = input_get('uid');
-	$mode         = input_get('mode');
-	$final        = input_get('final');
+	$user_id = session_get('user_id');
+	$username = session_get('username');
+	$uid = input_get('uid');
+	$mode = input_get('mode');
+	$final = input_get('final');
 
 	page_validate($usertype);
 
@@ -58,19 +58,13 @@ function main()
 
 	$str .= '<h1>Pending Payout Requests</h1>';
 
-	if ($uid !== '')
-	{
-		if ((int) $final !== 1)
-		{
-			$str .= view_form($uid, $mode);
-		}
-		else
-			if ((int) $mode === 1)
-			{
+	if ($uid !== '') {
+		if ((int) $final !== 1) {
+			$str .= view_request_efund($uid, $mode);
+		} else
+			if ((int) $mode === 1) {
 				approve_request($uid);
-			}
-			elseif ((int) $mode === 2)
-			{
+			} elseif ((int) $mode === 2) {
 				deny_request($uid);
 			}
 
@@ -90,8 +84,7 @@ function main()
  */
 function page_validate($usertype)
 {
-	if ($usertype !== 'Admin' && $usertype !== 'manager')
-	{
+	if ($usertype !== 'Admin' && $usertype !== 'manager') {
 		application()->redirect(Uri::root(true) . '/' . sef(43));
 	}
 }
@@ -111,8 +104,7 @@ function menu($usertype, $admintype, $account_type, $user_id, $username): string
 {
 	$str = '';
 
-	switch ($usertype)
-	{
+	switch ($usertype) {
 		case 'Admin':
 			$str .= menu_admin($admintype, $account_type, $user_id, $username);
 			break;
@@ -160,12 +152,9 @@ function view_form($uid, $mode): string
 
 	$str = '';
 
-	if ((int) $mode === 1)
-	{
+	if ((int) $mode === 1) {
 		$str .= '<h3>Approve Request</h3>';
-	}
-	else
-	{
+	} else {
 		$str .= '<h3>Deny Request</h3>';
 	}
 
@@ -469,8 +458,7 @@ function approve_request($uid)
 			Amount (' . $settings_ancillaries->currency . '): ' . number_format($result->amount, 2) . '<br>
 			Method: ' . $result->bank;
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		update_withdrawals($uid);
@@ -480,18 +468,19 @@ function approve_request($uid)
 		send_mail($message, 'Payout Confirmed', [$result->email]);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 
 		ExceptionHandler::render($e);
 	}
 
-//	send_mail($uid);
+	//	send_mail($uid);
 
-	application()->redirect(Uri::root(true) . '/' . sef(112),
-		'Payout Request Confirmed!', 'success');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(112),
+		'Payout Request Confirmed!',
+		'success'
+	);
 }
 
 /**
@@ -555,8 +544,7 @@ function deny_request($uid)
 {
 	$db = db();
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		delete_request($uid);
@@ -564,16 +552,17 @@ function deny_request($uid)
 		logs_deny($uid);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 
 		ExceptionHandler::render($e);
 	}
 
-	application()->redirect(Uri::root(true) . '/' . sef(112),
-		'Payout Request Denied!', 'notice');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(112),
+		'Payout Request Denied!',
+		'notice'
+	);
 }
 
 /**
@@ -609,8 +598,7 @@ function view_withdrawals_pending(): string
 
 	$str = '';
 
-	if (!empty($results))
-	{
+	if (!empty($results)) {
 		$str .= '<table class="category table table-striped table-bordered table-hover">
 	        <thead>
 	        <tr>
@@ -624,8 +612,7 @@ function view_withdrawals_pending(): string
 	        </thead>
 	        <tbody>';
 
-		foreach ($results as $result)
-		{
+		foreach ($results as $result) {
 			$str .= '<tr>
 				<td>' . date('M j, Y - g:i A', $result->date_requested) . '</td>
 				<td><a href="' . sef(44) . qs() . 'uid=' . $result->id . '">' . $result->username . '</td>
@@ -661,9 +648,7 @@ function view_withdrawals_pending(): string
 
 		$str .= '</tbody>
     		</table>';
-	}
-	else
-	{
+	} else {
 		$str .= '<hr><p>No pending requests yet.</p>';
 	}
 

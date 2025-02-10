@@ -44,13 +44,13 @@ main();
  */
 function main()
 {
-	$usertype     = session_get('usertype');
-	$admintype    = session_get('admintype');
+	$usertype = session_get('usertype');
+	$admintype = session_get('admintype');
 	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$username     = input_get('username');
-	$amount       = input_get('amount');
-	$final        = input_get('final');
+	$user_id = session_get('user_id');
+	$username = input_get('username');
+	$amount = input_get('amount');
+	$final = input_get('final');
 
 	session_set('edit', false);
 
@@ -58,13 +58,10 @@ function main()
 
 	$str = menu_admin($admintype, $account_type, $user_id, $username);
 
-	if ((int) $final !== 1)
-	{
+	if ((int) $final !== 1) {
 		$str .= check_input2();
-		$str .= view_form();
-	}
-	else
-	{
+		$str .= view_request_efund();
+	} else {
 		$edit = session_get('edit', false);
 
 		process_add_ecash($username, $amount, $edit);
@@ -132,8 +129,7 @@ function process_add_ecash($username, $amount, $edit)
 		'Contact Number: ' . $transfer_to->contact . '<br><br>' .
 		'<strong>E-cash Added</strong><br>' . input_get('amount') . '<br>';
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		update_users($amount, $username);
@@ -145,9 +141,7 @@ function process_add_ecash($username, $amount, $edit)
 		send_mail($message, 'E-Cash Added Successfully!', [$transfer_to->email]);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 
 		ExceptionHandler::render($e);
@@ -168,34 +162,35 @@ function validate_input($amount, $username, $edit)
 {
 	$app = application();
 
-	if ($amount === '' || !is_numeric($amount) || $username === '')
-	{
+	if ($amount === '' || !is_numeric($amount) || $username === '') {
 		$app->redirect(Uri::root(true) . '/' .
 			sef(116), 'Invalid Transaction!', 'error');
 	}
 
-	if ($amount < 0)
-	{
+	if ($amount < 0) {
 		$app->redirect(Uri::root(true) . '/' .
 			sef(116), 'Invalid Amount!', 'error');
 	}
 
 	$transfer_to = user_username($username);
 
-	if ($transfer_to->id === '0')
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(116),
-			'User to transfer to does not exist.', 'error');
+	if ($transfer_to->id === '0') {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(116),
+			'User to transfer to does not exist.',
+			'error'
+		);
 	}
 
-	if ($edit)
-	{
+	if ($edit) {
 		$date = input_get('date', '', 'RAW');
 
-		if ($date === '')
-		{
-			$app->redirect(Uri::root(true) . '/' . sef(116),
-				'Please specify the Current Date!', 'error');
+		if ($date === '') {
+			$app->redirect(
+				Uri::root(true) . '/' . sef(116),
+				'Please specify the Current Date!',
+				'error'
+			);
 		}
 	}
 }
@@ -342,8 +337,7 @@ function date_get($edit): string
 {
 	$date = time();
 
-	if ($edit)
-	{
+	if ($edit) {
 		$date = input_get('date', '0', 'RAW');
 	}
 

@@ -45,34 +45,30 @@ main();
  */
 function main()
 {
-	$usertype     = session_get('usertype');
-	$admintype    = session_get('admintype');
+	$usertype = session_get('usertype');
+	$admintype = session_get('admintype');
 	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$username     = session_get('username');
+	$user_id = session_get('user_id');
+	$username = session_get('username');
 
 	page_validate();
 
 	$str = menu($usertype, $admintype, $account_type, $user_id, $username);
 
-	if ($usertype === 'Admin' || $usertype === 'manager')
-	{
-		if ((int) input_get('final') !== 1)
-		{
-			$str .= view_form();
-		}
-		else
-		{
-			$item         = substr(input_get('item_name_add', '', 'RAW'), 0, 150);
-			$category     = input_get('item_cat_add', 'none', 'RAW');
-			$description  = substr(input_get('description_add', '', 'RAW'), 0, 1000);
-			$details      = substr(input_get('details_add', '', 'RAW'), 0, 1000);
-			$price        = input_get('price_add', 0);
+	if ($usertype === 'Admin' || $usertype === 'manager') {
+		if ((int) input_get('final') !== 1) {
+			$str .= view_request_efund();
+		} else {
+			$item = substr(input_get('item_name_add', '', 'RAW'), 0, 150);
+			$category = input_get('item_cat_add', 'none', 'RAW');
+			$description = substr(input_get('description_add', '', 'RAW'), 0, 1000);
+			$details = substr(input_get('details_add', '', 'RAW'), 0, 1000);
+			$price = input_get('price_add', 0);
 			$price_retail = input_get('price_retail_add', 0);
-			$qty          = input_get('quantity_add', 0);
-			$binary_pts   = input_get('binary_points_add', 0);
-			$reward_pts   = input_get('reward_points_add', 0);
-			$avatar       = application()->input->files->get('picture_add');
+			$qty = input_get('quantity_add', 0);
+			$binary_pts = input_get('binary_points_add', 0);
+			$reward_pts = input_get('reward_points_add', 0);
+			$avatar = application()->input->files->get('picture_add');
 
 			process_items_add(
 				$avatar,
@@ -107,8 +103,7 @@ function menu($usertype, $admintype, $account_type, $user_id, $username): string
 {
 	$str = '';
 
-	switch ($usertype)
-	{
+	switch ($usertype) {
 		case 'Admin':
 			$str .= menu_admin($admintype, $account_type, $user_id, $username);
 			break;
@@ -192,8 +187,7 @@ function view_form(): string
                     <td>';
 	$str .= '<select name="quantity_add" id="quantity_add">';
 
-	for ($ctr = 0; $ctr <= 1000; $ctr++)
-	{
+	for ($ctr = 0; $ctr <= 1000; $ctr++) {
 		$str .= '<option value="' . $ctr . '">' . $ctr . '</option>';
 	}
 
@@ -269,8 +263,7 @@ function process_items_add(
 	$quantity,
 	$binary_points,
 	$reward_points
-)
-{
+) {
 	$db = db();
 
 	Session::checkToken() or die(Text::_('Invalid Token'));
@@ -318,8 +311,8 @@ function insert_items(
 	$price_retail,
 	$quantity,
 	$binary_points,
-	$reward_points)
-{
+	$reward_points
+) {
 	$db = db();
 
 	insert(
@@ -333,7 +326,8 @@ function insert_items(
 			'price_retail',
 			'quantity',
 			'binary_points',
-			'reward_points'],
+			'reward_points'
+		],
 		[
 			$db->quote($item_name),
 			$db->quote($description),
@@ -364,50 +358,43 @@ function validate_input($item_name, $category, $price, $price_retail, $quantity,
 {
 	$app = application();
 
-	if ($item_name === '')
-	{
+	if ($item_name === '') {
 		$err = 'Please specify Item Name';
 
 		$app->redirect(Uri::root(true) . '/' . sef(70), $err, 'error');
 	}
 
-	if ($category === 'none')
-	{
+	if ($category === 'none') {
 		$err = 'Please specify Category';
 
 		$app->redirect(Uri::root(true) . '/' . sef(70), $err, 'error');
 	}
 
-	if ($price === '')
-	{
+	if ($price === '') {
 		$err = 'Please specify Price';
 
 		$app->redirect(Uri::root(true) . '/' . sef(70), $err, 'error');
 	}
 
-	if ($price_retail === '')
-	{
+	if ($price_retail === '') {
 		$err = 'Please specify Retail Price';
 
 		$app->redirect(Uri::root(true) . '/' . sef(70), $err, 'error');
 	}
 
-	if ((int) $quantity === 0)
-	{
+	if ((int) $quantity === 0) {
 		$err = 'Please specify quantity';
 
 		$app->redirect(Uri::root(true) . '/' . sef(70), $err, 'error');
 	}
 
-	if ($binary_points === '')
-	{
+	if ($binary_points === '') {
 		$err = 'Please specify Binary Points';
 
 		$app->redirect(Uri::root(true) . '/' . sef(70), $err, 'error');
 	}
 
-	if ($reward_points === '')
-	{
+	if ($reward_points === '') {
 		$err = 'Please specify Reward Points';
 
 		$app->redirect(Uri::root(true) . '/' . sef(70), $err, 'error');

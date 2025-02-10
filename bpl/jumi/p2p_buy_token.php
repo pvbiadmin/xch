@@ -1071,7 +1071,7 @@ function view_form($sell_id): string
 			<form method="post" onsubmit="submit.disabled=true; return true;">
 				<input type="hidden" name="sell_id" value="' . $sell_id . '">' .
 		/*'<input type="hidden" name="amount" value="' . $amount . '">
-											<input type="hidden" name="price" value="' . $price . '">' .*/
+												  <input type="hidden" name="price" value="' . $price . '">' .*/
 		'<fieldset>
                     <legend>Fill Up Desired Amount to Buy</legend>
                     <div class="uk-form-row">
@@ -1396,7 +1396,7 @@ function view_posting_single($posting, $user_id): string
 
 		$str .= '</div>';
 
-		$str .= view_form($sell_id);
+		$str .= view_request_efund($sell_id);
 
 		$str .= '</div>
 		        </div>';

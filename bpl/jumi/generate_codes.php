@@ -40,25 +40,22 @@ main();
  */
 function main()
 {
-	$username      = session_get('username');
-	$usertype      = session_get('usertype');
-	$admintype     = session_get('admintype');
-	$account_type  = session_get('account_type');
-//	$merchant_type = session_get('merchant_type');
-	$user_id       = session_get('user_id');
-	$amount        = input_get('amount', '0');
-	$type          = input_get('type', 'none', 'RAW');
+	$username = session_get('username');
+	$usertype = session_get('usertype');
+	$admintype = session_get('admintype');
+	$account_type = session_get('account_type');
+	//	$merchant_type = session_get('merchant_type');
+	$user_id = session_get('user_id');
+	$amount = input_get('amount', '0');
+	$type = input_get('type', 'none', 'RAW');
 
 	page_validate();
 
 	$str = menu($usertype, $admintype, $account_type, $username, $user_id);
 
-	if ($amount === '0' || $type === '')
-	{
-		$str .= view_form($account_type, $admintype, $user_id);
-	}
-	else
-	{
+	if ($amount === '0' || $type === '') {
+		$str .= view_request_efund($account_type, $admintype, $user_id);
+	} else {
 		validate_user($user_id, $admintype, $type, $amount);
 
 		code_generate($amount, $type, $user_id);
@@ -77,7 +74,7 @@ function validate_user($user_id, $admintype, $type, $amount)
 
 	$user = user($user_id);
 
-//	$usertype = $user->usertype;
+	//	$usertype = $user->usertype;
 
 	$efund = $user->payout_transfer;
 
@@ -85,8 +82,7 @@ function validate_user($user_id, $admintype, $type, $amount)
 
 	$total = $price * $amount;
 
-	if ($admintype !== 'Super' && $efund < $total)
-	{
+	if ($admintype !== 'Super' && $efund < $total) {
 		$error = 'Insufficient Funds!';
 
 		application()->redirect(URI::root(true) . '/' . sef(34), $error, 'error');
@@ -109,8 +105,7 @@ function menu($usertype, $admintype, $account_type, $username, $user_id): string
 {
 	$str = '';
 
-	switch ($usertype)
-	{
+	switch ($usertype) {
 		case 'Admin':
 			$str .= menu_admin($admintype, $account_type, $user_id, $username);
 			break;
@@ -138,8 +133,7 @@ function row_select_count(): string
                 <td>';
 	$str .= '<select name="amount" id="amount" style="float: left">';
 
-	for ($ctr = 0; $ctr <= 100; $ctr++)
-	{
+	for ($ctr = 0; $ctr <= 100; $ctr++) {
 		$str .= $ctr === 0 ? '<option value="' . $ctr . '">Select number</option>' :
 			'<option value="' . $ctr . '">' . $ctr . '</option>';
 	}
@@ -179,8 +173,7 @@ function view_form($account_type, $admintype, $user_id): string
 
 	$str .= account_options($account_type, $admintype);
 
-	if (settings('ancillaries')->cd_mode === 'cd')
-	{
+	if (settings('ancillaries')->cd_mode === 'cd') {
 		$str .= account_options($account_type, $admintype, 'cd');
 	}
 

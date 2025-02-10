@@ -35,7 +35,7 @@ main();
 function main()
 {
 	$user_id = session_get('user_id');
-	$amount  = input_get('amount');
+	$amount = input_get('amount');
 
 	page_validate();
 
@@ -43,13 +43,12 @@ function main()
 
 	$str .= '<h1>' . settings('plans')->etrade_name . ' Wallet</h1>';
 
-	if ($amount !== '')
-	{
+	if ($amount !== '') {
 		validate_input($user_id, $amount);
 		process_deposit($user_id, $amount);
 	}
 
-	$str .= view_form($user_id);
+	$str .= view_request_efund($user_id);
 
 	echo $str;
 }
@@ -65,9 +64,11 @@ function update_user($amount, $user_id)
 {
 	update(
 		'network_users',
-		['compound_daily_balance = compound_daily_balance - ' . $amount,
+		[
+			'compound_daily_balance = compound_daily_balance - ' . $amount,
 			(settings('ancillaries')->withdrawal_mode === 'standard' ?
-				'balance = balance + ' : 'payout_transfer = payout_transfer + ') . $amount],
+				'balance = balance + ' : 'payout_transfer = payout_transfer + ') . $amount
+		],
 		['id = ' . db()->quote($user_id)]
 	);
 }
@@ -83,8 +84,7 @@ function process_deposit($user_id, $amount)
 {
 	$db = db();
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		update_user($amount, $user_id);
@@ -92,16 +92,17 @@ function process_deposit($user_id, $amount)
 		logs($user_id, $amount);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 
 		ExceptionHandler::render($e);
 	}
 
-	application()->redirect(Uri::root(true) . '/' . sef(18),
-		settings('plans')->etrade_name . ' Deposit Completed Successfully!', 'success');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(18),
+		settings('plans')->etrade_name . ' Deposit Completed Successfully!',
+		'success'
+	);
 }
 
 /**
@@ -119,35 +120,44 @@ function validate_input($user_id, $amount)
 
 	$account_type = $user->account_type;
 
-	$etrade_principal     = $si->{$account_type . '_principal'};
+	$etrade_principal = $si->{$account_type . '_principal'};
 	$etrade_principal_cut = $si->{$account_type . '_principal_cut'} / 100;
-	$etrade_interest      = $si->{$account_type . '_interest'} / 100;
-	$etrade_maturity      = $si->{$account_type . '_maturity'};
-	$etrade_donation      = $si->{$account_type . '_donation'} / 100;
+	$etrade_interest = $si->{$account_type . '_interest'} / 100;
+	$etrade_maturity = $si->{$account_type . '_maturity'};
+	$etrade_donation = $si->{$account_type . '_donation'} / 100;
 
-	$maturity_principal = bcmul((string) ($etrade_principal * $etrade_principal_cut),
-		bcpow((string) (1 + $etrade_interest), (string) $etrade_maturity, 7), 7);
-	$minimum_deposit    = ($maturity_principal) * (1 - $etrade_donation);
+	$maturity_principal = bcmul(
+		(string) ($etrade_principal * $etrade_principal_cut),
+		bcpow((string) (1 + $etrade_interest), (string) $etrade_maturity, 7),
+		7
+	);
+	$minimum_deposit = ($maturity_principal) * (1 - $etrade_donation);
 
 	$app = application();
 
-	if ($amount > $user->compound_daily_balance)
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(115),
-			'Deposit exceeds ' . settings('plans')->etrade_name . ' Balance!', 'error');
+	if ($amount > $user->compound_daily_balance) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(115),
+			'Deposit exceeds ' . settings('plans')->etrade_name . ' Balance!',
+			'error'
+		);
 	}
 
-	if (user_compound($user_id)->day < $etrade_maturity && $amount < $minimum_deposit)
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(115),
+	if (user_compound($user_id)->day < $etrade_maturity && $amount < $minimum_deposit) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(115),
 			'Deposit only ' . number_format($minimum_deposit, 2) .
-			' ' . settings('ancillaries')->currency . '!', 'error');
+			' ' . settings('ancillaries')->currency . '!',
+			'error'
+		);
 	}
 
-	if (((double) $user->fast_track_deposit_today + (double) $amount) > $si->{$user->account_type . '_maximum_deposit'})
-	{
-		$app->redirect(Uri::root(true) . '/' . sef(115) . qs() . 'uid=' . $user_id,
-			'Exceeded Maximum Deposit!', 'error');
+	if (((double) $user->fast_track_deposit_today + (double) $amount) > $si->{$user->account_type . '_maximum_deposit'}) {
+		$app->redirect(
+			Uri::root(true) . '/' . sef(115) . qs() . 'uid=' . $user_id,
+			'Exceeded Maximum Deposit!',
+			'error'
+		);
 	}
 }
 

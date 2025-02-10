@@ -144,7 +144,7 @@ function main()
 		process_conversion($user_id, $amount, $method, $mode);
 	}
 
-	$str .= view_form($user_id, $value);
+	$str .= view_request_efund($user_id, $value);
 	$str .= view_pending_conversions();
 
 	echo $str;

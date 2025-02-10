@@ -60,7 +60,7 @@ function main()
 	}
 
 	if ($final === '') {
-		$str .= view_form($user_id, $admintype, $usertype);
+		$str .= view_request_efund($user_id, $admintype, $usertype);
 	} else {
 		process_form($user_id, $usertype, $admintype);
 	}

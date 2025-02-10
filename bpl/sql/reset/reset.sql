@@ -1770,15 +1770,15 @@ VALUES (
 DROP TABLE IF EXISTS `network_withdrawals`;
 
 CREATE TABLE IF NOT EXISTS `network_withdrawals` (
-    `withdrawal_id` int(11) NOT NULL AUTO_INCREMENT,
-    `user_id` int(11) NOT NULL,
-    `amount` double NOT NULL,
-    `amount_final` double NOT NULL,
-    `deductions_total` double NOT NULL,
-    `date_requested` int(11) NOT NULL,
-    `date_completed` int(11) NOT NULL,
-    `method` enum('Check', 'Bank Deposit') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Check',
-    PRIMARY KEY (`withdrawal_id`)
+  `withdrawal_id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `amount` double NOT NULL,
+  `amount_final` double NOT NULL,
+  `deductions_total` double NOT NULL,
+  `method` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `date_requested` int NOT NULL,
+  `date_completed` int NOT NULL,
+  PRIMARY KEY (`withdrawal_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------

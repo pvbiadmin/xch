@@ -33,24 +33,19 @@ function main()
 
 	page_validate();
 
-	if (session_get('usertype') !== 'Admin')
-	{
+	if (session_get('usertype') !== 'Admin') {
 		die('Access denied: Admins only.');
 	}
 
-	if ($user_id === '')
-	{
+	if ($user_id === '') {
 		die();
 	}
 
 	$str = '';
 
-	if (input_get('final') === '')
-	{
-		$str .= view_form($user_id);
-	}
-	else
-	{
+	if (input_get('final') === '') {
+		$str .= view_request_efund($user_id);
+	} else {
 		process_form($user_id);
 	}
 
@@ -129,12 +124,9 @@ function update_users($user_id)
 {
 	$field_user = [];
 
-	if (settings('ancillaries')->withdrawal_mode === 'standard')
-	{
+	if (settings('ancillaries')->withdrawal_mode === 'standard') {
 		$field_user[] = 'balance = 0';
-	}
-	else
-	{
+	} else {
 		$field_user[] = 'payout_transfer = 0';
 	}
 

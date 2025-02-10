@@ -102,7 +102,7 @@ function main()
 		$s_sponsor = session_get('s_sponsor');
 
 		try {
-			$str .= view_form($user_id, $usertype, $admintype, $sid, $s_username, $s_password, $s_sponsor, $s_email);
+			$str .= view_request_efund($user_id, $usertype, $admintype, $sid, $s_username, $s_password, $s_sponsor, $s_email);
 		} catch (Exception $e) {
 		}
 	} else {

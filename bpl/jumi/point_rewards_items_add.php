@@ -39,30 +39,26 @@ main();
  */
 function main()
 {
-	$usertype     = session_get('usertype');
-	$admintype    = session_get('admintype');
+	$usertype = session_get('usertype');
+	$admintype = session_get('admintype');
 	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$username     = session_get('username');
-	$final        = input_get('final');
+	$user_id = session_get('user_id');
+	$username = session_get('username');
+	$final = input_get('final');
 
 	page_validate();
 
 	$str = menu($usertype, $admintype, $account_type, $user_id, $username);
 
-	if ($usertype === 'Admin' || $usertype === 'manager')
-	{
-		if ((int) $final !== 1)
-		{
-			$str .= view_form();
-		}
-		else
-		{
-			$item_name   = substr(input_get('item_name', '', 'RAW'), 0, 150);
+	if ($usertype === 'Admin' || $usertype === 'manager') {
+		if ((int) $final !== 1) {
+			$str .= view_request_efund();
+		} else {
+			$item_name = substr(input_get('item_name', '', 'RAW'), 0, 150);
 			$description = substr(input_get('description', '', 'RAW'), 0, 1000);
-			$price       = input_get('price');
-			$quantity    = input_get('quantity');
-			$avatar      = application()->input->files->get('picture');
+			$price = input_get('price');
+			$quantity = input_get('quantity');
+			$avatar = application()->input->files->get('picture');
 
 			process_rewards_add($avatar, $item_name, $description, $price, $quantity);
 		}
@@ -86,8 +82,7 @@ function menu($usertype, $admintype, $account_type, $user_id, $username): string
 {
 	$str = '';
 
-	switch ($usertype)
-	{
+	switch ($usertype) {
 		case 'Admin':
 			$str .= menu_admin($admintype, $account_type, $user_id, $username);
 			break;
@@ -129,8 +124,7 @@ function view_form(): string
                     <td>
                         <select name="quantity" id="quantity">';
 
-	for ($ctr = 0; $ctr <= 1000; $ctr++)
-	{
+	for ($ctr = 0; $ctr <= 1000; $ctr++) {
 		$str .= '<option value="' . $ctr . '">' . $ctr . '</option>';
 	}
 
@@ -170,15 +164,15 @@ function process_rewards_add($avatar, $item_name, $description, $price, $quantit
 
 	validate_input($item_name, $price, $quantity);
 
-//	try
+	//	try
 //	{
 //		$db->transactionStart();
 
-		insert_incentive($item_name, $description, $price, $quantity);
+	insert_incentive($item_name, $description, $price, $quantity);
 
-		upload_image($db->insertid(), $avatar, 'incentive');
+	upload_image($db->insertid(), $avatar, 'incentive');
 
-//		$db->transactionCommit();
+	//		$db->transactionCommit();
 //	}
 //	catch (Exception $e)
 //	{
@@ -187,8 +181,11 @@ function process_rewards_add($avatar, $item_name, $description, $price, $quantit
 //		ExceptionHandler::render($e);
 //	}
 
-	application()->redirect(Uri::root(true) . '/' . sef(50),
-		'Incentive item added.', 'notice');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(50),
+		'Incentive item added.',
+		'notice'
+	);
 }
 
 /**
@@ -203,22 +200,19 @@ function validate_input($item_name, $price, $quantity)
 {
 	$app = application();
 
-	if ($item_name === '')
-	{
+	if ($item_name === '') {
 		$err = 'Please specify Item Name.<br>';
 
 		$app->redirect(Uri::root(true) . '/' . sef(51), $err, 'error');
 	}
 
-	if ($price === '')
-	{
+	if ($price === '') {
 		$err = 'Please specify price.<br>';
 
 		$app->redirect(Uri::root(true) . '/' . sef(51), $err, 'error');
 	}
 
-	if ($quantity === '')
-	{
+	if ($quantity === '') {
 		$err = 'Please specify quantity.<br>';
 
 		$app->redirect(Uri::root(true) . '/' . sef(51), $err, 'error');

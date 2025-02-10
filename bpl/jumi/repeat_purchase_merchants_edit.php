@@ -57,8 +57,8 @@ function main()
     if ($usertype === 'Admin' || $usertype === 'manager') {
         $uid = input_get('uid');
 
-        if ((int)input_get('final') !== 1) {
-            $str .= view_form($uid);
+        if ((int) input_get('final') !== 1) {
+            $str .= view_request_efund($uid);
         } else {
             $merchant_name = substr(input_get('merchant_name_edit', '', 'RAW'), 0, 150);
             $description = substr(input_get('description_edit', '', 'RAW'), 0, 1000);
@@ -169,20 +169,20 @@ function view_form($uid): string
  */
 function process_merchant_edit($avatar, $uid, $merchant_name, $description, $details)
 {
-//    $db = db();
+    //    $db = db();
 
     Session::checkToken() or die(Text::_('Invalid Token'));
 
     validate_input($uid, $merchant_name);
 
-//    try {
+    //    try {
 //        $db->transactionStart();
 
-        update_merchant($uid, $merchant_name, $description, $details);
+    update_merchant($uid, $merchant_name, $description, $details);
 
-        upload_image($uid, $avatar, 'merchant');
+    upload_image($uid, $avatar, 'merchant');
 
-//        $db->transactionCommit();
+    //        $db->transactionCommit();
 //    } catch (Exception $e) {
 //        $db->transactionRollback();
 //

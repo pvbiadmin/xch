@@ -47,7 +47,7 @@ main();
 function main()
 {
 	$user_id = session_get('user_id');
-	$final   = input_get('final');
+	$final = input_get('final');
 
 	page_validate();
 
@@ -55,16 +55,13 @@ function main()
 
 	$str = menu();
 
-	if ((int) $final !== 1)
-	{
+	if ((int) $final !== 1) {
 		$str .= check_input2();
 		$str .= view_form($user_id);
-	}
-	else
-	{
-		$amount   = input_get('amount');
+	} else {
+		$amount = input_get('amount');
 		$username = input_get('username');
-		$edit     = session_get('edit', false);
+		$edit = session_get('edit', false);
 
 		$date = input_get_date($edit);
 
@@ -90,7 +87,7 @@ function view_form($user_id): string
 
 	$efund_name = $settings_ancillaries->efund_name;
 
-	$currency       = $settings_ancillaries->currency;
+	$currency = $settings_ancillaries->currency;
 
 	$processing_fee = $settings_ancillaries->processing_fee;
 
@@ -148,17 +145,17 @@ function validate_input($user_id, $amount, $username)
 
 	$transfer_from = user($user_id);
 
-	if ($amount === '' ||
+	if (
+		$amount === '' ||
 		!is_numeric($amount) ||
 		$username === '' ||
-		$username === $transfer_from->username)
-	{
+		$username === $transfer_from->username
+	) {
 		application()->redirect(Uri::root(true) .
 			'/' . sef(16), 'Invalid Transaction!', 'error');
 	}
 
-	if ($transfer_from->payout_transfer < ($amount + $processing_fee))
-	{
+	if ($transfer_from->payout_transfer < ($amount + $processing_fee)) {
 		application()->redirect(Uri::root(true) .
 			'/' . sef(16), 'Please maintain at least ' .
 			number_format($amount + $processing_fee, 18) .
@@ -167,22 +164,22 @@ function validate_input($user_id, $amount, $username)
 
 	$transfer_to = user_username($username);
 
-	if (!$transfer_to->id)
-	{
+	if (!$transfer_to->id) {
 		application()->redirect(Uri::root(true) .
 			'/' . sef(16), 'Invalid user!', 'error');
 	}
 
 	$edit = session_get('edit', false);
 
-	if ($edit)
-	{
+	if ($edit) {
 		$date = input_get('date', '', 'RAW');
 
-		if ($date === '')
-		{
-			application()->redirect(Uri::root(true) . '/' . sef(16),
-				'Please specify the Current Date!', 'error');
+		if ($date === '') {
+			application()->redirect(
+				Uri::root(true) . '/' . sef(16),
+				'Please specify the Current Date!',
+				'error'
+			);
 		}
 	}
 }
@@ -198,8 +195,10 @@ function update_user_transfer_from($user_id, $amount)
 {
 	update(
 		'network_users',
-		['payout_transfer = payout_transfer - ' .
-			((double) $amount + (double) settings('ancillaries')->processing_fee)],
+		[
+			'payout_transfer = payout_transfer - ' .
+			((double) $amount + (double) settings('ancillaries')->processing_fee)
+		],
 		['id = ' . db()->quote(user($user_id)->id)]
 	);
 }
@@ -236,7 +235,7 @@ function log_activity($user_id, $username, $amount, $date)
 	$sa = settings('ancillaries');
 
 	$transfer_from = user($user_id);
-	$transfer_to   = user_username($username);
+	$transfer_to = user_username($username);
 
 	$activity = '<b>' . $sa->efund_name . ' Transfer: </b> <a href="' . sef(44) . qs() . 'uid=' . $user_id . '">' .
 		$transfer_from->username . '</a> transferred ' . number_format($amount, 18) . ' ' .
@@ -281,7 +280,7 @@ function log_transactions($user_id, $username, $amount, $date, &$insert_id)
 	$efund_name = $settings_ancillaries->efund_name;
 
 	$transfer_from = user($user_id);
-	$transfer_to   = user_username($username);
+	$transfer_to = user_username($username);
 
 	$details = '<b>' . $efund_name . ' Transfer: </b> <a href="' . sef(44) . qs() . 'uid=' . $user_id . '">' .
 		$transfer_from->username . '</a> transferred ' . number_format($amount, 18) . ' ' .
@@ -428,7 +427,7 @@ function process_form($user_id, $amount, $username, $date)
 	validate_input($user_id, $amount, $username);
 
 	$transfer_from = user($user_id);
-	$transfer_to   = user_username($username);
+	$transfer_to = user_username($username);
 
 	// mail admin and user
 	$message = '<strong>Sender</strong>
@@ -446,8 +445,7 @@ function process_form($user_id, $amount, $username, $date)
 			<strong>Amount Transferred</strong><br>
 			' . $amount . '<br>';
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		update_user_transfer_from($user_id, $amount);
@@ -459,9 +457,7 @@ function process_form($user_id, $amount, $username, $date)
 			' Transferred Successfully!', [$transfer_from->email, $transfer_to->email]);
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 
 		ExceptionHandler::render($e);
@@ -482,8 +478,7 @@ function input_get_date($edit): string
 {
 	$date = time();
 
-	if ($edit)
-	{
+	if ($edit) {
 		$date = input_get('date', '0', 'RAW');
 	}
 
@@ -525,12 +520,9 @@ function view_transfer_history($user_id): string
 
 	$str = '<h2>Transfer History</h2>';
 
-	if (empty($transfers))
-	{
+	if (empty($transfers)) {
 		$str .= '<hr><p>No transfers yet.</p>';
-	}
-	else
-	{
+	} else {
 		$str .= '<table class="category table table-striped table-bordered table-hover">
         <thead>
         <tr>

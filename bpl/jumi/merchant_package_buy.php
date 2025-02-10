@@ -48,16 +48,12 @@ function main()
 
 	$type = input_get('type');
 
-	if (session_get('merchant_type') === 'starter')
-	{
-		if ($type === '')
-		{
-			$str .= view_form($user_id);
+	if (session_get('merchant_type') === 'starter') {
+		if ($type === '') {
+			$str .= view_request_efund($user_id);
 
 			$str .= api_coin(settings('ancillaries')->currency, settings('trading')->fmc_to_usd);
-		}
-		else
-		{
+		} else {
 			process_form($user_id, $type, input_get('fmc_mkt_price_online'));
 		}
 	}
@@ -120,18 +116,16 @@ function validate_merchant($user_id, $type)
 
 	$settings_ancillaries = settings('ancillaries');
 
-	if ($type === 'none')
-	{
+	if ($type === 'none') {
 		$err = 'Please select package!';
 
 		$app->redirect(Uri::root(true) . '/' . sef(46), $err, 'error');
 	}
 
-	$min_bal_usd    = $settings_ancillaries->{$type . '_min_bal_usd'};
+	$min_bal_usd = $settings_ancillaries->{$type . '_min_bal_usd'};
 	$merchant_entry = settings('merchant')->{$type . '_merchant_entry'};
 
-	if (user($user_id)->payout_transfer < ($merchant_entry + $min_bal_usd))
-	{
+	if (user($user_id)->payout_transfer < ($merchant_entry + $min_bal_usd)) {
 		$err = 'Not enough ' . $settings_ancillaries->efund_name . ', please maintain at least ' .
 			number_format($merchant_entry + $min_bal_usd, 2) . ' ' . $settings_ancillaries->currency;
 
@@ -153,7 +147,7 @@ function process_form($user_id, $type, $fmc_mkt_price_online)
 
 	validate_merchant($user_id, $type);
 
-	$merchant_name  = settings('merchant')->{$type . '_merchant_name'};
+	$merchant_name = settings('merchant')->{$type . '_merchant_name'};
 
 	$user = user($user_id);
 
@@ -164,11 +158,10 @@ function process_form($user_id, $type, $fmc_mkt_price_online)
 		Merchant Type: ' . $merchant_name;
 
 	$message_admin = 'A new ' . $merchant_name . ' merchant has been registered.<br><hr>' . $body;
-	$message_user  = 'Congratulations for your successful ' .
+	$message_user = 'Congratulations for your successful ' .
 		$merchant_name . ' Merchant Registration!.<br><hr>' . $body;
 
-	try
-	{
+	try {
 		$db->transactionStart();
 
 		update_user($user_id, $type, $fmc_mkt_price_online);
@@ -177,15 +170,12 @@ function process_form($user_id, $type, $fmc_mkt_price_online)
 
 		send_mail($message_admin, 'Merchant Registration Successful!');
 
-		if ($email !== '')
-		{
+		if ($email !== '') {
 			send_mail($message_user, 'Merchant Registration Confirmation', [$email]);
 		}
 
 		$db->transactionCommit();
-	}
-	catch (Exception $e)
-	{
+	} catch (Exception $e) {
 		$db->transactionRollback();
 		ExceptionHandler::render($e);
 	}
@@ -193,8 +183,11 @@ function process_form($user_id, $type, $fmc_mkt_price_online)
 	// mail admin
 //	send_mail($user_id, $type);
 
-	application()->redirect(Uri::root(true) . '/' . sef(41),
-		settings('merchant')->{$type . '_merchant_name'} . ' Registration Successful!', 'success');
+	application()->redirect(
+		Uri::root(true) . '/' . sef(41),
+		settings('merchant')->{$type . '_merchant_name'} . ' Registration Successful!',
+		'success'
+	);
 }
 
 /**

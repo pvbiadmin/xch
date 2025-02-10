@@ -2,7 +2,8 @@
 
 namespace BPL\Jumi\Request_Efund;
 
-require_once 'bpl/menu.php';
+require_once 'templates/sb_admin/tmpl/master.tmpl.php';
+// require_once 'bpl/menu.php';
 require_once 'bpl/mods/query.php';
 require_once 'bpl/mods/mailer.php';
 require_once 'bpl/mods/btc_currency.php';
@@ -14,13 +15,14 @@ require_once 'bpl/plugins/phpqrcode/qrlib.php';
 use Exception;
 use QRcode;
 
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Exception\ExceptionHandler;
 
 use RuntimeException;
-use function BPL\Menu\admin as menu_admin;
-use function BPL\Menu\member as menu_member;
-use function BPL\Menu\manager as menu_manager;
+// use function BPL\Menu\admin as menu_admin;
+// use function BPL\Menu\member as menu_member;
+// use function BPL\Menu\manager as menu_manager;
 
 use function BPL\Mods\Database\Query\delete;
 use function BPL\Mods\Database\Query\insert;
@@ -30,6 +32,8 @@ use function BPL\Mods\Mailer\main as send_mail;
 //use function BPL\Mods\BTC_Currency\main as btc_currency;
 use function BPL\Mods\API_Token_Price\main as token_price;
 use function BPL\Mods\API\Coinbrain\TokenPrice\main as coinbrain_price_token;
+
+use function Templates\SB_Admin\Tmpl\Master\main as master;
 
 use function BPL\Mods\Url_SEF\sef;
 use function bpl\Mods\Url_SEF\qs;
@@ -44,7 +48,9 @@ use function BPL\Mods\Helpers\user;
 use function BPL\Mods\Helpers\time;
 use const QR_ECLEVEL_L;
 
-main();
+$content = main();
+
+master($content);
 
 /**
  *
@@ -53,9 +59,6 @@ main();
  */
 function main()
 {
-	$username = session_get('username');
-	$usertype = session_get('usertype');
-	$admintype = session_get('admintype');
 	$account_type = session_get('account_type');
 	$user_id = session_get('user_id');
 	$amount = input_get('amount');
@@ -64,81 +67,52 @@ function main()
 
 	page_validate();
 
-	$str = menu($usertype, $admintype, $account_type, $username, $user_id);
+	$str = '';
 
 	$app = application();
-
-	$user = user($user_id);
-
-	$arr_payment_method = arr_payment_method($user);
 
 	$sa = settings('ancillaries');
 
 	$currency = $sa->currency;
+	$efund_name = $sa->efund_name;
 
-	//	$currency_upper = settings('ancillaries')->currency;
-//	$currency_lower = strtolower(settings('ancillaries')->currency);
+	$user = user($user_id);
+
+	$account_type = $user->account_type;
+
+	$arr_payment_method = arr_payment_method($user);
 
 	if (empty($arr_payment_method)) {
-		$app->redirect(
-			Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-			'Please Fill Up Your Payment Method.',
-			'error'
-		);
-	} else {
-		if (empty($arr_payment_method['bnb'])) {
-			$app->redirect(
-				Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-				'Your Wallet Address for ' . strtoupper('bnb') . ' is Required.',
-				'error'
-			);
-		}
+		$app->enqueueMessage('Please Fill Up Your Payment Method.', 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
 	}
 
 	if (
-		($currency === 'PHP') && !array_key_exists('gcash', $arr_payment_method)
+		($currency === 'PHP')
+		&& !array_key_exists('gcash', $arr_payment_method)
+		&& !array_key_exists('maya', $arr_payment_method)
 		&& !array_key_exists('bank', $arr_payment_method)
 	) {
-		$app->redirect(
-			Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-			'Please Fill Up Your G-Cash or Bank Details.',
-			'error'
-		);
+		$app->enqueueMessage('Please Fill Up Your Gcash, Maya, or Bank Details.', 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
 	}
 
 	if ($currency === 'USD' && !array_key_exists('bank', $arr_payment_method)) {
-		$app->redirect(
-			Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-			'Please Fill Up Your Bank Details.',
-			'error'
-		);
+		$app->enqueueMessage('Please Fill Up Your Bank Details.', 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
 	}
 
-	if (!in_array($currency, ['PHP', 'USD'])) {
-		if (!array_key_exists(strtolower($currency), $arr_payment_method)) {
-			$app->redirect(
-				Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-				'Please Fill Up Your ' . $currency . ' Payment Method.',
-				'error'
-			);
-		}
-	}
 
-	//	if (empty($arr_payment_method) || !array_key_exists($currency_lower, $arr_payment_method))
-//	{
-//		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-//			'Required to fill up your ' . $currency_upper . ' Token', 'error');
-//	}
+	$min_request = $sa->{$account_type . '_min_request_usd'};
+	$min_request_format = number_format($min_request, 2);
+
+	$max_request = $sa->{$account_type . '_max_request_usd'};
+	$max_request_format = number_format($max_request, 2);
 
 	if ($user->account_type !== 'starter') {
-		$max_request = settings('ancillaries')->{$user->account_type . '_max_request_usd'};
-
 		if ($max_request > 0 && ((double) $user->requested_today + (double) $amount) > $max_request) {
-			$app->redirect(
-				Uri::root(true) . '/' . sef(73) . qs() . 'uid=' . $user_id,
-				'Exceeded Maximum Request for today!',
-				'error'
-			);
+			$app->enqueueMessage('Exceeded Maximum Request for today!', 'error');
+			$app->redirect(Uri::root(true) . '/' . sef(73) . qs() . 'uid=' . $user_id);
 		}
 	}
 
@@ -150,10 +124,160 @@ function main()
 		process_request($user_id, $amount, $method);
 	}
 
-	$str .= view_form($user_id);
-	//	$str .= view_pending_requests();
+	$view_request_efund = view_request_efund($user_id);
 
-	echo $str;
+	$notes = <<<HTML
+		Enter the requested amount in the box then select your prepared payment method, minimum request is $min_request_format $currency up to $max_request_format $currency maximum request, then press the submit button. On the table below, press the button under "Method" and follow the instructions provided.
+	HTML;
+
+	$str .= <<<HTML
+	<div class="container-fluid px-4">
+		<h1 class="mt-4">Request $efund_name</h1>
+		<ol class="breadcrumb mb-4">
+			<li class="breadcrumb-item active">$notes</li>
+		</ol>				
+		$view_request_efund
+	</div>
+	HTML;
+
+	return $str;
+}
+
+/**
+ *
+ * @param $user_id
+ *
+ * @return string
+ *
+ * @since version
+ */
+function view_request_efund($user_id): string
+{
+	$view_form = view_form($user_id);
+
+	$notifications = notifications();
+	$view_pending_requests = view_pending_requests($user_id);
+
+	return <<<HTML
+    <div class="container-fluid px-4">        
+		<div class="row justify-content-center">
+			<div class="col-lg-5">
+				$notifications
+				<div class="card mb-4">
+					$view_form
+				</div>
+        	</div>		
+		</div>
+        $view_pending_requests
+    </div>	
+HTML;
+}
+
+function view_form($user_id)
+{
+	$user = user($user_id);
+	$efund = $user->payout_transfer;
+	$efund_format = number_format($efund, 2);
+
+	$sa = settings('ancillaries');
+
+	$currency = $sa->currency;
+	$efund_name = $sa->efund_name;
+
+	$form_token = HTMLHelper::_('form.token');
+
+	$str = <<<HTML
+    <div class="card-header">
+        <i class="fas fa-money-bill me-1"></i>
+        $efund_name Balance: $efund_format $currency
+    </div>
+    <div class="card-body">
+        <form method="post" onsubmit="submit.disabled = true;">
+            $form_token
+            <div class="input-group mb-3">
+                <span class="input-group-text"><label for="amount">Amount</label></span>
+                <input type="text" name="amount" id="amount" class="form-control" placeholder="Enter Amount" required aria-label="Amount">
+                <span class="input-group-text">$currency</span>
+            </div>
+
+			<div class="input-group mb-3">
+				<select class="form-select" name="method" id="method">
+					<option selected value="">Choose...</option>
+					<option value="gcash">Gcash</option>
+					<option value="maya">Maya</option>
+					<option value="bank">Bank</option>
+				</select>
+				<label class="input-group-text" for="method">Method</label>
+			</div>
+
+            <div class="form-group actions">
+                <button type="submit" class="btn btn-primary">Submit</button>                
+            </div>
+        </form>
+    </div>
+HTML;
+
+	return $str;
+}
+
+function notifications(): string
+{
+	$app = application();
+
+	// Display Joomla messages as dismissible alerts
+	$messages = $app->getMessageQueue(true);
+	$notification_str = fade_effect(); // Initialize the notification string
+
+	if (!empty($messages)) {
+		foreach ($messages as $message) {
+			// Map Joomla message types to Bootstrap alert classes
+			$alert_class = '';
+			switch ($message['type']) {
+				case 'error':
+					$alert_class = 'danger'; // Bootstrap uses 'danger' instead of 'error'
+					break;
+				case 'warning':
+					$alert_class = 'warning';
+					break;
+				case 'notice':
+					$alert_class = 'info'; // Joomla 'notice' maps to Bootstrap 'info'
+					break;
+				case 'message':
+				default:
+					$alert_class = 'success'; // Joomla 'message' maps to Bootstrap 'success'
+					break;
+			}
+
+			$notification_str .= <<<HTML
+            <div class="alert alert-{$alert_class} alert-dismissible fade show mt-5" role="alert">
+                {$message['message']}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+HTML;
+		}
+	}
+
+	return $notification_str;
+}
+
+function fade_effect(int $duration = 10000)
+{
+	return <<<HTML
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Select all alert elements
+      const alerts = document.querySelectorAll('.alert');
+
+      // Loop through each alert and set a timeout to dismiss it
+      alerts.forEach(function (alert) {
+        setTimeout(function () {
+          // Use Bootstrap's alert method to close the alert
+          bootstrap.Alert.getOrCreateInstance(alert).close();
+        }, $duration);
+      });
+    });
+  </script>
+HTML;
 }
 
 function process_delete_request($cid)
@@ -175,42 +299,10 @@ function process_delete_request($cid)
 		ExceptionHandler::render($e);
 	}
 
-	application()->redirect(
-		Uri::root(true) . '/' . sef(73),
-		'Request deleted successfully!',
-		'notice'
-	);
-}
+	$app = application();
 
-/**
- *
- * @param $usertype
- * @param $admintype
- * @param $account_type
- * @param $username
- * @param $user_id
- *
- * @return string
- *
- * @since version
- */
-function menu($usertype, $admintype, $account_type, $username, $user_id): string
-{
-	$str = '';
-
-	switch ($usertype) {
-		case 'Admin':
-			$str .= menu_admin($admintype, $account_type, $user_id, $username);
-			break;
-		case 'Member':
-			$str .= menu_member($account_type, $username, $user_id);
-			break;
-		case 'manager':
-			$str .= menu_manager();
-			break;
-	}
-
-	return $str;
+	$app->enqueueMessage('Request Cancelled!', 'info');
+	$app->redirect(Uri::current());
 }
 
 /**
@@ -231,50 +323,28 @@ function validate_input($user_id, $amount, $method)
 
 	$account_type = $user->account_type;
 
-	if ($account_type !== 'starter') {
-		$minimum_request = $sa->{$account_type . '_min_request_usd'};
+	$minimum_request = $sa->{$account_type . '_min_request_usd'};
 
-		if ($amount < $minimum_request) {
-			application()->redirect(
-				Uri::root(true) . '/' . sef(73),
-				'Minimum Amount is ' . $minimum_request . '.',
-				'error'
-			);
-		}
+	if ($account_type !== 'starter' && $amount < $minimum_request) {
+		$app->enqueueMessage('Minimum Amount is ' . $minimum_request . '.', 'error');
+		$app->redirect(Uri::current());
 	}
 
 	$arr_payment_method = arr_payment_method($user);
 
-	if (empty($arr_payment_method['bnb'])) {
-		$app->redirect(
-			Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-			'Your Wallet Address for ' . strtoupper('bnb') . ' is Required.',
-			'error'
-		);
+	if ($method === '') {
+		$app->enqueueMessage("Please Fillup Payment Method!", 'error');
+		$app->redirect(Uri::current());
 	}
 
-	if (empty($arr_payment_method) || empty($arr_payment_method[$method])) {
-		$app->redirect(
-			Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id,
-			'Your Wallet Address for ' . strtoupper($method) . ' is Required.',
-			'error'
-		);
-	}
-
-	if ($method === 'none') {
-		application()->redirect(
-			Uri::root(true) . '/' . sef(73),
-			'Please Select Method!',
-			'error'
-		);
+	if ($method !== '' &&/* empty($arr_payment_method) ||  */ empty($arr_payment_method[$method])) {
+		$app->enqueueMessage('Your Wallet Address for ' . strtoupper($method) . ' is Required.', 'error');
+		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
 	}
 
 	if ($amount <= 0) {
-		application()->redirect(
-			Uri::root(true) . '/' . sef(73),
-			'Please enter valid amount!',
-			'error'
-		);
+		$app->enqueueMessage('Please enter valid amount!', 'error');
+		$app->redirect(Uri::current());
 	}
 }
 
@@ -309,18 +379,6 @@ function insert_request($user_id, $amount, $price, $method)
 		]
 	);
 }
-
-///**
-// * @param $user
-// *
-// * @return array
-// *
-// * @since version
-// */
-//function payout_method($user): array
-//{
-//	return explode('|', $user->bank);
-//}
 
 function arr_payment_method($user): array
 {
@@ -400,7 +458,7 @@ function process_request($user_id, $amount, $method)
 
 	$user = user($user_id);
 
-	$price_total = price_token_method($amount, $method);
+	$price_total = /* price_token_method($amount, $method) */ $amount;
 
 	$currency = in_array($method, ['bank', 'gcash', 'maya']) ? 'PHP' : $method;
 
@@ -427,65 +485,8 @@ function process_request($user_id, $amount, $method)
 		ExceptionHandler::render($e);
 	}
 
-	$app->redirect(
-		Uri::root(true) . '/' . sef(73),
-		'Your transaction will be posted below with a pending request, press Method at the bottom and pay your pending entry. ',
-		'success'
-	);
-}
-
-/**
- *
- * @param $user_id
- *
- * @return string
- *
- * @since version
- */
-function view_form($user_id): string
-{
-	$user = user($user_id);
-
-	$sa = settings('ancillaries');
-
-	$efund_name = settings('ancillaries')->efund_name;
-
-	$str = '<h1>Request ' . settings('ancillaries')->efund_name . '</h1>';
-
-	// Add a responsive button section for mobile view
-	$str .= $user->account_type === 'starter' ? ''
-		: '<p style="margin-bottom: -2px; color: green;">Enter the request amount in the box then select your prepared currency payment method, "minimum request is ' .
-		$sa->{$user->account_type . '_min_request_usd'} . ' ' . $efund_name . ' up to ' . $sa->{$user->account_type . '_max_request_usd'} .
-		' ' . $efund_name . ' maximum request" then press the submit button. Press the button under "Method" and follow the instructions provided.</p>';
-
-	$str .= '<p style="color: green;">Always ensure you\'re using the BNB BEP20 (Binance Smart Chain) network, as payment method, to avoid losing your assets.</p>';
-
-	$str .= '<form method="post" onsubmit="submit.disabled=true; return true;" style="width:100%; max-width:600px; margin:0 auto; padding:20px;">';
-
-	$str .= '<form method="post" onsubmit="submit.disabled=true; return true;" style="width:100%; max-width:600px; margin:0 auto; padding:20px; box-sizing:border-box;">';
-
-	$str .= '	
- 		<!--<input type="button" class="uk-button uk-button-primary" value="Buy Token Here" data-uk-modal="{target:\'#modal-buy-token\'}">--></span></h1>
-	    <form method="post" onsubmit="submit.disabled=true; return true;">
-	        <table class="category table table-striped table-bordered table-hover">
-	            <tr>';
-
-	$str .= '<td><input type="text" name="amount" placeholder="Amount (' . $efund_name . ')" id="amount" style = "float:left">';
-	$str .= view_method_select($user_id);
-	$str .= '<input type="submit" name="submit" value="Submit" class="uk-button uk-button-primary">';
-	//	$str .= '<a class="uk-button uk-button-primary" style="float:right"
-//		href="https://study.bitkeep.com/en/?ht_kb=create-your-first-wallet">Create Your Smart Wallet</a>';
-	$str .= '</td>';
-	$str .= '</tr>
-	        </table>
-	    </form>';
-
-
-	$str .= view_pending_requests();
-
-	$str .= modal_buy_token('0xd8A4f0346bed070a19C0502d77Cff657963f3691');
-
-	return $str;
+	$app->enqueueMessage('Your transaction will be posted below with a pending request, press Method at the bottom and pay your pending entry.', 'success');
+	$app->redirect(Uri::current());
 }
 
 function view_method_select($user_id): string
@@ -643,104 +644,218 @@ function arr_contact_info($user)
 	return json_decode($contact_info, true);
 }
 
-/**
- *
- * @return string
- *
- * @since version
- */
-function view_pending_requests(): string
+function view_pending_requests($user_id): string
+{
+	$sa = settings('ancillaries');
+
+	$efund_name = $sa->efund_name;
+
+	$table_pending_requests = table_pending_requests($user_id);
+
+	return <<<HTML
+		<div class="card mb-4">
+			<div class="card-header">
+				<i class="fas fa-hourglass me-1"></i>
+				Pending $efund_name Requests
+			</div>
+			<div class="card-body">
+				<table id="datatablesSimple">
+					$table_pending_requests
+				</table>
+			</div>
+		</div>
+	HTML;
+}
+
+function table_pending_requests($user_id)
+{
+	$sa = settings('ancillaries');
+	$currency = $sa->currency;
+
+	$row_pending_requests = row_pending_requests($user_id);
+
+	$str = <<<HTML
+		<thead>
+			<tr>
+				<th>Date Requested</th>
+				<th>Amount ($currency)</th>
+				<th>Price ($currency)</th>				
+				<th>Method</th>
+				<th>Action</th>
+			</tr>
+		</thead>
+		<tfoot>
+			<tr>
+				<th>Date Requested</th>
+				<th>Amount ($currency)</th>
+				<th>Price ($currency)</th>				
+				<th>Method</th>
+				<th>Action</th>
+			</tr>
+		</tfoot>
+		<tbody>
+			$row_pending_requests						
+		</tbody>
+	HTML;
+
+	return $str;
+}
+
+function row_pending_requests($user_id): string
 {
 	$user_id = session_get('user_id');
 	$pending = user_efund_request($user_id);
 	$efund_name = settings('ancillaries')->efund_name;
 
-	$str = '<h1>Pending ' . $efund_name . ' Requests</h1>';
+	$str = '';
 
 	if (empty($pending)) {
-		$str .= '<p>No pending ' . $efund_name . ' requests yet.</p>';
+		// $str .= 'No pending ' . $efund_name . ' requests yet.';
 	} else {
-		$str .= '<table class="category table table-striped table-bordered table-hover">';
-		$str .= '<thead>';
-		$str .= '<tr>';
-		$str .= '<th>Date Requested</th>';
-		$str .= '<th>Amount</th>';
-		$str .= '<th>Price</th>';
-		$str .= '<th>Method</th>';
-		$str .= '<th>Action</th>';
-		$str .= '</tr>';
-		$str .= '</thead>';
-		$str .= '<tbody>';
-
 		foreach ($pending as $tmp) {
 			$user_admin = user(1);
 			$admin_arr_payment = arr_payment_method($user_admin);
 			$admin_payment_address = $admin_arr_payment[$tmp->method] ?? '';
 			$payment_method = strtoupper($tmp->method);
 
-			if (isset($admin_arr_payment[$tmp->method]) && is_array($admin_arr_payment[$tmp->method])) {
-				foreach ($admin_arr_payment[$tmp->method] as $k => $v) {
-					$payment_method = strtoupper($k);
-					$admin_payment_address = $v;
-					break;
-				}
+			// if (isset($admin_arr_payment[$tmp->method]) && is_array($admin_arr_payment[$tmp->method])) {
+			// 	foreach ($admin_arr_payment[$tmp->method] as $k => $v) {
+			// 		$payment_method = strtoupper($k);
+			// 		$admin_payment_address = $v;
+			// 		break;
+			// 	}
+			// }
+
+			// foreach ($admin_arr_payment as $k => $v) {
+			// if (!is_array($v)) {
+			// 	// Handle simple key-value pairs
+			// 	$str .= '<div class="input-group mb-2">';
+			// 	$str .= '<div class="input-group-text">' . ucwords(htmlspecialchars($k)) . '</div>';
+			// 	$str .= '<input type="text" class="form-control" value="' . htmlspecialchars($v) . '" readonly>';
+			// 	$str .= '</div>';
+			// } else {
+			// Handle nested arrays
+			// $str .= '<div class="input-group mb-2">';
+			// $str .= '<div class="input-group-text">' . ucwords(htmlspecialchars($k)) . '</div>';
+
+			// Create a concatenated string of all nested values
+			$nested_values = [];
+			foreach ($admin_payment_address as $x => $y) {
+				$nested_values[] = ucwords(htmlspecialchars($x)) . ': ' . htmlspecialchars($y);
 			}
 
-			$currency = in_array($tmp->method, ['bank', 'gcash']) ? 'PHP' : $tmp->method;
+			$admin_payment_details = '<input type="text" class="form-control" value="' . implode(' | ', $nested_values) . '" readonly>';
+			// $str .= '</div>';
+			// }
+			// }
+
+			$currency = in_array($tmp->method, ['bank', 'gcash', 'maya']) ? 'PHP' : $tmp->method;
 
 			$str .= '<tr>';
 			$str .= '<td>' . date('M j, Y - g:i A', $tmp->date_requested) . '</td>';
-			$str .= '<td>' . number_format($tmp->amount, 8) . ' ' . $efund_name . '</td>';
-			$str .= '<td>' . number_format($tmp->price, 8) . ' ' . strtoupper($currency) . '</td>';
-			$str .= '<td><input type="button" class="uk-button uk-button-primary" value="' .
-				strtoupper($payment_method) . '" data-uk-modal="{target:\'#modal-' . $tmp->request_id . '\'}"></td>';
+			$str .= '<td>' . number_format($tmp->amount, 2) . ' ' . /* $efund_name . */ '</td>';
+			$str .= '<td>' . number_format($tmp->price, 2) . ' ' . /* strtoupper($currency) . */ '</td>';
 
-			$str .= '<div id="modal-' . $tmp->request_id . '" class="uk-modal" aria-hidden="true" style="display: none; overflow-y: scroll; margin-top: 150px">';
-			$str .= '<div class="uk-modal-dialog" style="text-align: center">';
-			$str .= '<button type="button" class="uk-modal-close uk-close"></button>';
+			// $str .= '<td><input type="button" class="uk-button uk-button-primary" value="' .
+			// 	strtoupper($payment_method) . '" data-uk-modal="{target:\'#modal-' . $tmp->request_id . '\'}"></td>';
+
+			$str .= '<td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-' . $tmp->request_id . '">' .
+				strtoupper($payment_method) . '</button></td>';
+
+			// $str .= '<div id="modal-' . $tmp->request_id . '" class="uk-modal" aria-hidden="true" style="display: none; overflow-y: scroll; margin-top: 150px">';
+			// $str .= '<div class="uk-modal-dialog" style="text-align: center">';
+			// $str .= '<button type="button" class="uk-modal-close uk-close"></button>';
 
 			$contact_info = arr_contact_info($user_admin);
 			$messenger = $contact_info['messenger'] ?? '';
 			$contact = $messenger ? '<p><b>Admin Messenger URL:</b> ' . $messenger . '</p>' : '';
 			$contact .= isset($user_admin->email) ? '<p><b>Admin Email Address:</b> ' . $user_admin->email . '</p>' : '';
 
-			if (!in_array($tmp->method, ['bank', 'gcash'])) {
-				$str .= '<img src="images/trust-wallet.svg" alt="" width="150px">';
-				$str .= '<p style="color: red;">After successful transaction, please screenshot the transaction and send it to the email below. The transaction will be processed within 24 hours, and you will see the ' . $efund_name . ' in your dashboard wallet. For any concerns, you can email us anytime.<br><br> -- "Support Team".</p>';
-				$str .= $contact;
-				$str .= '<img src="' . qr_code_generate($admin_payment_address) . '" alt="QR Code Trust Wallet" style="width:250px;">';
-				$str .= '<p>Please pay <b>' . number_format($tmp->price, 8) . '</b> ' . strtoupper($currency) . ' to the following Wallet Address:</p>';
-				$str .= '<p><b>' . $admin_payment_address . '</b></p>';
-			} else {
-				$str .= $contact;
-				if ($tmp->method === 'gcash') {
-					$str .= '<p>Please pay <b>' . number_format($tmp->price, 8) . '</b> ' . strtoupper($currency) . ' to the following G-Cash Number:</p>';
-					$str .= '<p><b>' . $admin_payment_address . '</b></p>';
-				} elseif ($tmp->method === 'bank') {
-					$str .= '<p>Please pay <b>' . number_format($tmp->price, 8) . '</b> ' . strtoupper($currency) . ' to the following ' . strtoupper($payment_method) . ' Bank Account:</p>';
-					$str .= '<p><b>' . $admin_payment_address . '</b></p>';
-				}
+			// if (!in_array($tmp->method, ['bank', 'gcash', 'maya'])) {
+			// 	$str .= '<img src="images/trust-wallet.svg" alt="" width="150px">';
+			// 	$str .= '<p style="color: red;">After successful transaction, please screenshot the transaction and send it to the email below. The transaction will be processed within 24 hours, and you will see the ' . $efund_name . ' in your dashboard wallet. For any concerns, you can email us anytime.<br><br> -- "Support Team".</p>';
+			// 	$str .= $contact;
+			// 	$str .= '<img src="' . qr_code_generate($admin_payment_address) . '" alt="QR Code Trust Wallet" style="width:250px;">';
+			// 	$str .= '<p>Please pay <b>' . number_format($tmp->price, 8) . '</b> ' . strtoupper($currency) . ' to the following Wallet Address:</p>';
+			// 	$str .= '<p><b>' . $admin_payment_address . '</b></p>';
+			// } else {
+
+			// }
+
+			$str .= '<div class="modal fade" id="modal-' . $tmp->request_id . '" tabindex="-1" aria-labelledby="modal-' . $tmp->request_id . 'Label" aria-hidden="true">
+					<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+						<h1 class="modal-title fs-5" id="modal-' . $tmp->request_id . 'Label">Payment Instruction</h1>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">';
+
+			$str .= $contact;
+
+			if ($tmp->method === 'gcash') {
+				$str .= '<p>Please pay <b>' . number_format($tmp->price, 2) . '</b> ' . strtoupper($currency) . ' to the following Gcash Account:</p>';
+				$str .= /* '<p><b>' . $admin_payment_address . '</b></p>' */ $admin_payment_details;
+			} elseif ($tmp->method === 'maya') {
+				$str .= '<p>Please pay <b>' . number_format($tmp->price, 2) . '</b> ' . strtoupper($currency) . ' to the following ' . /* strtoupper($payment_method) . */ ' Maya Account:</p>';
+				$str .= /* '<p><b>' . $admin_payment_address . '</b></p>' */ $admin_payment_details;
+			} elseif ($tmp->method === 'bank') {
+				$str .= '<p>Please pay <b>' . number_format($tmp->price, 2) . '</b> ' . strtoupper($currency) . ' to the following ' . /* strtoupper($payment_method) . */ ' Bank Account:</p>';
+				$str .= /* '<p><b>' . $admin_payment_address . '</b></p>' */ $admin_payment_details;
 			}
 
-			$str .= '</div></div></td>';
-			$str .= '<td><input type="button" class="uk-button uk-button-primary" value="Cancel" data-uk-modal="{target:\'#modal-cancel-' . $tmp->request_id . '\'}"></td>';
+			$str .= '</div>
+						<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>						
+						</div>
+					</div>
+					</div>
+				</div>';
 
-			$str .= '<div id="modal-cancel-' . $tmp->request_id . '" class="uk-modal" aria-hidden="true" style="display: none; overflow-y: scroll; margin-top: 120px">';
-			$str .= '<div class="uk-modal-dialog" style="text-align: center">';
-			$str .= '<button type="button" class="uk-modal-close uk-close"></button>';
-			$str .= '<p><strong>Are you sure you want to cancel this request?</strong></p>';
-			$str .= '<div class="uk-panel uk-panel-box" style="text-align: left">';
-			$str .= '<h3 class="uk-panel-title"><strong>Date Requested:</strong> ' . date('M j, Y - g:i A', $tmp->date_requested) . '</h3>';
-			$str .= '<h3 class="uk-panel-title"><strong>Amount:</strong> ' . number_format($tmp->amount, 2) . '</h3>';
-			$str .= '<h3 class="uk-panel-title"><strong>Final: </strong> ' . number_format($tmp->price, 2) . ' ' . strtoupper($currency) . '</h3>';
-			$str .= '</div>';
-			$str .= '<div class="uk-modal-footer" style="text-align: right">';
-			$str .= '<input type="button" class="uk-modal-close uk-button uk-button-primary" value="Close">';
-			$str .= '<a href="' . sef(73) . qs() . 'cid=' . $tmp->request_id . '" type="button" class="uk-button uk-button-primary">Confirm</a>';
-			$str .= '</div></div></div></tr>';
+			// $str .= '</div></div></td>';
+
+			// $str .= '<td><input type="button" class="uk-button uk-button-primary" value="Cancel" data-uk-modal="{target:\'#modal-cancel-' . $tmp->request_id . '\'}"></td>';
+
+			$str .= '<td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-cancel-' . $tmp->request_id . '">Cancel</button></td>';
+
+			$str .= '<div class="modal fade" id="modal-cancel-' . $tmp->request_id . '" tabindex="-1" aria-labelledby="modal-cancel-' . $tmp->request_id . 'Label" aria-hidden="true">
+					<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+						<h1 class="modal-title fs-5" id="modal-cancel-' . $tmp->request_id . 'Label">Cancel Request</h1>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">';
+
+			$str .= '<p>Date Requested: ' . date('M j, Y - g:i A', $tmp->date_requested) . '</p>';
+			$str .= '<p>Amount: ' . number_format($tmp->amount, 2) . '</p>';
+			$str .= '<p>Price: ' . number_format($tmp->price, 2) . ' ' . strtoupper($currency) . '</p>';
+
+			$str .= '</div>
+						<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<a href="' . sef(73) . qs() . 'cid=' . $tmp->request_id . '" type="button" class="btn btn-primary">Confirm</a>
+						</div>
+					</div>
+					</div>
+				</div>';
+
+			// $str .= '<div id="modal-cancel-' . $tmp->request_id . '" class="uk-modal" aria-hidden="true" style="display: none; overflow-y: scroll; margin-top: 120px">';
+			// $str .= '<div class="uk-modal-dialog" style="text-align: center">';
+			// $str .= '<button type="button" class="uk-modal-close uk-close"></button>';
+			// $str .= '<p><strong>Are you sure you want to cancel this request?</strong></p>';
+			// $str .= '<div class="uk-panel uk-panel-box" style="text-align: left">';
+			// $str .= '<h3 class="uk-panel-title"><strong>Date Requested:</strong> ' . date('M j, Y - g:i A', $tmp->date_requested) . '</h3>';
+			// $str .= '<h3 class="uk-panel-title"><strong>Amount:</strong> ' . number_format($tmp->amount, 2) . '</h3>';
+			// $str .= '<h3 class="uk-panel-title"><strong>Final: </strong> ' . number_format($tmp->price, 2) . ' ' . strtoupper($currency) . '</h3>';
+			// $str .= '</div>';
+			// $str .= '<div class="uk-modal-footer" style="text-align: right">';
+			// $str .= '<input type="button" class="uk-modal-close uk-button uk-button-primary" value="Close">';
+			// $str .= '<a href="' . sef(73) . qs() . 'cid=' . $tmp->request_id . '" type="button" class="uk-button uk-button-primary">Confirm</a>';
+			// $str .= '</div></div></div></tr>';
 		}
 
-		$str .= '</tbody></table>';
+		// $str .= '</tbody></table>';
 	}
 
 	return $str;
