@@ -2,13 +2,16 @@
 
 namespace BPL\Jumi\Sales_Overview;
 
-require_once 'bpl/menu.php';
+require_once 'templates/sb_admin/tmpl/master.tmpl.php';
+// require_once 'bpl/menu.php';
 require_once 'bpl/mods/helpers.php';
 
 use Joomla\CMS\Uri\Uri;
 
-use function BPL\Menu\admin;
-use function BPL\Menu\admin as menu_admin;
+// use function BPL\Menu\admin;
+// use function BPL\Menu\admin as menu_admin;
+
+use function Templates\SB_Admin\Tmpl\Master\main as master;
 
 use function BPL\Mods\Url_SEF\sef;
 
@@ -17,9 +20,12 @@ use function BPL\Mods\Helpers\application;
 use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\users;
-use function BPL\Mods\Helpers\page_reload;
+// use function BPL\Mods\Helpers\page_reload;
+use function BPL\Mods\Helpers\live_reload;
 
-main();
+$content = main();
+
+master($content);
 
 /**
  *
@@ -28,21 +34,58 @@ main();
  */
 function main()
 {
-	$usertype     = session_get('usertype');
-	$admintype    = session_get('admintype');
-	$account_type = session_get('account_type');
-	$user_id      = session_get('user_id');
-	$username     = session_get('username');
+	$usertype = session_get('usertype');
+	// $admintype    = session_get('admintype');
+	// $account_type = session_get('account_type');
+	// $user_id      = session_get('user_id');
+	// $username     = session_get('username');
 
 	page_validate($usertype);
 
-	$str = menu_admin($admintype, $account_type, $user_id, $username);
+	// $str = menu_admin($admintype, $account_type, $user_id, $username);
 
-	$str .= page_reload();
+	// $str .= page_reload();
 
-	$str .= view_sales();
+	$str = live_reload(true);
 
-	echo $str;
+	$view_sales = view_sales(true);
+
+	$str .= <<<HTML
+	<div class="container-fluid px-4">
+		<h1 class="mt-4">Profit Summary</h1>
+		<ol class="breadcrumb mb-4">
+			<li class="breadcrumb-item active">List of income</li>
+		</ol>				
+		$view_sales
+	</div>
+	HTML;
+
+	return $str;
+}
+
+function view_sales($counter)
+{
+	$counter_span = '';
+
+	if ($counter) {
+		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
+	}
+
+	$row_sales = row_sales();
+
+	return <<<HTML
+		<div class="card mb-4">
+			<div class="card-header">
+				<i class="fas fa-table me-1"></i>
+				Profit Book{$counter_span}
+			</div>
+			<div class="card-body">
+				<table class="table">
+					$row_sales
+				</table>
+			</div>
+		</div>
+	HTML;
 }
 
 /**
@@ -51,7 +94,7 @@ function main()
  *
  * @since version
  */
-function view_sales(): string
+function row_sales(): string
 {
 	$currency = settings('ancillaries')->currency;
 
@@ -69,45 +112,86 @@ function view_sales(): string
 
 	$net_sales = $total_sales - $cd_sales - $total_payouts - $fmc_purchase;
 
-	$str = '<h2>Sales Overview</h2>
-		<table class="category table table-striped table-bordered table-hover" style="width:900px;">
-			<tr>
-				<td style="width: 21%">Members:</td>
-				<td style="width: 43%">' . count(users()) . '
-					<a style="float:right" href="' . sef(40) . '">View All Members</a>
-				</td>
-			</tr>
-			<tr>
-				<td>Overall Sales:</td>
-				<td>' . number_format($total_sales, 5) . ' ' . $currency . '
-					<a style="float:right" href="' . sef(35) . '">View Income Log</a>
-				</td>
-			</tr>
-			<tr>
-				<td>CD Sales:</td>
-				<td>' . number_format($cd_sales, 5) . ' ' . $currency . '
-				</td>
-			</tr>
-			<tr>
-				<td>Payouts:</td>
-				<td>' . number_format($total_payouts, 5) . ' ' . $currency . '
-					<a style="float:right" href="' . sef(49) . '">View Payout Log</a>
-				</td>
-			</tr>';
+	$count_users = count(users());
 
-	if (settings('plans')->trading)
-	{
-		$str .= '<tr>
-					<td>' . settings('trading')->token_name . ' Profit:</td>
-					<td>' . number_format($fmc_purchase, 5) . ' ' . $currency . '</td>
-				</tr>';
-	}
+	$link_directs = sef(40);
+	$button_directs = <<<HTML
+		<a href="$link_directs" class="btn btn-primary btn-sm" style="float:right">View All Members</a>
+	HTML;
 
-	$str .= '<tr>
-				<td>Net Sales:</td>
-				<td>' . number_format($net_sales, 5) . ' ' . $currency . '</td>
-			</tr>
-		</table>';
+	$total_sales_format = number_format($total_sales, 2);
+	$link_income_log = sef(35);
+	$button_income_log = <<<HTML
+		<a href="$link_income_log" class="btn btn-primary btn-sm" style="float:right">View Income Log</a>
+	HTML;
+
+	$payouts_format = number_format($total_payouts, 2);
+	$link_payout_log = sef(49);
+	$button_payout_log = <<<HTML
+		<a href="$link_payout_log" class="btn btn-primary btn-sm" style="float:right">View Payout Log</a>
+	HTML;
+
+	$net_profit_format = number_format($net_sales, 2);
+
+	$str = <<<HTML
+		<tbody>
+		<tr>
+			<th scope="row">Members</th>
+			<td>$count_users{$button_directs}</td>			
+		</tr>
+		<tr>
+			<th scope="row">Profit</th>
+			<td>$total_sales_format $currency{$button_income_log}</td>
+		</tr>
+		<tr>
+			<th scope="row">Payouts</th>
+			<td colspan="2">$payouts_format $currency{$button_payout_log}</td>
+		</tr>
+		<tr>
+			<th scope="row">Net Profit</th>
+			<td colspan="2">$net_profit_format $currency{$button_payout_log}</td>
+		</tr>
+	</tbody>
+HTML;
+
+	// $str = '
+	// 	<table class="category table table-striped table-bordered table-hover" style="width:900px;">
+	// 		<tr>
+	// 			<td style="width: 21%">Members:</td>
+	// 			<td style="width: 43%">' . count(users()) . '
+	// 				<a style="float:right" href="' . sef(40) . '">View All Members</a>
+	// 			</td>
+	// 		</tr>
+	// 		<tr>
+	// 			<td>Overall Sales:</td>
+	// 			<td>' . number_format($total_sales, 5) . ' ' . $currency . '
+	// 				<a style="float:right" href="' . sef(35) . '">View Income Log</a>
+	// 			</td>
+	// 		</tr>
+	// 		<tr>
+	// 			<td>CD Sales:</td>
+	// 			<td>' . number_format($cd_sales, 5) . ' ' . $currency . '
+	// 			</td>
+	// 		</tr>
+	// 		<tr>
+	// 			<td>Payouts:</td>
+	// 			<td>' . number_format($total_payouts, 5) . ' ' . $currency . '
+	// 				<a style="float:right" href="' . sef(49) . '">View Payout Log</a>
+	// 			</td>
+	// 		</tr>';
+
+	// if (settings('plans')->trading) {
+	// 	$str .= '<tr>
+	// 				<td>' . settings('trading')->token_name . ' Profit:</td>
+	// 				<td>' . number_format($fmc_purchase, 5) . ' ' . $currency . '</td>
+	// 			</tr>';
+	// }
+
+	// $str .= '<tr>
+	// 			<td>Net Sales:</td>
+	// 			<td>' . number_format($net_sales, 5) . ' ' . $currency . '</td>
+	// 		</tr>
+	// 	</table>';
 
 	return $str;
 }
@@ -120,8 +204,7 @@ function view_sales(): string
  */
 function page_validate($usertype)
 {
-	if ($usertype !== 'Admin' && $usertype !== 'manager')
-	{
+	if ($usertype !== 'Admin' && $usertype !== 'manager') {
 		application()->redirect(Uri::root(true) . '/' . sef(43));
 	}
 }
