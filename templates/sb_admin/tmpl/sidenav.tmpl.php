@@ -511,10 +511,10 @@ function efund($admintype, $user_id)
             {$add_efund}      
             <a class="nav-link" href="{$efund_transfer_link}">{$efund_name} Transfer</a>     
             <a class="nav-link" href="{$buy_efund_logs_link}">Buy {$efund_name} Logs</a>
-            {$withdraw_efund}
+            <!-- {$withdraw_efund}
             {$pending_efund_withdrawals}
             {$approved_efund_withdrawals}
-            {$efund_withdrawal_logs}
+            {$efund_withdrawal_logs} -->
         </nav>
     </div>
     HTML;
