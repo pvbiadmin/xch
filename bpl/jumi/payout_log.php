@@ -206,7 +206,7 @@ HTML;
 			$str .= '<td>' . date('M j, Y - g:i A', $payout->payout_date) . '</td>';
 			$str .= '<td><a href="' . sef(44) . qs() . 'uid=' .
 				$user->id . '">' . $user->username . '</a></td>';
-			$str .= '<td>' . payout_method($user) . '</td>';
+			$str .= '<td>' . /* payout_method($user) */ ucwords($payout->method) . '</td>';
 			$str .= '<td>' . number_format($payout->amount, 2) . '</td>';
 			$str .= '<td>' . number_format($payout->total_tax, 2) . '</td>';
 			$str .= '<td>' . number_format($payout->payout_total, 2) . '</td>';
@@ -284,7 +284,7 @@ function row_payouts_admin()
 			$str .= '<td>' . date('M j, Y - g:i A', $payout->payout_date) . '</td>';
 			$str .= '<td><a href="' . sef(44) . qs() . 'uid=' .
 				$user->id . '">' . $user->username . '</a></td>';
-			$str .= '<td>' . payout_method($user) . '</td>';
+			$str .= '<td>' . /* payout_method($user) */ ucwords($payout->method) . '</td>';
 			$str .= '<td>' . number_format($payout->amount, 2) . '</td>';
 			$str .= '<td>' . number_format($payout->total_tax, 2) . '</td>';
 			$str .= '<td>' . number_format($payout->payout_total, 2) . '</td>';
@@ -402,7 +402,7 @@ function row_payouts($user_id)
 			$str .= '<tr>';
 			$str .= '<td>' . date('M j, Y - g:i A', $payout->payout_date) . '</td>';
 
-			$str .= payout_method($user);
+			$str .= /* payout_method($user) */ ucwords($payout->method);
 			$str .= '<td>' . number_format($payout->amount - (
 				($payout->amount * $cybercharge) + $processing_fee), 2) . '</td>';
 			$str .= '</tr>';

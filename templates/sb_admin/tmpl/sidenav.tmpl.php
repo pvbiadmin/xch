@@ -62,16 +62,16 @@ function admin($admintype, $user_id)
     if (
         $dashboard
         || $members
-        || $codes
+        // || $codes
         || $logs
         || $efund_admin
         || $wallet_admin
     ) {
         $core = <<<HTML
-        <div class="sb-sidenav-menu-heading">Core</div>
+        <div class="sb-sidenav-menu-heading">Page</div>
         {$dashboard}
         {$members}
-        {$codes}
+        <!-- {$codes} -->
         {$logs}
         {$efund_admin}
         {$wallet_admin}
@@ -273,8 +273,8 @@ function dashboard_member($user_id)
         data-bs-parent="#sidenavAccordion">
         <nav class="sb-sidenav-menu-nested nav">
             <a class="nav-link" href="{$home_link}">Home</a>
-            <a class="nav-link" href="{$account_info_link}">Account Info</a>
-            <a class="nav-link" href="{$add_account_link}">Add Account</a>
+            <a class="nav-link" href="{$account_info_link}">Member Details</a>
+            <a class="nav-link" href="{$add_account_link}">Signup</a>
             {$buy_package}
         </nav>
     </div>
@@ -309,7 +309,7 @@ function wallet_member($user_id)
         data-bs-parent="#sidenavAccordion">
         <nav class="sb-sidenav-menu-nested nav">
             <!-- <a class="nav-link" href="{$convert_to_efund_link}">Transfer Efund</a> -->
-            <a class="nav-link" href="{$payout_logs_link}">Payout Logs</a>
+            <!-- <a class="nav-link" href="{$payout_logs_link}">Payout Logs</a> -->
             <a class="nav-link" href="{$withdrawal_request_link}">Withdrawal Request</a>
             <a class="nav-link" href="{$withdrawal_completed_link}">Withdrawal Completed</a>
         </nav>
@@ -499,7 +499,7 @@ function efund($admintype, $user_id)
     <a class="nav-link collapsed" href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseEfundAdmin"
         aria-expanded="false" aria-controls="collapseEfundAdmin">
         <div class="sb-nav-link-icon"><i class="fas fa-bank"></i></div>
-        Finance
+        Bank
         <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
     </a>
     <div class="collapse" id="collapseEfundAdmin" aria-labelledby="headingOne"
@@ -628,7 +628,7 @@ function commission($user_id)
     <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseCommissions"
         aria-expanded="false" aria-controls="collapseCommissions">
         <div class="sb-nav-link-icon"><i class="fas fa-hand-holding-usd"></i></div>
-        Commissions
+        Affiliates
         <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
     </a>
 
@@ -1384,7 +1384,7 @@ function investment()
     <a class="nav-link collapsed" href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseInvestment"
         aria-expanded="false" aria-controls="collapseInvestment">
         <div class="sb-nav-link-icon"><i class="fas fa-percent"></i></div>
-        Investment Plans
+        Profits Program
         <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
     </a>
     <div class="collapse" id="collapseInvestment" aria-labelledby="headingOne"

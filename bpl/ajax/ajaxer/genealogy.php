@@ -2,880 +2,759 @@
 
 namespace BPL\Ajax\Ajaxer\Genealogy;
 
+require_once 'bpl/mods/helpers.php';
+
+use function BPL\Mods\Url_SEF\sef;
+use function BPL\Mods\Helpers\db;
+
 /**
- * Generates the complete HTML, CSS, and JavaScript for the genealogy visualization.
+ * @param           $type
+ * @param           $user_id
+ * @param   string  $plan
  *
- * This function serves as the entry point for rendering the genealogy tree. It combines
- * the HTML structure, CSS styles, and JavaScript code (including the AJAX request) into
- * a single string that can be output to the browser.
+ * @return string
  *
- * @param string $type The type of genealogy tree (e.g., 'binary_pair', 'unilevel').
- * @param int $user_id The ID of the user for whom the tree is being generated.
- * @param string $plan The plan type (e.g., 'binary_pair', 'unilevel').
- *
- * @return string The complete HTML, CSS, and JavaScript code for the visualization.
+ * @since version
  */
 function main($type, $user_id, string $plan = 'binary_pair'): string
 {
-    $render = render($type, $user_id, $plan);
+	$dir_font  = 'bpl/plugins/orgchart/assets/css/font-awesome.min.css';
+	$dir_style = 'bpl/plugins/orgchart/assets/css/style.css';
+	$dir_d3    = 'bpl/plugins/orgchart/assets/js/d3.min.js';
 
-    return <<<HTML
-        <link rel='stylesheet prefetch' href='https://fonts.googleapis.com/css?family=Roboto'>
-        <style>
-            :root {
-                --color-primary: steelblue;
-                --color-secondary: #999;
-                --color-background: #fff;
-                --color-tooltip-bg: rgba(0, 0, 0, 0.9);
-                --color-tooltip-text: #fff;
-                
-                --font-size-base: clamp(0.75rem, 2vw, 1rem);
-                --font-family-base: system-ui, -apple-system, sans-serif;
-                
-                --spacing-sm: max(0.3125rem, 1vw);
-                --spacing-md: max(0.625rem, 2vw);
-                --spacing-top: max(2rem, 4vw);
-                
-                --border-radius: 0.3125rem;
-                --stroke-width-large: min(3px, 0.5vw);
-                --stroke-width-small: min(2px, 0.3vw);
-                --border-dash-size: max(5px, 1vw);
-                
-                --transition-default: 200ms ease;
-            }
-
-            #genealogy_{$type} {
-                width: 100%;
-                height: 100vh;
-                max-height: 100vh;
-                overflow: hidden;
-                position: relative;
-                padding-top: var(--spacing-top);
-                touch-action: none; /* Disable browser's default touch handling */
-                -webkit-user-select: none; /* Prevent text selection during drag */
-                user-select: none;
-            }
-
-            #genealogy_{$type} svg {
-                width: 100% !important;
-                height: calc(100% - var(--spacing-top)) !important;
-                max-width: 100vw;
-                max-height: 100vh;
-            }
-
-            /* Tooltip Styles */
-            .tooltip {
-                position: absolute;
-                padding: 10px;
-                background: var(--color-tooltip-bg);
-                color: var(--color-tooltip-text);
-                border-radius: 4px;
-                font-size: 14px;
-                pointer-events: none;
-                opacity: 0;
-                transition: opacity 0.2s ease-in-out;
-                z-index: 1000;
-                max-width: 300px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            }
-
-            /* Mobile Tooltip Positioning */
-            @media (max-width: 768px) {
-                .tooltip {
-                    position: fixed;
-                    left: 50% !important;
-                    bottom: 20px !important;
-                    transform: translateX(-50%);
-                    top: auto !important;
-                    width: 90%;
-                    max-width: none;
-                }
-            }
-
-            .tooltip div {
-                margin: 5px 0;
-                line-height: 1.4;
-            }
-
-            .tooltip strong {
-                color: #fff;
-                margin-right: 5px;
-            }
-
-            /* Border container */
-            .border-container {
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                pointer-events: none;
-                border: var(--stroke-width-small) dashed var(--color-secondary);
-                margin: var(--spacing-sm);
-                border-radius: var(--border-radius);
-            }
-
-            #genealogy_{$type} .node circle {
-                fill: var(--color-background);
-                stroke: var(--color-primary);
-                stroke-width: var(--stroke-width-large);
-            }
-
-            #genealogy_{$type} .node text {
-                font: var(--font-size-base) var(--font-family-base);
-                transform-origin: center;
-            }
-
-            #genealogy_{$type} .link {
-                fill: none;
-                stroke: var(--color-secondary);
-                stroke-width: var(--stroke-width-small);
-            }
-        </style>
-        <div id="genealogy_{$type}">
-            <div class="border-container"></div>
-        </div>
-        <div class="tooltip" id="tooltip"></div>
-        <div class="controls">
-            <button class="control-button" id="zoomIn">+</button>
-            <button class="control-button" id="zoomOut">-</button>
-            <button class="control-button" id="reset">↺</button>
-        </div>
-        <script src="https://d3js.org/d3.v7.min.js"></script>
-        <script>{$render}</script>
-    HTML;
-}
-
-/**
- * Generates the JavaScript code for making an AJAX request to fetch genealogy data.
- *
- * This function creates a jQuery AJAX call to fetch data for the genealogy tree based on
- * the specified type, user ID, and plan. The fetched data is then used to initialize the
- * tree visualization.
- *
- * @param string $type The type of genealogy tree (e.g., 'binary_pair', 'unilevel').
- * @param int $user_id The ID of the user for whom the tree is being generated.
- * @param string $plan The plan type (e.g., 'binary_pair', 'unilevel').
- *
- * @return string The JavaScript code for the AJAX request.
- */
-function ajax($type, $user_id, string $plan = 'binary_pair'): string
-{
-    return <<<JS
-        jQuery.ajax({
-            type: "post",
-            dataType: "json",
-            url: "bpl/ajax/action.php",
-            data: {
-                "action": "genealogy_{$type}",
-                "id_user": {$user_id},
-                "plan": "{$plan}"
-            },
-            success: function (data) {
-                const treeVis = new TreeVisualization("#genealogy_{$type}", data, "{$plan}");
-            }
-        });
-    JS;
-}
-
-/**
- * Renders the HTML, CSS, and JavaScript for the genealogy visualization.
- *
- * This function generates the necessary HTML structure, CSS styles, and JavaScript code
- * for rendering a genealogy tree using D3.js. It also includes a tooltip for displaying
- * node details and handles AJAX requests for fetching tree data.
- *
- * @param string $type The type of genealogy tree (e.g., 'binary_pair', 'unilevel').
- * @param int $user_id The ID of the user for whom the tree is being generated.
- * @param string $plan The plan type (e.g., 'binary_pair', 'unilevel').
- *
- * @return string The complete HTML, CSS, and JavaScript code for the visualization.
- */
-function render($type, $user_id, $plan): string
-{
-    // Generate the tooltip content
-    $tooltipContent = tooltipContent($plan);
-
-    $str = <<<JS
-        /**
-         * Type definition for a node in the tree structure.
-         * Each node can have a name, optional details, and optional child nodes.
-         * @typedef {Object} TreeNode
-         * @property {string} name - Display name of the node
-         * @property {Object} [details] - Optional metadata about the node
-         * @property {string} details.id - Unique identifier
-         * @property {string} details.account - Account information
-         * @property {number} details.balance - Account balance
-         * @property {string} details.plan - Subscription plan type
-         * @property {number} details.bonus_indirect_referral - Bonus amount
-         * @property {TreeNode[]} [children] - Array of child nodes
-        */
-        
-        /**
-         * Global configuration object for customizing the tree visualization.
-         * Contains settings for margins, node appearance, animations, and link styling.
-         * @constant {Object}
-        */
-        const CONFIG = {
-            margin: {
-                top: 20,     // Top margin in pixels
-                right: 90,   // Right margin in pixels
-                bottom: 30,  // Bottom margin in pixels
-                left: 90     // Left margin in pixels
-            },
-            nodeRadius: 10,              // Radius of node circles in pixels
-            transitionDuration: 200,     // Duration of animations in milliseconds
-            linkStyle: {
-                strokeWidth: 2,          // Width of connecting lines
-                strokeColor: "#999"      // Color of connecting lines
-            }
+	$str = '<link rel="stylesheet" href="' . $dir_font . '">';
+	$str .= '<link rel=\'stylesheet prefetch\' href=\'https://fonts.googleapis.com/css?family=Roboto\'>';
+	$str .= '<link rel="stylesheet" href="' . $dir_style . '">';
+	$str .= '<style>
+    	#genealogy_' . $type . ' {
+            cursor: move;
+            height: 100%;
+            width: 100%;
+            background-color: transparent;
+            border: 1px dashed #C3CCE8;
+            margin: 0;
         };
-        
-        /**
-         * Class representing an interactive tree visualization using D3.js
-         * Features include:
-         * - Collapsible nodes
-         * - Interactive zooming
-         * - Tooltips with node details
-         * - Smooth transitions
-         * - Automatic layout
-        */
-        class TreeVisualization {
-            /**
-             * Creates a new tree visualization instance
-             * @param {string} containerId - ID of the DOM element to contain the tree
-             * @param {TreeNode} data - Hierarchical data structure for the tree
-            */
-            constructor(containerId, data, plan) {
-                this.i = 0;
-                this.container = d3.select(containerId);
-                this.plan = plan; // Store the plan type
-                
-                this.updateDimensions();
-                this.initializeResizeHandler();
-                
-                // Touch interaction state
-                this.touchState = {
-                    isDragging: false,
-                    lastX: 0,
-                    lastY: 0,
-                    startX: 0,
-                    startY: 0,
-                    transform: null
-                };
-                
-                this.tooltip = d3.select("#tooltip");
-                this.initialVerticalOffset = 60;
-                
-                this.initializeSVG();
-                this.initializeTree(data);
-                this.setupZoom();
-                this.setupControls();
-                this.setupTouchInteractions();
-            }
+	</style>';
+	$str .= '<div id="genealogy_' . $type . '"></div>';
+	$str .= '<script src="' . $dir_d3 . '"></script>';
+	$str .= '<script>' . render($type, $user_id, $plan) . '</script>';
 
-            setupTouchInteractions() {
-                const container = this.container.node();
-                
-                // Touch start handler
-                container.addEventListener('touchstart', (e) => {
-                    if (e.touches.length === 1) {
-                        // Single touch - initialize drag
-                        const touch = e.touches[0];
-                        this.touchState.isDragging = true;
-                        this.touchState.lastX = touch.clientX;
-                        this.touchState.lastY = touch.clientY;
-                        this.touchState.startX = touch.clientX;
-                        this.touchState.startY = touch.clientY;
-                        this.touchState.transform = d3.zoomTransform(this.svg.node());
-                    } else if (e.touches.length === 2) {
-                        // Two touches - prepare for pinch zoom
-                        this.touchState.isDragging = false;
-                        const touch1 = e.touches[0];
-                        const touch2 = e.touches[1];
-                        this.touchDistance = Math.hypot(
-                            touch2.clientX - touch1.clientX,
-                            touch2.clientY - touch1.clientY
-                        );
-                    }
-                }, { passive: true });
-
-                // Touch move handler
-                container.addEventListener('touchmove', (e) => {
-                    if (e.touches.length === 1 && this.touchState.isDragging) {
-                        // Handle drag
-                        const touch = e.touches[0];
-                        const dx = touch.clientX - this.touchState.lastX;
-                        const dy = touch.clientY - this.touchState.lastY;
-                        
-                        // Update last position
-                        this.touchState.lastX = touch.clientX;
-                        this.touchState.lastY = touch.clientY;
-                        
-                        // Calculate new transform
-                        const transform = this.touchState.transform;
-                        const newTransform = transform.translate(
-                            dx / transform.k,
-                            dy / transform.k
-                        );
-                        
-                        // Apply the new transform
-                        this.svg.call(
-                            this.zoom.transform,
-                            newTransform
-                        );
-                    } else if (e.touches.length === 2) {
-                        // Handle pinch zoom
-                        const touch1 = e.touches[0];
-                        const touch2 = e.touches[1];
-                        const newDistance = Math.hypot(
-                            touch2.clientX - touch1.clientX,
-                            touch2.clientY - touch1.clientY
-                        );
-                        
-                        if (this.touchDistance) {
-                            const delta = newDistance / this.touchDistance;
-                            this.zoom.scaleBy(this.svg, delta);
-                            this.touchDistance = newDistance;
-                        }
-                    }
-                }, { passive: true });
-
-                // Touch end handler
-                container.addEventListener('touchend', () => {
-                    this.touchState.isDragging = false;
-                    this.touchDistance = null;
-                }, { passive: true });
-
-                // Touch cancel handler
-                container.addEventListener('touchcancel', () => {
-                    this.touchState.isDragging = false;
-                    this.touchDistance = null;
-                }, { passive: true });
-            }
-
-            updateDimensions() {
-                const container = this.container.node();
-                const computedStyle = getComputedStyle(document.documentElement);
-                const topSpacing = parseFloat(computedStyle.getPropertyValue('--spacing-top'));
-                
-                this.width = container.clientWidth - CONFIG.margin.left - CONFIG.margin.right;
-                this.height = container.clientHeight - CONFIG.margin.top - CONFIG.margin.bottom - topSpacing;
-            }
-
-            initializeResizeHandler() {
-                window.addEventListener('resize', () => {
-                    this.updateDimensions();
-                    this.svg
-                        .attr("width", this.width + CONFIG.margin.left + CONFIG.margin.right)
-                        .attr("height", this.height + CONFIG.margin.top + CONFIG.margin.bottom);
-                    
-                    this.tree.size([this.width, this.height]);
-                    this.update(this.root);
-                });
-            }
-
-            setupControls() {
-                const zoomIn = document.getElementById('zoomIn');
-                const zoomOut = document.getElementById('zoomOut');
-                const reset = document.getElementById('reset');
-                
-                zoomIn.addEventListener('click', () => this.zoom.scaleBy(this.svg.transition().duration(300), 1.2));
-                zoomOut.addEventListener('click', () => this.zoom.scaleBy(this.svg.transition().duration(300), 0.8));
-                reset.addEventListener('click', () => {
-                    this.svg.transition().duration(300).call(
-                        this.zoom.transform,
-                        d3.zoomIdentity.translate(CONFIG.margin.left, CONFIG.margin.top + this.initialVerticalOffset)
-                    );
-                });
-            }
-        
-            /**
-             * Sets up the SVG container and adds basic structural elements
-             * Includes a border and transformation group for zooming
-             * @private
-            */
-            initializeSVG() {
-                // Create main SVG container with specified dimensions
-                this.svg = this.container.append("svg")
-                    .attr("width", this.width + CONFIG.margin.left + CONFIG.margin.right)
-                    .attr("height", this.height + CONFIG.margin.top + CONFIG.margin.bottom)
-                    .style("display", "block")
-                    .style("margin", "auto");
-        
-                // Create group for zoom transformations with adjusted initial transform
-                this.zoomGroup = this.svg.append("g")
-                    .attr("transform", `translate(\${CONFIG.margin.left},\${CONFIG.margin.top + parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--spacing-top'))})`);
-            }
-        
-            /**
-             * Adds a dashed border around the visualization
-             * @private
-            */
-            addBorder() {
-                this.svg.append("rect")
-                    .attr("width", this.svg.attr("width"))
-                    .attr("height", this.svg.attr("height"))
-                    .attr("fill", "none")
-                    .attr("stroke", CONFIG.linkStyle.strokeColor)
-                    .attr("stroke-width", CONFIG.linkStyle.strokeWidth)
-                    .attr("stroke-dasharray", "5,5");
-            }
-        
-            /**
-             * Initializes zoom behavior with scale limits and event handling
-             * @private
-            */
-            setupZoom() {
-                this.zoom = d3.zoom()
-                    .scaleExtent([0.3, 3])
-                    .on("zoom", ({ transform }) => {
-                        this.zoomGroup.attr("transform", transform);
-                    });
-
-                const initialTransform = d3.zoomIdentity
-                    .translate(CONFIG.margin.left, CONFIG.margin.top + this.initialVerticalOffset);
-
-                this.svg.call(this.zoom)
-                    .call(this.zoom.transform, initialTransform);
-            }
-        
-            /**
-             * Sets up the initial tree structure and collapses all nodes
-             * @param {TreeNode} data - Root node of the tree
-             * @private
-            */
-            initializeTree(data) {
-                // Create D3 tree layout with adjusted size
-                this.tree = d3.tree().size([this.width, this.height - this.initialVerticalOffset]);
-        
-                // Create hierarchy from data
-                this.root = d3.hierarchy(data, d => {
-                    if (d.children) {
-                        // Sort children based on position if plan is binary_pair
-                        if (this.plan === 'binary_pair' || this.plan === 'passup_binary') {
-                            d.children.sort((a, b) => {
-                                if (a.details.position === 'Left' && b.details.position !== 'Left') {
-                                    return -1;
-                                } else if (a.details.position !== 'Left' && b.details.position === 'Left') {
-                                    return 1;
-                                } else {
-                                    return 0;
-                                }
-                            });
-                        }
-
-                        return d.children;
-                    }
-                    
-                    return null;
-                });
-        
-                // Set initial position with offset
-                this.root.x0 = this.width / 2;
-                this.root.y0 = this.initialVerticalOffset; // Start below the border
-        
-                // Collapse all nodes initially
-                if (this.root.children) {
-                    this.root.children.forEach(this.collapse);
-                }
-        
-                this.update(this.root);
-            }
-        
-            /**
-             * Recursively collapses all children of a node
-             * @param {d3.HierarchyNode} node - Node to collapse
-             * @private
-            */
-            collapse = (node) => {
-                if (node.children) {
-                    node._children = node.children;  // Store children in _children
-                    node._children.forEach(this.collapse);
-                    node.children = null;  // Remove children to collapse
-                }
-            }
-        
-            /**
-             * Generates SVG path data for connecting lines between nodes
-             * Uses curved lines with control points
-             * @param {Object} source - Starting point coordinates
-             * @param {Object} target - Ending point coordinates
-             * @returns {string} SVG path data
-             * @private
-            */
-            diagonal(source, target) {
-                return `M \${source.x} \${source.y}
-                        C \${source.x} \${(source.y + target.y) / 2},
-                        \${target.x} \${(source.y + target.y) / 2},
-                        \${target.x} \${target.y}`;
-            }
-        
-            /**
-             * Updates the visualization when node states change
-             * Handles node positions, transitions, and link updates
-             * @param {d3.HierarchyNode} source - Node that triggered the update
-             * @public
-            */
-            update(source) {
-                const treeData = this.tree(this.root);
-                const nodes = treeData.descendants();
-                const links = treeData.descendants().slice(1);
-        
-                // Normalize for fixed-depth
-                nodes.forEach(node => {
-                    node.y = node.depth * 120;  // Vertical spacing between levels
-                });
-        
-                this.updateNodes(nodes, source);
-                this.updateLinks(links, source);
-        
-                // Store the old positions for transitions
-                nodes.forEach(node => {
-                    node.x0 = node.x;
-                    node.y0 = node.y;
-                });
-            }
-        
-            /**
-             * Handles the enter/update/exit cycle for nodes
-             * @param {d3.HierarchyNode[]} nodes - Array of tree nodes
-             * @param {d3.HierarchyNode} source - Source node for transitions
-             * @private
-            */
-            updateNodes(nodes, source) {
-                const node = this.zoomGroup.selectAll("g.node")
-                    .data(nodes, d => d.id || (d.id = ++this.i));
-        
-                const nodeEnter = this.createNodes(node, source);
-                this.updateExistingNodes(nodeEnter, node);
-                this.removeNodes(node, source);
-            }
-        
-            /**
-             * Creates new nodes in the visualization
-             * @param {d3.Selection} node - D3 selection of nodes
-             * @param {d3.HierarchyNode} source - Source node for transitions
-             * @returns {d3.Selection} New node elements
-             * @private
-            */
-            createNodes(node, source) {
-                const nodeEnter = node.enter().append("g")
-                    .attr("class", "node")
-                    .attr("transform", () => `translate(\${source.x0},\${source.y0})`)
-                    .on("click", (_event, d) => this.handleClick(d))
-                    .on("mouseover", (_event, d) => this.handleMouseOver(d))
-                    .on("mousemove", (event) => this.handleMouseMove(event))
-                    .on("mouseout", () => this.handleMouseOut());
-        
-                // Add circles for nodes
-                nodeEnter.append("circle")
-                    .attr("class", "node")
-                    .attr("r", 1e-6)
-                    .style("fill", d => d._children ? "lightsteelblue" : "#fff");
-        
-                // Add labels for nodes
-                nodeEnter.append("text")
-                    .attr("dy", ".35em")
-                    .attr("x", d => d.children || d._children ? -13 : 13)
-                    .attr("text-anchor", d => d.children || d._children ? "end" : "start")
-                    .text(d => d.data.username);
-        
-                return nodeEnter;
-            }
-        
-            /**
-             * Updates existing nodes with new positions and states
-             * @param {d3.Selection} nodeEnter - Enter selection of new nodes
-             * @param {d3.Selection} node - Update selection of existing nodes
-             * @private
-            */
-            updateExistingNodes(nodeEnter, node) {
-                const nodeUpdate = nodeEnter.merge(node);
-        
-                // Transition nodes to their new positions
-                nodeUpdate.transition()
-                    .duration(CONFIG.transitionDuration)
-                    .attr("transform", d => `translate(\${d.x},\${d.y})`);
-        
-                nodeUpdate.select("circle.node")
-                    .attr("r", CONFIG.nodeRadius)
-                    .style("fill", d => d._children ? "lightsteelblue" : "#fff")
-                    .attr("cursor", "pointer");
-            }
-        
-            /**
-             * Handles the removal of nodes from the visualization
-             * @param {d3.Selection} node - D3 selection of nodes to remove
-             * @param {d3.HierarchyNode} source - Source node for transitions
-             * @private
-            */
-            removeNodes(node, source) {
-                const nodeExit = node.exit().transition()
-                    .duration(CONFIG.transitionDuration)
-                    .attr("transform", () => `translate(\${source.x},\${source.y})`)
-                    .remove();
-        
-                nodeExit.select("circle")
-                    .attr("r", 1e-6);
-        
-                nodeExit.select("text")
-                    .style("fill-opacity", 1e-6);
-            }
-        
-            /**
-             * Updates the connecting lines between nodes
-             * @param {d3.HierarchyNode[]} links - Array of links between nodes
-             * @param {d3.HierarchyNode} source - Source node for transitions
-             * @private
-            */
-            updateLinks(links, source) {
-                const link = this.zoomGroup.selectAll("path.link")
-                    .data(links, d => d.id);
-        
-                // Enter any new links at the parent's previous position
-                const linkEnter = link.enter().insert("path", "g")
-                    .attr("class", "link")
-                    .attr("d", () => {
-                        const o = { x: source.x0, y: source.y0 };
-                        return this.diagonal(o, o);
-                    });
-        
-                // Transition links to their new position
-                linkEnter.merge(link)
-                    .transition()
-                    .duration(CONFIG.transitionDuration)
-                    .attr("d", d => this.diagonal(d, d.parent));
-        
-                // Remove any exiting links
-                link.exit().transition()
-                    .duration(CONFIG.transitionDuration)
-                    .attr("d", () => {
-                        const o = { x: source.x, y: source.y };
-                        return this.diagonal(o, o);
-                    })
-                    .remove();
-            }
-        
-            /**
-             * Handles click events on nodes to toggle expansion/collapse
-             * @param {d3.HierarchyNode} node - Clicked node
-             * @private
-            */
-            handleClick(node) {
-                if (node.children) {
-                    node._children = node.children;
-                    node.children = null;
-                } else {
-                    node.children = node._children;
-                    node._children = null;
-                }
-        
-                this.update(node);
-            }
-        
-            /**
-             * Shows tooltip with node details on mouseover/touch
-             * @param {d3.HierarchyNode} node - Node being interacted with
-             * @private
-             */
-            handleMouseOver(node) {
-                if (this.tooltipTimeout) {
-                    clearTimeout(this.tooltipTimeout);
-                }
-                
-                // Check if we're not currently dragging on mobile
-                if (!this.touchState.isDragging) {
-                    this.tooltip
-                        .style("opacity", "1")
-                        .html(this.generateTooltipContent(node.data.details));
-                }
-            }
-
-            {$tooltipContent}
-        
-            /**
-             * Updates tooltip position on mouse movement
-             * @param {MouseEvent} event - Mouse move event
-             * @private
-             */
-            handleMouseMove(event) {
-                const isMobile = window.innerWidth <= 768;
-                if (!isMobile && !this.touchState.isDragging) {
-                    const tooltipWidth = this.tooltip.node().offsetWidth;
-                    const tooltipHeight = this.tooltip.node().offsetHeight;
-                    
-                    let left = event.pageX + 15;
-                    let top = event.pageY - tooltipHeight - 10;
-                    
-                    if (left + tooltipWidth > window.innerWidth) {
-                        left = event.pageX - tooltipWidth - 15;
-                    }
-                    
-                    if (top < 0) {
-                        top = event.pageY + 20;
-                    }
-                    
-                    this.tooltip
-                        .style("left", `\${left}px`)
-                        .style("top", `\${top}px`);
-                }
-            }
-        
-            /**
-             * Hides tooltip when mouse leaves a node
-             * @private
-             */
-            handleMouseOut() {
-                // Add a small delay before hiding tooltip
-                this.tooltipTimeout = setTimeout(() => {
-                    this.tooltip.style("opacity", "0");
-                }, 100);
-            }
-        }
-    JS;
-
-    $str .= ajax($type, $user_id, $plan);
-
-    return $str;
+	return $str;
 }
 
 /**
- * Generates the JavaScript code for the tooltip content based on the plan type.
  *
- * This function dynamically generates the `generateTooltipContent` method for the
- * `TreeVisualization` class. The tooltip content is customized based on the attributes
- * associated with the given plan type.
+ * @return string[]
  *
- * @param string $plan The plan type (e.g., 'binary_pair', 'unilevel').
- *
- * @return string The JavaScript code for the `generateTooltipContent` method.
- */
-function tooltipContent($plan): string
-{
-    // Get the attributes for the plan
-    $attributes = set_attr($plan);
-
-    // Generate the tooltip content based on the attributes
-    if (is_array($attributes)) {
-        // Handle multiple attributes
-        $attrList = implode(', ', $attributes);
-
-        if ($plan === 'passup_binary') {
-            $tooltipContent = <<<JS
-                /**
-                 * Generates HTML content for the tooltip
-                 * @param {Object} details - Node details object
-                 * @returns {string} HTML content for tooltip
-                 * @private
-                 */
-                generateTooltipContent(details) {
-                    const { username, account, balance, {$attrList} } = details;
-                
-                    return `
-                        <div><strong>User:</strong> \${username}</div>
-                        <div><strong>Account:</strong> \${account}</div>
-                        <div><strong>Balance:</strong> \${balance}</div>
-                        <div><strong>Position:</strong> \${{$attributes[0]}}</div>
-                        <div><strong>Income:</strong> \${{$attributes[1]}}</div>                        
-                    `;
-                }
-            JS;
-        } else {
-            $tooltipContent = <<<JS
-                /**
-                 * Generates HTML content for the tooltip
-                 * @param {Object} details - Node details object
-                 * @returns {string} HTML content for tooltip
-                 * @private
-                 */
-                generateTooltipContent(details) {
-                    const { username, account, balance, {$attrList} } = details;
-                
-                    return `
-                        <div><strong>User:</strong> \${username}</div>
-                        <div><strong>Account:</strong> \${account}</div>
-                        <div><strong>Balance:</strong> \${balance}</div>
-                        <div><strong>Income:</strong> \${{$attributes[0]}}</div>
-                        <div><strong>Position:</strong> \${{$attributes[1]}}</div>
-                        <div><strong>Status:</strong> \${{$attributes[2]}}</div>
-                    `;
-                }
-            JS;
-        }
-    } else {
-        // Handle single attribute
-        $tooltipContent = <<<JS
-            /**
-             * Generates HTML content for the tooltip
-             * @param {Object} details - Node details object
-             * @returns {string} HTML content for tooltip
-             * @private
-             */
-            generateTooltipContent(details) {
-                const { username, account, balance, plan, {$attributes} } = details;
-            
-                return `
-                    <div><strong>User:</strong> \${username}</div>
-                    <div><strong>Account:</strong> \${account}</div>
-                    <div><strong>Balance:</strong> \${balance}</div>
-                    <div><strong>\${plan}:</strong> \${{$attributes}}</div>
-                `;
-            }
-        JS;
-    }
-
-    return $tooltipContent;
-}
-
-/**
- * Retrieves the attributes associated with a given plan type.
- *
- * This function maps a plan type (e.g., 'binary_pair', 'unilevel') to its corresponding
- * attributes. These attributes are used to dynamically generate tooltip content in the
- * genealogy visualization.
- *
- * @param string $plan The plan type (e.g., 'binary_pair', 'unilevel').
- *
- * @return string|array The attribute(s) associated with the plan. Returns a string for
- *                      single attributes or an array for multiple attributes.
- */
-function set_attr($plan)
-{
-    // Iterate through the plan attributes to find a match
-    foreach (plan_attr() as $k => $v) {
-        if ($k === $plan) {
-            return $v; // Return the attribute(s) for the matching plan
-        }
-    }
-
-    // Return a default attribute if no match is found
-    return ['income_cycle', 'position', 'status'];
-}
-
-/**
- * Defines the mapping of plan types to their associated attributes.
- *
- * This function returns an associative array where the keys are plan types (e.g., 'binary_pair',
- * 'unilevel') and the values are the attributes associated with each plan. These attributes are
- * used to dynamically generate tooltip content in the genealogy visualization.
- *
- * @return array An associative array mapping plan types to their attributes.
+ * @since version
  */
 function plan_attr(): array
 {
-    return [
-        'indirect_referral' => 'bonus_indirect_referral',
-        'unilevel' => 'unilevel',
-        'echelon' => 'bonus_echelon',
-        'binary_pair' => ['income_cycle', 'position', 'status'],
-        'passup_binary' => ['position', 'passup_binary_bonus'],
-        'leadership_binary' => 'bonus_leadership',
-        'leadership_passive' => 'bonus_leadership_passive',
-        'leadership_fast_track_principal' => 'bonus_leadership_fast_track_principal',
-        'matrix' => 'bonus_matrix',
-        'power' => 'bonus_power',
-        'matrix_table' => 'bonus_share',
-        'harvest' => 'bonus_harvest'
-    ];
+	return [
+		'indirect_referral'  => 'bonus_indirect_referral',
+		'unilevel'           => 'unilevel',
+		'binary_pair'        => 'income_cycle',
+		'leadership_binary'  => 'bonus_leadership',
+		'leadership_passive' => 'bonus_leadership_passive',
+		'matrix'             => 'bonus_matrix',
+		'power'              => 'bonus_power',
+		'matrix_table'       => 'bonus_share',
+		'harvest'            => 'bonus_harvest'
+	];
+}
+
+/**
+ * @param $plan
+ *
+ * @return string
+ *
+ * @since version
+ */
+function details($plan): string
+{
+	$attr = set_attr($plan);
+
+	$img = $plan !== 'binary_pair' ? '"active.png"' :
+        '(d.caption === "Y" || d.caption === "X" ? "active.png" : "inactive.png")';
+	$usr = $plan !== 'binary_pair' ? '"emp-name"' :
+        '(d.caption === "Y" || d.caption === "X" ? "emp-name" : "inactive-binary")';
+
+	$str = 'nodeGroup.append("text")
+	            .attr("x", dynamic.nodeTextLeftMargin)
+	            .attr("y", attrs.nodePadding + 10)
+	            .attr("class", function (d) {
+	                return ' . $usr . ';
+	            })
+	            .attr("text-anchor", "left")
+	            .text(function (d) {
+	                return d.username.trim();
+	            })
+	            .call(wrap, attrs.nodeWidth);' . "\n\n";
+
+	$str .= 'nodeGroup.append("text")
+	            .attr("x", dynamic.nodeTextLeftMargin)
+	            .attr("y", dynamic.nodePositionNameTopMargin)
+	            .attr("class", "emp-position-name")
+	            .attr("dy", ".15em")
+	            .attr("text-anchor", "left")	           
+	            .text(function (d) {	
+	                return d.account;
+	            });' . "\n\n";
+
+	$str .= 'nodeGroup.append("text")
+            .attr("x", dynamic.nodeTextLeftMargin)
+            .attr("y", attrs.nodePadding + 10 + dynamic.nodeImageHeight / 4 * 2)
+            .attr("class", "emp-position-name")
+            .attr("dy", "0.05em")
+            .attr("text-anchor", "left")
+
+            .text(function (d) {               
+                return d.' . $attr . ';
+            });' . "\n\n";
+
+	$str .= $plan !== 'binary_pair' ? '' : 'nodeGroup.append("text")
+	            .attr("x", dynamic.nodeTextLeftMargin)
+	            .attr("y", dynamic.nodeChildCountTopMargin)
+	            .attr("class", function (d) {
+	                return ' . $usr . ';
+	            })
+	            .attr("dy", "-0.2em")
+	            .attr("text-anchor", "left")
+	
+	            .text(function (d) {
+	                switch(d.caption) {
+	                    case "Y":
+	                        return "Active";
+	                    break;
+	                    case "X":
+	                        return "Reactivated";
+	                    break;
+	                    case "Z":
+	                        return "Maxed Out";
+	                    break;
+	                    default:
+	                        return "Inactive";
+	                    break;
+	                }	               
+	            });' . "\n\n";
+
+	$str .= 'nodeGroup.append("defs").append("svg:clipPath")
+	            .attr("id", "clip")
+	            .append("svg:rect")
+	            .attr("id", "clip-rect")
+	            .attr("rx", 3)
+	            .attr("x", attrs.nodePadding)
+	            .attr("y", 2 + attrs.nodePadding)
+	            .attr("width", dynamic.nodeImageWidth)
+	            .attr("fill", "none")
+	            .attr("height", dynamic.nodeImageHeight - 4);' . "\n\n";
+
+	$str .= 'nodeGroup.append("svg:image")
+	            .attr("y", 2 + attrs.nodePadding)
+	            .attr("x", attrs.nodePadding)
+	            .attr("preserveAspectRatio", "yes")
+	            .attr("width", dynamic.nodeImageWidth)
+	            .attr("height", dynamic.nodeImageHeight - 4)
+	            .attr("clip-path", "url(#clip)")
+	            .attr("xlink:href", function (d) {
+	                return params.imageUrl + ' . $img . ';
+	            });' . "\n\n";
+
+	return $str;
+}
+
+/**
+ * @param           $type
+ * @param           $user_id
+ * @param   string  $plan
+ *
+ * @return string
+ *
+ * @since version
+ */
+function ajax($type, $user_id, string $plan = 'binary_pair'): string
+{
+	return 'jQuery.ajax({
+	    type: "post",
+	    dataType: "json",
+	    url: "bpl/ajax/action.php",
+	    data: {
+	        "action": "genealogy_' . $type . '",
+	        "id_user": ' . $user_id . ',
+	        "plan": "' . $plan . '"
+	    },
+	    success: function (data) {
+	        params = {
+	            selector: "#genealogy_' . $type . '",
+	            imageUrl: "bpl/plugins/orgchart/assets/img/",
+	            profileUrl: "' . sef(44) . '",
+	            chartWidth: window.innerWidth,
+	            chartHeight: window.innerHeight,
+	            data: data,
+	            pristinaData: JSON.parse(JSON.stringify(data))
+	        };
+	
+	        drawOrganizationChart(params);
+	    }
+	});';
+}
+
+/**
+ * @param $type
+ * @param $user_id
+ * @param $plan
+ *
+ * @return string
+ *
+ * @since version
+ */
+function render($type, $user_id, $plan): string
+{
+	$str = 'var params = {};';
+	$str .= ajax($type, $user_id, $plan);
+	$str .= genealogy($plan);
+
+	return $str;
+}
+
+/**
+ * @param $plan
+ *
+ * @return string
+ *
+ * @since version
+ */
+function genealogy($plan): string
+{
+	return 'function drawOrganizationChart(params) {		
+	    var attrs = {
+	        EXPAND_SYMBOL: "\uf067",
+	        COLLAPSE_SYMBOL: "\uf068",
+	        selector: params.selector,
+	        root: params.data,
+	        width: params.chartWidth,
+	        height: params.chartHeight,
+	        index: 0,
+	        nodePadding: 9,
+	        collapseCircleRadius: 7,
+	        nodeHeight: 80,
+	        nodeWidth: 160,
+	        duration: 750,
+	        rootNodeTopMargin: 20,
+	        minMaxZoomProportions: [0.05, 3],
+	        linkLineSize: 180,
+	        collapsibleFontSize: "10px",
+	        userIcon: "\uf013",
+	        nodeStroke: "#ccc",
+	        nodeStrokeWidth: "1px"
+	    };
+	
+	    var dynamic = {};
+	
+	    dynamic.nodeImageWidth = attrs.nodeHeight * 100 / 140;
+	    dynamic.nodeImageHeight = attrs.nodeHeight - 2 * attrs.nodePadding;
+	    dynamic.nodeTextLeftMargin = attrs.nodePadding * 2 + dynamic.nodeImageWidth;
+	    dynamic.rootNodeLeftMargin = attrs.width / 2;
+	    dynamic.nodePositionNameTopMargin = attrs.nodePadding + 8 + dynamic.nodeImageHeight / 4;
+	    dynamic.nodeChildCountTopMargin = attrs.nodePadding + 14 + dynamic.nodeImageHeight / 4 * 3;
+	
+	    var tree = d3.layout.tree().nodeSize([attrs.nodeWidth + 40, attrs.nodeHeight]);
+	    var diagonal = d3.svg.diagonal()
+	        .projection(function (d) {
+	            debugger;
+	            return [d.x + attrs.nodeWidth / 2, d.y + attrs.nodeHeight / 2];
+	        });
+	    var zoomBehaviours = d3.behavior
+	        .zoom()
+	        .scaleExtent(attrs.minMaxZoomProportions)
+	        .on("zoom", redraw);
+	    var svg = d3.select(attrs.selector)
+	        .append("svg")
+	        .attr("width", attrs.width)
+	        .attr("height", attrs.height)
+	        .call(zoomBehaviours)
+	        .append("g")
+	        .attr("transform", "translate(" + (attrs.width / 2 - 190) + "," + 20 + ")");
+	
+	    //necessary so that zoom knows where to zoom and un-zoom from
+	    zoomBehaviours.translate([dynamic.rootNodeLeftMargin, attrs.rootNodeTopMargin]);
+	
+	    attrs.root.x0 = 0;
+	    attrs.root.y0 = dynamic.rootNodeLeftMargin;
+	
+	    if (params.mode !== "department") {
+	        // adding unique values to each node recursively
+	        var uniq = 1;
+	
+	        addPropertyRecursive("uniqueIdentifier", function () {
+	            return uniq++;
+	        }, attrs.root);
+	    }
+	
+	    expand(attrs.root);
+	
+	    if (attrs.root.children) {
+	        attrs.root.children.forEach(collapse);
+	    }
+	
+	    update(attrs.root);
+	
+	    d3.select(attrs.selector).style("height", attrs.height);
+	
+	    function update(source, param) {
+	        // Compute the new tree layout.
+	        var nodes = tree.nodes(attrs.root)
+	                .reverse(),
+	            links = tree.links(nodes);
+	
+	        // Normalize for fixed-depth.
+	        nodes.forEach(function (d) {
+	            d.y = d.depth * attrs.linkLineSize;
+	        });
+	
+	        // Update the nodes…
+	        var node = svg.selectAll("g.node")
+	            .data(nodes, function (d) {
+	                return d.id || (d.id = ++attrs.index);
+	            });
+	
+	        // Enter any new nodes at the parent\'s previous position.
+	        var nodeEnter = node.enter()
+	            .append("g")
+	            .attr("class", "node")
+	            .attr("transform", function () {
+	                return "translate(" + source.x0 + "," + source.y0 + ")";
+	            });
+	
+	        var nodeGroup = nodeEnter.append("g")
+	            .attr("class", "node-group");
+	
+	        nodeGroup.append("rect")
+	            .attr("width", attrs.nodeWidth)
+	            .attr("height", attrs.nodeHeight)
+	            .attr("data-node-group-id", function (d) {
+	                return d.uniqueIdentifier;
+	            })
+	            .attr("class", function (d) {
+	                var res = "";
+	                if (d.isLoggedUser) res += "nodeRepresentsCurrentUser ";
+	                res += d._children || d.children ? "nodeHasChildren" : "nodeDoesNotHaveChildren";
+	
+	                return res;
+	            });
+	
+	        var collapsiblesWrapper =
+	            nodeEnter.append("g")
+	                .attr("data-id", function (v) {
+	                    return v.uniqueIdentifier;
+	                });
+	
+	        var collapsibles = collapsiblesWrapper.append("circle")
+	            .attr("class", "node-collapse")
+	            .attr("cx", attrs.nodeWidth - attrs.collapseCircleRadius)
+	            .attr("cy", attrs.nodeHeight - 7)
+	            .attr("", setCollapsibleSymbolProperty);
+	
+	        //hide collapse rect when node does not have children
+	        collapsibles.attr("r", function (d) {
+	            if (d.children || d._children) return attrs.collapseCircleRadius;
+	
+	            return 0;
+	        })
+	            .attr("height", attrs.collapseCircleRadius);
+	
+	        collapsiblesWrapper.append("text")
+	            .attr("class", "text-collapse")
+	            .attr("x", attrs.nodeWidth - attrs.collapseCircleRadius)
+	            .attr("y", attrs.nodeHeight - 3)
+	            .attr("width", attrs.collapseCircleRadius)
+	            .attr("height", attrs.collapseCircleRadius)
+	            .style("font-size", attrs.collapsibleFontSize)
+	            .attr("text-anchor", "middle")
+	            .style("font-family", "FontAwesome")
+	            .text(function (d) {
+	                return d.collapseText;
+	            });
+	
+	        collapsiblesWrapper.on("click", click);' .
+
+		details($plan)
+
+		. '// Transition nodes to their new position.
+	        var nodeUpdate = node.transition()
+	            .duration(attrs.duration)
+	            .attr("transform", function (d) {
+	                return "translate(" + d.x + "," + d.y + ")";
+	            });
+	
+	        //todo replace with attrs object
+	        nodeUpdate.select("rect")
+	            .attr("width", attrs.nodeWidth)
+	            .attr("height", attrs.nodeHeight)
+	            .attr("rx", 3)
+	            .attr("stroke", function (d) {
+	                if (param && d.uniqueIdentifier === param.locate) {
+	                    return "#a1ceed";
+	                }
+	
+	                return attrs.nodeStroke;
+	            })
+	            .attr("stroke-width", function (d) {
+	                if (param && d.uniqueIdentifier === param.locate) {
+	                    return 6;
+	                }
+	
+	                return attrs.nodeStrokeWidth
+	            });
+	
+	        // Transition exiting nodes to the parent\'s new position.
+	        var nodeExit = node.exit().transition()
+	            .duration(attrs.duration)
+	            .attr("transform", function () {
+	                return "translate(" + source.x + "," + source.y + ")";
+	            })
+	            .remove();
+	
+	        nodeExit.select("rect")
+	            .attr("width", attrs.nodeWidth)
+	            .attr("height", attrs.nodeHeight);
+	
+	        // Update the links…
+	        var link = svg.selectAll("path.link")
+	            .data(links, function (d) {
+	                return d.target.id;
+	            });
+	
+	        // Enter any new links at the parent\'s previous position.
+	        link.enter().insert("path", "g")
+	            .attr("class", "link")
+	            .attr("x", attrs.nodeWidth / 2)
+	            .attr("y", attrs.nodeHeight / 2)
+	            .attr("d", function () {
+	                var o = {
+	                    x: source.x0,
+	                    y: source.y0
+	                };
+	
+	                return diagonal({
+	                    source: o,
+	                    target: o
+	                });
+	            });
+	
+	        // Transition links to their new position.
+	        link.transition()
+	            .duration(attrs.duration)
+	            .attr("d", diagonal);
+	
+	        // Transition exiting nodes to the parent\'s new position.
+	        link.exit().transition()
+	            .duration(attrs.duration)
+	            .attr("d", function () {
+	                var o = {
+	                    x: source.x,
+	                    y: source.y
+	                };
+	
+	                return diagonal({
+	                    source: o,
+	                    target: o
+	                });
+	            })
+	            .remove();
+	
+	        // Stash the old positions for transition.
+	        nodes.forEach(function (d) {
+	            d.x0 = d.x;
+	            d.y0 = d.y;
+	        });
+	
+	        var x = 0;
+	        var y = 0;
+	
+	        if (param && param.locate) {
+	            nodes.forEach(function (d) {
+	                if (d.uniqueIdentifier === param.locate) {
+	                    x = d.x;
+	                    y = d.y;
+	                }
+	            });
+	
+	            // normalize for width/height
+	            new_x = window.innerWidth / 2 - x;
+	            new_y = window.innerHeight / 2 - y;
+	
+	            // move the main container g
+	            svg.attr("transform", "translate(" + new_x + "," + new_y + ")");
+	            zoomBehaviours.translate([new_x, new_y]);
+	            zoomBehaviours.scale(1);
+	        }
+	
+	        if (param && param.centerMySelf) {
+	            nodes.forEach(function (d) {
+	                if (d.isLoggedUser) {
+	                    x = d.x;
+	                    y = d.y;
+	                }
+	            });
+	
+	            // normalize for width/height
+	            var new_x = window.innerWidth / 2 - x;
+	            var new_y = window.innerHeight / 2 - y;
+	
+	            // move the main container g
+	            svg.attr("transform", "translate(" + new_x + "," + new_y + ")");
+	            zoomBehaviours.translate([new_x, new_y]);
+	            zoomBehaviours.scale(1);
+	        }
+	    }
+	
+	    // Toggle children on click.
+	    function click(d) {
+	        d3.select(this).select("text").text(function (dv) {
+	            if (dv.collapseText === attrs.EXPAND_SYMBOL) {
+	                dv.collapseText = attrs.COLLAPSE_SYMBOL
+	            } else {
+	                if (dv.children) {
+	                    dv.collapseText = attrs.EXPAND_SYMBOL
+	                }
+	            }
+	
+	            return dv.collapseText;
+	        });
+	
+	        if (d.children) {
+	            d._children = d.children;
+	            d.children = null;
+	        } else {
+	            d.children = d._children;
+	            d._children = null;
+	        }
+	
+	        update(d);
+	    }
+	
+	    //########################################################
+	
+	    //Redraw for zoom
+	    function redraw() {
+	        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+	    }
+	
+	    // #############################   Function Area #######################
+	    function wrap(text, width) {
+	        text.each(function () {
+	            var text = d3.select(this),
+	                words = text.text().split(/\s+/).reverse(),
+	                word,
+	                line = [],
+	                lineNumber = 0,
+	                lineHeight = 1.1, // ems
+	                x = text.attr("x"),
+	                y = text.attr("y"),
+	                dy = 0,
+	                tspan = text.text(null)
+	                    .append("tspan")
+	                    .attr("x", x)
+	                    .attr("y", y)
+	                    .attr("dy", dy + "em");
+	
+	            while (word = words.pop()) {
+	                line.push(word);
+	                tspan.text(line.join(" "));
+	
+	                if (tspan.node().getComputedTextLength() > width) {
+	                    line.pop();
+	                    tspan.text(line.join(" "));
+	                    line = [word];
+	                    tspan = text.append("tspan")
+	                        .attr("x", x)
+	                        .attr("y", y)
+	                        .attr("dy", ++lineNumber * lineHeight + dy + "em")
+	                        .text(word);
+	                }
+	            }
+	        });
+	    }
+	
+	    function addPropertyRecursive(propertyName, propertyValueFunction, element) {
+	        if (element[propertyName]) {
+	            element[propertyName] = element[propertyName] + \' \' + propertyValueFunction(element);
+	        } else {
+	            element[propertyName] = propertyValueFunction(element);
+	        }
+	
+	        if (element.children) {
+	            element.children.forEach(function (v) {
+	                addPropertyRecursive(propertyName, propertyValueFunction, v)
+	            })
+	        }
+	
+	        if (element._children) {
+	            element._children.forEach(function (v) {
+	                addPropertyRecursive(propertyName, propertyValueFunction, v)
+	            })
+	        }
+	    }
+	
+	    function getEmployeesCount(node) {
+	        var count = 1;
+	
+	        countChilds(node);
+	
+	        return count;
+	
+	        function countChilds(node) {
+	            var childs = node.children ? node.children : node._children;
+	
+	            if (childs) {
+	                childs.forEach(function (v) {
+	                    count++;
+	                    countChilds(v);
+	                })
+	            }
+	        }
+	    }
+	
+	    function expand(d) {
+	        if (d.children) {
+	            d.children.forEach(expand);
+	        }
+	
+	        if (d._children) {
+	            d.children = d._children;
+	            d.children.forEach(expand);
+	            d._children = null;
+	        }
+	
+	        if (d.children) {
+	            // if node has children and it\'s expanded, then  display -
+	            setToggleSymbol(d, attrs.COLLAPSE_SYMBOL);
+	        }
+	    }
+	
+	    function collapse(d) {
+	        if (d._children) {
+	            d._children.forEach(collapse);
+	        }
+	
+	        if (d.children) {
+	            d._children = d.children;
+	            d._children.forEach(collapse);
+	            d.children = null;
+	        }
+	
+	        if (d._children) {
+	            // if node has children and it\'s collapsed, then  display +
+	            setToggleSymbol(d, attrs.EXPAND_SYMBOL);
+	        }
+	    }
+	
+	    function setCollapsibleSymbolProperty(d) {
+	        if (d._children) {
+	            d.collapseText = attrs.EXPAND_SYMBOL;
+	        } else if (d.children) {
+	            d.collapseText = attrs.COLLAPSE_SYMBOL;
+	        }
+	    }
+	
+	    function setToggleSymbol(d, symbol) {
+	        d.collapseText = symbol;
+	        d3.select("*[data-id=\"" + d.uniqueIdentifier + "\"]").select("text").text(symbol);
+	    }
+	
+	    /* expand current nodes collapsed parents */
+	    function expandParents(d) {
+	        while (d.parent) {
+	            d = d.parent;
+	
+	            if (!d.children) {
+	                d.children = d._children;
+	                d._children = null;
+	                setToggleSymbol(d, attrs.COLLAPSE_SYMBOL);
+	            }
+	        }
+	    }
+	
+	    function show(selectors) {
+	        display(selectors, "initial")
+	    }
+	
+	    function hide(selectors) {
+	        display(selectors, "none")
+	    }
+	
+	    function display(selectors, displayProp) {
+	        selectors.forEach(function (selector) {
+	            var elements = getAll(selector);
+	
+	            elements.forEach(function (element) {
+	                element.style.display = displayProp;
+	            })
+	        });
+	    }
+	
+	    function set(selector, value) {
+	        var elements = getAll(selector);
+	
+	        elements.forEach(function (element) {
+	            element.innerHTML = value;
+	            element.value = value;
+	        })
+	    }
+	
+	    function clear(selector) {
+	        set(selector, "");
+	    }
+	
+	    function get(selector) {
+	        return document.querySelector(selector);
+	    }
+	
+	    function getAll(selector) {
+	        return document.querySelectorAll(selector);
+	    }
+	}';
+}
+
+/**
+ * @param $plan
+ *
+ * @return string
+ *
+ * @since version
+ */
+function set_attr($plan): string
+{
+	$attr = 'status';
+
+	foreach (plan_attr() as $k => $v)
+	{
+		if ($k === $plan && $v !== 'status')
+		{
+			$attr = $v;
+		}
+	}
+
+	return $attr;
+}
+
+/**
+ * @param $user_id
+ *
+ * @return mixed|null
+ *
+ * @since version
+ */
+function user_binary($user_id)
+{
+	$db = db();
+
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_users u ' .
+		'INNER JOIN network_binary b ' .
+		'ON u.id = b.user_id ' .
+		'WHERE user_id = ' . $db->quote($user_id)
+	)->loadObject();
 }

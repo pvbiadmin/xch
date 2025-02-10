@@ -189,7 +189,7 @@ function view_form($user_id): string
             </button>
 
             <div class="form-group actions">
-                <button type="submit" class="btn btn-primary">Submit</button>                
+                <button type="submit" class="btn btn-primary">Withdraw</button>                
             </div>
         </form>
     </div>

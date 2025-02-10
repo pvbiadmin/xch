@@ -112,11 +112,11 @@ function member($user_id, $counter = false): string
 	}
 
 	$view_agent_dashboard = view_agent_dashboard($user_id, $counter);
-	$view_fast_track = view_fast_track($user_id, $counter);
+	$view_fast_track = view_fast_track($user_id);
 
 	$str .= <<<HTML
 		<div class="container-fluid px-4">
-			<h1 class="mt-4">Active Income</h1>
+			<h1 class="mt-4">Marketing Plan</h1>
 			<ol class="breadcrumb mb-4">
 				<li class="breadcrumb-item active">Income Summary</li>
 			</ol>
@@ -171,7 +171,7 @@ function view_agent_dashboard($user_id, $counter): string
 		<div class="card mb-4">
 			<div class="card-header">
 				<i class="fas fa-table me-1"></i>
-				Agent Dashboard{$counter_span}
+				Dashboard{$counter_span}
 			</div>
 			<div class="card-body">
 				<div class="row">
@@ -203,24 +203,24 @@ function view_account_status($user_id)
 
 	$view_account_status = ucwords($account_status);
 
-	$reactivate_link = sef(130);
+	// $reactivate_link = sef(130);
 
 	$account_type_format = ucwords($user->account_type);
 
 	$reactivate = <<<HTML
-		<span class="small">Account Type: $account_type_format</span>
+		<span class="small">Package: $account_type_format</span>
 	HTML;
 
-	if (!$sp->account_freeze && $account_status === 'active') {
-		$reactivate = <<<HTML
-			<span><a class="small stretched-link" href="$reactivate_link">Reactivate Account</a></span>
-		HTML;
-	}
+	// if (!$sp->account_freeze && $account_status === 'inactive') {
+	// 	$reactivate = <<<HTML
+	// 		<span><a class="small stretched-link" href="$reactivate_link">Reactivate Account</a></span>
+	// 	HTML;
+	// }
 
 	return <<<HTML
 		<div class="col-xl-3 col-md-6">
 			<div class="card mb-4">
-				<div class="card-body">Account Status<span id="account_status" style="float:right">
+				<div class="card-body">Package Status<span id="account_status" style="float:right">
 					$view_account_status</span></div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
 					$reactivate
@@ -315,7 +315,7 @@ function view_lftp($user_id)
 				<div class="card-body">$lftp_name<span id="lftp" style="float:right">
 					$lftp_total_format $sa->currency</span></div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
-					<a class="small" href="$link_add_royalty">Add Stakes</a>
+					<a class="small" href="$link_add_royalty">Add Package</a>
 					<div class="small"><i class="fas fa-angle-right"></i></div>
 				</div>
 			</div>
@@ -348,8 +348,8 @@ function view_fast_track($user_id)
 		<div class="card mb-4">
 			<div class="card-header">
 				<i class="fas fa-table me-1"></i>
-				Profit Share<span style="float:right">
-					Passive Income: $fast_track_interest_format $sa->currency</span>
+				Passive Program<span style="float:right">
+					Passive Wallet: $fast_track_interest_format $sa->currency</span>
 			</div>
 			<div class="card-body">
 				<table id="datatablesSimple">
@@ -375,20 +375,20 @@ function table_fast_track($user_id)
 	$str = <<<HTML
 		<thead>
 			<tr>
-				<th>Initial</th>
-				<th>Accumulated</th>
-				<th>Running Days</th>
-				<th>Maturity Date ($maturity days)</th>
-				<th>Status</th>							
+				<th>Package</th>
+				<th>Profit</th>
+				<th>Day</th>
+				<th>Time Frame ($maturity days)</th>
+				<th>Remarks</th>							
 			</tr>
 		</thead>
 		<tfoot>
 			<tr>
-				<th>Initial</th>
-				<th>Accumulated</th>
-				<th>Running Days</th>
-				<th>Maturity Date ($maturity days)</th>
-				<th>Status</th>
+				<th>Package</th>
+				<th>Profit</th>
+				<th>Day</th>
+				<th>Time Frame ($maturity days)</th>
+				<th>Remarks</th>							
 			</tr>
 		</tfoot>
 		<tbody>
@@ -1117,7 +1117,7 @@ function row_balance($user_id): string
 		'<a style="float:right" href="' . sef(130) . '">Reactivate Account</a>';
 
 	return '<tr>
-	        <td><a href="javascript:void(0)">Wallet Available Balance</a>:</td>
+	        <td><a href="javascript:void(0)">Wallet Balance</a>:</td>
 	        <td>' . number_format(user($user_id)->{$field_balance}, 8) .
 		' ' . $sa->currency . (!$sp->account_freeze ? '' : $reactivate) .
 		'</td>

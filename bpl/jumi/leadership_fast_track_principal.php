@@ -59,11 +59,11 @@ function main()
 		<ol class="breadcrumb mb-4">
 			<li class="breadcrumb-item active">Income Summary</li>
 		</ol>
-		<div class="row">
+		<!-- <div class="row">
 			$view_status
 			$view_total_members
 			$view_total_bonus
-		</div>				
+		</div> -->				
 		$view_lftp
 	</div>
 	HTML;
@@ -148,7 +148,7 @@ function view_total_bonus($user_id)
 				<div class="card-body">Royalty Bonus<span id="royalty_bonus" style="float:right">
 					$lftp_total_format $sa->currency</span></div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
-					<a class="small text-white stretched-link" href="$link_add_royalty">Add Stakes</a>
+					<a class="small text-white stretched-link" href="$link_add_royalty">Add Package</a>
 					<div class="small text-white"><i class="fas fa-angle-right"></i></div>
 				</div>
 			</div>
@@ -191,17 +191,17 @@ function table_profit_chart($user_id)
 		<thead>
 			<tr>
 				<th>Level</th>
-				<th>Accounts</th>
+				<th>Members</th>
 				<th>Profit</th>
-				<th>Fixed Rate (%)</th>
+				<th>Alotted Income (%)</th>
 			</tr>
 		</thead>
 		<tfoot>
 			<tr>
 				<th>Level</th>
-				<th>Accounts</th>
+				<th>Members</th>
 				<th>Profit</th>
-				<th>Fixed Rate (%)</th>
+				<th>Alotted Income (%)</th>
 			</tr>
 		</tfoot>
 		<tbody>

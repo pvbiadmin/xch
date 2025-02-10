@@ -54,7 +54,7 @@ function main()
     page_validate();
 
     $notifications = notifications();
-    $view_form = view_request_efund();
+    $view_form = view_form();
     $view_shares = view_shares($user_id);
     $view_principal = view_principal($user_id);
     $view_balance = view_balance($user_id);
@@ -64,7 +64,7 @@ function main()
 	<div class="container-fluid px-4">
 		<h1 class="mt-4">Passive Income</h1>
 		<ol class="breadcrumb mb-4">
-			<li class="breadcrumb-item active">Add Stakes</li>
+			<li class="breadcrumb-item active">Add Package</li>
 		</ol>
 		$notifications
 		<div class="row">
@@ -163,7 +163,7 @@ function view_form()
     return <<<HTML
         <div class="col-xl-3 col-md-6" id="view-form-container">
             <div class="card mb-4">
-                <div class="card-body">Add Stakes</div>
+                <div class="card-body">Add Package</div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <input type="text" id="fast_track_input" placeholder="Enter value" class="form-control">
                     &nbsp;
@@ -189,7 +189,7 @@ function view_shares($user_id)
     return <<<HTML
 		<div class="col-xl-3 col-md-6">
 			<div class="card mb-4">
-				<div class="card-body">Shares</div>
+				<div class="card-body">Profit</div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
 					<span class="fast_track_value_last">$shares</span>
 					<div class="small"><i class="fas fa-angle-right"></i></div>
@@ -207,7 +207,7 @@ function view_principal($user_id)
     return <<<HTML
 		<div class="col-xl-3 col-md-6">
 			<div class="card mb-4">
-				<div class="card-body">Value</div>
+				<div class="card-body">Total Principal</div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
 					<span class="fast_track_principal">$value</span>
 					<div class="small"><i class="fas fa-angle-right"></i></div>
@@ -227,7 +227,7 @@ function view_balance($user_id)
     return <<<HTML
 		<div class="col-xl-3 col-md-6">
 			<div class="card mb-4">
-				<div class="card-body">$sa->efund_name Balance</div>
+				<div class="card-body">Wallet</div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
 					<span class="usd_bal_now_user">$balance_format</span>
 					<div class="small"><i class="fas fa-angle-right"></i></div>
@@ -251,7 +251,7 @@ function view_tbl_fast_track($user_id, $counter): string
 		<div class="card mb-4">
 			<div class="card-header">
 				<i class="fas fa-table me-1"></i>
-				List Stakes{$counter_span}
+				Package{$counter_span}
 			</div>
 			<div class="card-body">
 				<table id="datatablesSimple">
@@ -279,26 +279,26 @@ function table_list_stakes($user_id)
     $str = <<<HTML
 		<thead>
 			<tr>
-				<th>Initial</th>
-				<th>Accumulated</th>
-				<th>Running Days</th>
-				<th>Maturity Date ($maturity days)</th>
-				<th>Status</th>							
+				<th>Package</th>
+				<th>Profit</th>
+				<th>Day</th>
+				<th>Time Frame ($maturity days)</th>
+				<th>Remarks</th>							
 			</tr>
 		</thead>
 		<tfoot>
-			<tr>
-				<th>Initial</th>
-				<th>Accumulated</th>
-				<th>Running Days</th>
-				<th>Maturity Date ($maturity days)</th>
-				<th>Status</th>
+            <tr>
+				<th>Package</th>
+				<th>Profit</th>
+				<th>Day</th>
+				<th>Time Frame ($maturity days)</th>
+				<th>Remarks</th>							
 			</tr>
 		</tfoot>
 		<tbody>
 			$row_list_stakes						
 		</tbody>
-	HTML;
+HTML;
 
     return $str;
 }

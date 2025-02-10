@@ -133,9 +133,9 @@ function main()
 	$str .= <<<HTML
 	<div class="container-fluid px-4">
 		<h1 class="mt-4">Request $efund_name</h1>
-		<ol class="breadcrumb mb-4">
+		<!-- <ol class="breadcrumb mb-4">
 			<li class="breadcrumb-item active">$notes</li>
-		</ol>				
+		</ol> -->				
 		$view_request_efund
 	</div>
 	HTML;
@@ -171,6 +171,255 @@ function view_request_efund($user_id): string
         $view_pending_requests
     </div>	
 HTML;
+}
+
+function view_pending_requests($user_id): string
+{
+	$sa = settings('ancillaries');
+
+	$efund_name = $sa->efund_name;
+
+	$table_pending_requests = table_pending_requests($user_id);
+
+	return <<<HTML
+		<div class="card mb-4">
+			<div class="card-header">
+				<i class="fas fa-hourglass me-1"></i>
+				Pending $efund_name Requests
+			</div>
+			<div class="card-body">
+				<table id="datatablesSimple">
+					$table_pending_requests
+				</table>
+			</div>
+		</div>
+	HTML;
+}
+
+function table_pending_requests($user_id)
+{
+	$sa = settings('ancillaries');
+	$currency = $sa->currency;
+
+	$row_pending_requests = row_pending_requests($user_id);
+
+	$str = <<<HTML
+		<thead>
+			<tr>
+				<th>Date</th>
+				<th>Amount ($currency)</th>
+				<th>Value ($currency)</th>				
+				<th>Payment</th>
+				<th>Cancel</th>
+			</tr>
+		</thead>
+		<tfoot>
+			<tr>
+				<th>Date</th>
+				<th>Amount ($currency)</th>
+				<th>Value ($currency)</th>				
+				<th>Payment</th>
+				<th>Cancel</th>
+			</tr>
+		</tfoot>
+		<tbody>
+			$row_pending_requests						
+		</tbody>
+	HTML;
+
+	return $str;
+}
+
+function row_pending_requests($user_id): string
+{
+	$user_id = session_get('user_id');
+	$pending = user_efund_request($user_id);
+	$efund_name = settings('ancillaries')->efund_name;
+
+	$str = '';
+
+	if (empty($pending)) {
+		// $str .= 'No pending ' . $efund_name . ' requests yet.';
+	} else {
+		foreach ($pending as $tmp) {
+			$user_admin = user(1);
+			$admin_arr_payment = arr_payment_method($user_admin);
+			$admin_payment_address = $admin_arr_payment[$tmp->method] ?? '';
+			$payment_method = strtoupper($tmp->method);
+
+			// if (isset($admin_arr_payment[$tmp->method]) && is_array($admin_arr_payment[$tmp->method])) {
+			// 	foreach ($admin_arr_payment[$tmp->method] as $k => $v) {
+			// 		$payment_method = strtoupper($k);
+			// 		$admin_payment_address = $v;
+			// 		break;
+			// 	}
+			// }
+
+			// foreach ($admin_arr_payment as $k => $v) {
+			// if (!is_array($v)) {
+			// 	// Handle simple key-value pairs
+			// 	$str .= '<div class="input-group mb-2">';
+			// 	$str .= '<div class="input-group-text">' . ucwords(htmlspecialchars($k)) . '</div>';
+			// 	$str .= '<input type="text" class="form-control" value="' . htmlspecialchars($v) . '" readonly>';
+			// 	$str .= '</div>';
+			// } else {
+			// Handle nested arrays
+			// $str .= '<div class="input-group mb-2">';
+			// $str .= '<div class="input-group-text">' . ucwords(htmlspecialchars($k)) . '</div>';
+
+			// Create a concatenated string of all nested values
+			$nested_values = [];
+			foreach ($admin_payment_address as $x => $y) {
+				$nested_values[] = ucwords(htmlspecialchars($x)) . ': ' . htmlspecialchars($y);
+			}
+
+			$admin_payment_details = '<input type="text" class="form-control" value="' . implode(' | ', $nested_values) . '" readonly>';
+			// $str .= '</div>';
+			// }
+			// }
+
+			$currency = in_array($tmp->method, ['bank', 'gcash', 'maya']) ? 'PHP' : $tmp->method;
+
+			$str .= '<tr>';
+			$str .= '<td>' . date('M j, Y - g:i A', $tmp->date_requested) . '</td>';
+			$str .= '<td>' . number_format($tmp->amount, 2) . ' ' . /* $efund_name . */ '</td>';
+			$str .= '<td>' . number_format($tmp->price, 2) . ' ' . /* strtoupper($currency) . */ '</td>';
+
+			// $str .= '<td><input type="button" class="uk-button uk-button-primary" value="' .
+			// 	strtoupper($payment_method) . '" data-uk-modal="{target:\'#modal-' . $tmp->request_id . '\'}"></td>';
+
+			$str .= '<td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-' . $tmp->request_id . '">' .
+				strtoupper($payment_method) . '</button></td>';
+
+			// $str .= '<div id="modal-' . $tmp->request_id . '" class="uk-modal" aria-hidden="true" style="display: none; overflow-y: scroll; margin-top: 150px">';
+			// $str .= '<div class="uk-modal-dialog" style="text-align: center">';
+			// $str .= '<button type="button" class="uk-modal-close uk-close"></button>';
+
+			$contact_info = arr_contact_info($user_admin);
+			$messenger = $contact_info['messenger'] ?? '';
+			$contact = $messenger ? '<p><b>Admin Messenger URL:</b> ' . $messenger . '</p>' : '';
+			$contact .= isset($user_admin->email) ? '<p><b>Admin Email Address:</b> ' . $user_admin->email . '</p>' : '';
+
+			// if (!in_array($tmp->method, ['bank', 'gcash', 'maya'])) {
+			// 	$str .= '<img src="images/trust-wallet.svg" alt="" width="150px">';
+			// 	$str .= '<p style="color: red;">After successful transaction, please screenshot the transaction and send it to the email below. The transaction will be processed within 24 hours, and you will see the ' . $efund_name . ' in your dashboard wallet. For any concerns, you can email us anytime.<br><br> -- "Support Team".</p>';
+			// 	$str .= $contact;
+			// 	$str .= '<img src="' . qr_code_generate($admin_payment_address) . '" alt="QR Code Trust Wallet" style="width:250px;">';
+			// 	$str .= '<p>Please pay <b>' . number_format($tmp->price, 8) . '</b> ' . strtoupper($currency) . ' to the following Wallet Address:</p>';
+			// 	$str .= '<p><b>' . $admin_payment_address . '</b></p>';
+			// } else {
+
+			// }
+
+			$str .= '<div class="modal fade" id="modal-' . $tmp->request_id . '" tabindex="-1" aria-labelledby="modal-' . $tmp->request_id . 'Label" aria-hidden="true">
+					<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+						<h1 class="modal-title fs-5" id="modal-' . $tmp->request_id . 'Label">Merchant Information</h1>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">';
+
+			if ($tmp->method === 'gcash') {
+				$str .= '<p>Pay <b>' . number_format($tmp->price, 2) . '</b> ' . strtoupper($currency) . ' to the following Gcash Account:</p>';
+				$str .= /* '<p><b>' . $admin_payment_address . '</b></p>' */ $admin_payment_details;
+			} elseif ($tmp->method === 'maya') {
+				$str .= '<p>Pay <b>' . number_format($tmp->price, 2) . '</b> ' . strtoupper($currency) . ' to the following ' . /* strtoupper($payment_method) . */ ' Maya Account:</p>';
+				$str .= /* '<p><b>' . $admin_payment_address . '</b></p>' */ $admin_payment_details;
+			} elseif ($tmp->method === 'bank') {
+				$str .= '<p>Pay <b>' . number_format($tmp->price, 2) . '</b> ' . strtoupper($currency) . ' to the following ' . /* strtoupper($payment_method) . */ ' Bank Account:</p>';
+				$str .= /* '<p><b>' . $admin_payment_address . '</b></p>' */ $admin_payment_details;
+			}
+
+			$str .= '<p>Please send the screenshot of your payment to the following contact:</p>';
+
+			$str .= $contact;
+
+			$str .= '</div>
+						<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>						
+						</div>
+					</div>
+					</div>
+				</div>';
+
+			// $str .= '</div></div></td>';
+
+			// $str .= '<td><input type="button" class="uk-button uk-button-primary" value="Cancel" data-uk-modal="{target:\'#modal-cancel-' . $tmp->request_id . '\'}"></td>';
+
+			$str .= '<td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-cancel-' . $tmp->request_id . '">Cancel</button></td>';
+
+			$str .= '<div class="modal fade" id="modal-cancel-' . $tmp->request_id . '" tabindex="-1" aria-labelledby="modal-cancel-' . $tmp->request_id . 'Label" aria-hidden="true">
+					<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+						<h1 class="modal-title fs-5" id="modal-cancel-' . $tmp->request_id . 'Label">Cancel Request</h1>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">';
+
+			$str .= '<p>Date Requested: ' . date('M j, Y - g:i A', $tmp->date_requested) . '</p>';
+			$str .= '<p>Amount: ' . number_format($tmp->amount, 2) . '</p>';
+			$str .= '<p>Price: ' . number_format($tmp->price, 2) . ' ' . strtoupper($currency) . '</p>';
+
+			$str .= '</div>
+						<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<a href="' . sef(73) . qs() . 'cid=' . $tmp->request_id . '" type="button" class="btn btn-primary">Confirm</a>
+						</div>
+					</div>
+					</div>
+				</div>';
+
+			// $str .= '<div id="modal-cancel-' . $tmp->request_id . '" class="uk-modal" aria-hidden="true" style="display: none; overflow-y: scroll; margin-top: 120px">';
+			// $str .= '<div class="uk-modal-dialog" style="text-align: center">';
+			// $str .= '<button type="button" class="uk-modal-close uk-close"></button>';
+			// $str .= '<p><strong>Are you sure you want to cancel this request?</strong></p>';
+			// $str .= '<div class="uk-panel uk-panel-box" style="text-align: left">';
+			// $str .= '<h3 class="uk-panel-title"><strong>Date Requested:</strong> ' . date('M j, Y - g:i A', $tmp->date_requested) . '</h3>';
+			// $str .= '<h3 class="uk-panel-title"><strong>Amount:</strong> ' . number_format($tmp->amount, 2) . '</h3>';
+			// $str .= '<h3 class="uk-panel-title"><strong>Final: </strong> ' . number_format($tmp->price, 2) . ' ' . strtoupper($currency) . '</h3>';
+			// $str .= '</div>';
+			// $str .= '<div class="uk-modal-footer" style="text-align: right">';
+			// $str .= '<input type="button" class="uk-modal-close uk-button uk-button-primary" value="Close">';
+			// $str .= '<a href="' . sef(73) . qs() . 'cid=' . $tmp->request_id . '" type="button" class="uk-button uk-button-primary">Confirm</a>';
+			// $str .= '</div></div></div></tr>';
+		}
+
+		// $str .= '</tbody></table>';
+	}
+
+	return $str;
+}
+
+function modal_buy_token($admin_payment_address): string
+{
+	$str = '<div id="modal-buy-token" class="uk-modal" aria-hidden="true" style="display: none; overflow-y: scroll; margin-top: 150px">';
+
+	$str .= '<div class="uk-modal-dialog" style="text-align: center">
+                <button type="button" class="uk-modal-close uk-close"></button>               
+                <div class="uk-width-1-1 uk-form uk-grid-margin" style="text-align: center">                    
+                    <legend>Buy Token in This Wallet Address</legend>
+                    <p style="font-weight: bolder; font-size: large">' . $admin_payment_address . '</p>                   
+                </div>';
+
+	$str .= '<img src="' . qr_code_generate($admin_payment_address) .
+		'" alt="QR Code Trust Wallet" style="width:250px;">';
+
+	$str .= '</div>';
+
+	//	$str .= '<div class="uk-modal-dialog" style="text-align: center">';
+//	$str .= '<button type="button" class="uk-modal-close uk-close"></button>';
+
+	//	$str .= '<div class="uk-form-row">
+//                                <input type="text" value="' . $admin_payment_address . '" class="uk-form-large uk-form-width-small">
+//                                <button class="uk-button uk-button-large" type="reset">Large</button>
+//                            </div>';
+
+	$str .= '</div>
+	        </div>';
+
+	return $str;
 }
 
 function view_form($user_id)
@@ -211,7 +460,7 @@ function view_form($user_id)
 			</div>
 
             <div class="form-group actions">
-                <button type="submit" class="btn btn-primary">Submit</button>                
+                <button type="submit" class="btn btn-primary">Buy</button>                
             </div>
         </form>
     </div>
@@ -485,7 +734,7 @@ function process_request($user_id, $amount, $method)
 		ExceptionHandler::render($e);
 	}
 
-	$app->enqueueMessage('Your transaction will be posted below with a pending request, press Method at the bottom and pay your pending entry.', 'success');
+	$app->enqueueMessage('Click the method and complete your transaction.', 'success');
 	$app->redirect(Uri::current());
 }
 
@@ -642,253 +891,6 @@ function arr_contact_info($user)
 	$contact_info = empty($user->contact) ? '{}' : $user->contact;
 
 	return json_decode($contact_info, true);
-}
-
-function view_pending_requests($user_id): string
-{
-	$sa = settings('ancillaries');
-
-	$efund_name = $sa->efund_name;
-
-	$table_pending_requests = table_pending_requests($user_id);
-
-	return <<<HTML
-		<div class="card mb-4">
-			<div class="card-header">
-				<i class="fas fa-hourglass me-1"></i>
-				Pending $efund_name Requests
-			</div>
-			<div class="card-body">
-				<table id="datatablesSimple">
-					$table_pending_requests
-				</table>
-			</div>
-		</div>
-	HTML;
-}
-
-function table_pending_requests($user_id)
-{
-	$sa = settings('ancillaries');
-	$currency = $sa->currency;
-
-	$row_pending_requests = row_pending_requests($user_id);
-
-	$str = <<<HTML
-		<thead>
-			<tr>
-				<th>Date Requested</th>
-				<th>Amount ($currency)</th>
-				<th>Price ($currency)</th>				
-				<th>Method</th>
-				<th>Action</th>
-			</tr>
-		</thead>
-		<tfoot>
-			<tr>
-				<th>Date Requested</th>
-				<th>Amount ($currency)</th>
-				<th>Price ($currency)</th>				
-				<th>Method</th>
-				<th>Action</th>
-			</tr>
-		</tfoot>
-		<tbody>
-			$row_pending_requests						
-		</tbody>
-	HTML;
-
-	return $str;
-}
-
-function row_pending_requests($user_id): string
-{
-	$user_id = session_get('user_id');
-	$pending = user_efund_request($user_id);
-	$efund_name = settings('ancillaries')->efund_name;
-
-	$str = '';
-
-	if (empty($pending)) {
-		// $str .= 'No pending ' . $efund_name . ' requests yet.';
-	} else {
-		foreach ($pending as $tmp) {
-			$user_admin = user(1);
-			$admin_arr_payment = arr_payment_method($user_admin);
-			$admin_payment_address = $admin_arr_payment[$tmp->method] ?? '';
-			$payment_method = strtoupper($tmp->method);
-
-			// if (isset($admin_arr_payment[$tmp->method]) && is_array($admin_arr_payment[$tmp->method])) {
-			// 	foreach ($admin_arr_payment[$tmp->method] as $k => $v) {
-			// 		$payment_method = strtoupper($k);
-			// 		$admin_payment_address = $v;
-			// 		break;
-			// 	}
-			// }
-
-			// foreach ($admin_arr_payment as $k => $v) {
-			// if (!is_array($v)) {
-			// 	// Handle simple key-value pairs
-			// 	$str .= '<div class="input-group mb-2">';
-			// 	$str .= '<div class="input-group-text">' . ucwords(htmlspecialchars($k)) . '</div>';
-			// 	$str .= '<input type="text" class="form-control" value="' . htmlspecialchars($v) . '" readonly>';
-			// 	$str .= '</div>';
-			// } else {
-			// Handle nested arrays
-			// $str .= '<div class="input-group mb-2">';
-			// $str .= '<div class="input-group-text">' . ucwords(htmlspecialchars($k)) . '</div>';
-
-			// Create a concatenated string of all nested values
-			$nested_values = [];
-			foreach ($admin_payment_address as $x => $y) {
-				$nested_values[] = ucwords(htmlspecialchars($x)) . ': ' . htmlspecialchars($y);
-			}
-
-			$admin_payment_details = '<input type="text" class="form-control" value="' . implode(' | ', $nested_values) . '" readonly>';
-			// $str .= '</div>';
-			// }
-			// }
-
-			$currency = in_array($tmp->method, ['bank', 'gcash', 'maya']) ? 'PHP' : $tmp->method;
-
-			$str .= '<tr>';
-			$str .= '<td>' . date('M j, Y - g:i A', $tmp->date_requested) . '</td>';
-			$str .= '<td>' . number_format($tmp->amount, 2) . ' ' . /* $efund_name . */ '</td>';
-			$str .= '<td>' . number_format($tmp->price, 2) . ' ' . /* strtoupper($currency) . */ '</td>';
-
-			// $str .= '<td><input type="button" class="uk-button uk-button-primary" value="' .
-			// 	strtoupper($payment_method) . '" data-uk-modal="{target:\'#modal-' . $tmp->request_id . '\'}"></td>';
-
-			$str .= '<td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-' . $tmp->request_id . '">' .
-				strtoupper($payment_method) . '</button></td>';
-
-			// $str .= '<div id="modal-' . $tmp->request_id . '" class="uk-modal" aria-hidden="true" style="display: none; overflow-y: scroll; margin-top: 150px">';
-			// $str .= '<div class="uk-modal-dialog" style="text-align: center">';
-			// $str .= '<button type="button" class="uk-modal-close uk-close"></button>';
-
-			$contact_info = arr_contact_info($user_admin);
-			$messenger = $contact_info['messenger'] ?? '';
-			$contact = $messenger ? '<p><b>Admin Messenger URL:</b> ' . $messenger . '</p>' : '';
-			$contact .= isset($user_admin->email) ? '<p><b>Admin Email Address:</b> ' . $user_admin->email . '</p>' : '';
-
-			// if (!in_array($tmp->method, ['bank', 'gcash', 'maya'])) {
-			// 	$str .= '<img src="images/trust-wallet.svg" alt="" width="150px">';
-			// 	$str .= '<p style="color: red;">After successful transaction, please screenshot the transaction and send it to the email below. The transaction will be processed within 24 hours, and you will see the ' . $efund_name . ' in your dashboard wallet. For any concerns, you can email us anytime.<br><br> -- "Support Team".</p>';
-			// 	$str .= $contact;
-			// 	$str .= '<img src="' . qr_code_generate($admin_payment_address) . '" alt="QR Code Trust Wallet" style="width:250px;">';
-			// 	$str .= '<p>Please pay <b>' . number_format($tmp->price, 8) . '</b> ' . strtoupper($currency) . ' to the following Wallet Address:</p>';
-			// 	$str .= '<p><b>' . $admin_payment_address . '</b></p>';
-			// } else {
-
-			// }
-
-			$str .= '<div class="modal fade" id="modal-' . $tmp->request_id . '" tabindex="-1" aria-labelledby="modal-' . $tmp->request_id . 'Label" aria-hidden="true">
-					<div class="modal-dialog">
-					<div class="modal-content">
-						<div class="modal-header">
-						<h1 class="modal-title fs-5" id="modal-' . $tmp->request_id . 'Label">Payment Instruction</h1>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-						</div>
-						<div class="modal-body">';
-
-			$str .= $contact;
-
-			if ($tmp->method === 'gcash') {
-				$str .= '<p>Please pay <b>' . number_format($tmp->price, 2) . '</b> ' . strtoupper($currency) . ' to the following Gcash Account:</p>';
-				$str .= /* '<p><b>' . $admin_payment_address . '</b></p>' */ $admin_payment_details;
-			} elseif ($tmp->method === 'maya') {
-				$str .= '<p>Please pay <b>' . number_format($tmp->price, 2) . '</b> ' . strtoupper($currency) . ' to the following ' . /* strtoupper($payment_method) . */ ' Maya Account:</p>';
-				$str .= /* '<p><b>' . $admin_payment_address . '</b></p>' */ $admin_payment_details;
-			} elseif ($tmp->method === 'bank') {
-				$str .= '<p>Please pay <b>' . number_format($tmp->price, 2) . '</b> ' . strtoupper($currency) . ' to the following ' . /* strtoupper($payment_method) . */ ' Bank Account:</p>';
-				$str .= /* '<p><b>' . $admin_payment_address . '</b></p>' */ $admin_payment_details;
-			}
-
-			$str .= '</div>
-						<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>						
-						</div>
-					</div>
-					</div>
-				</div>';
-
-			// $str .= '</div></div></td>';
-
-			// $str .= '<td><input type="button" class="uk-button uk-button-primary" value="Cancel" data-uk-modal="{target:\'#modal-cancel-' . $tmp->request_id . '\'}"></td>';
-
-			$str .= '<td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-cancel-' . $tmp->request_id . '">Cancel</button></td>';
-
-			$str .= '<div class="modal fade" id="modal-cancel-' . $tmp->request_id . '" tabindex="-1" aria-labelledby="modal-cancel-' . $tmp->request_id . 'Label" aria-hidden="true">
-					<div class="modal-dialog">
-					<div class="modal-content">
-						<div class="modal-header">
-						<h1 class="modal-title fs-5" id="modal-cancel-' . $tmp->request_id . 'Label">Cancel Request</h1>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-						</div>
-						<div class="modal-body">';
-
-			$str .= '<p>Date Requested: ' . date('M j, Y - g:i A', $tmp->date_requested) . '</p>';
-			$str .= '<p>Amount: ' . number_format($tmp->amount, 2) . '</p>';
-			$str .= '<p>Price: ' . number_format($tmp->price, 2) . ' ' . strtoupper($currency) . '</p>';
-
-			$str .= '</div>
-						<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-						<a href="' . sef(73) . qs() . 'cid=' . $tmp->request_id . '" type="button" class="btn btn-primary">Confirm</a>
-						</div>
-					</div>
-					</div>
-				</div>';
-
-			// $str .= '<div id="modal-cancel-' . $tmp->request_id . '" class="uk-modal" aria-hidden="true" style="display: none; overflow-y: scroll; margin-top: 120px">';
-			// $str .= '<div class="uk-modal-dialog" style="text-align: center">';
-			// $str .= '<button type="button" class="uk-modal-close uk-close"></button>';
-			// $str .= '<p><strong>Are you sure you want to cancel this request?</strong></p>';
-			// $str .= '<div class="uk-panel uk-panel-box" style="text-align: left">';
-			// $str .= '<h3 class="uk-panel-title"><strong>Date Requested:</strong> ' . date('M j, Y - g:i A', $tmp->date_requested) . '</h3>';
-			// $str .= '<h3 class="uk-panel-title"><strong>Amount:</strong> ' . number_format($tmp->amount, 2) . '</h3>';
-			// $str .= '<h3 class="uk-panel-title"><strong>Final: </strong> ' . number_format($tmp->price, 2) . ' ' . strtoupper($currency) . '</h3>';
-			// $str .= '</div>';
-			// $str .= '<div class="uk-modal-footer" style="text-align: right">';
-			// $str .= '<input type="button" class="uk-modal-close uk-button uk-button-primary" value="Close">';
-			// $str .= '<a href="' . sef(73) . qs() . 'cid=' . $tmp->request_id . '" type="button" class="uk-button uk-button-primary">Confirm</a>';
-			// $str .= '</div></div></div></tr>';
-		}
-
-		// $str .= '</tbody></table>';
-	}
-
-	return $str;
-}
-
-function modal_buy_token($admin_payment_address): string
-{
-	$str = '<div id="modal-buy-token" class="uk-modal" aria-hidden="true" style="display: none; overflow-y: scroll; margin-top: 150px">';
-
-	$str .= '<div class="uk-modal-dialog" style="text-align: center">
-                <button type="button" class="uk-modal-close uk-close"></button>               
-                <div class="uk-width-1-1 uk-form uk-grid-margin" style="text-align: center">                    
-                    <legend>Buy Token in This Wallet Address</legend>
-                    <p style="font-weight: bolder; font-size: large">' . $admin_payment_address . '</p>                   
-                </div>';
-
-	$str .= '<img src="' . qr_code_generate($admin_payment_address) .
-		'" alt="QR Code Trust Wallet" style="width:250px;">';
-
-	$str .= '</div>';
-
-	//	$str .= '<div class="uk-modal-dialog" style="text-align: center">';
-//	$str .= '<button type="button" class="uk-modal-close uk-close"></button>';
-
-	//	$str .= '<div class="uk-form-row">
-//                                <input type="text" value="' . $admin_payment_address . '" class="uk-form-large uk-form-width-small">
-//                                <button class="uk-button uk-button-large" type="reset">Large</button>
-//                            </div>';
-
-	$str .= '</div>
-	        </div>';
-
-	return $str;
 }
 
 /**

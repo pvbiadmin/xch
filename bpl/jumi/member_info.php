@@ -54,9 +54,9 @@ function main()
 
 	$str .= <<<HTML
 <div class="container-fluid px-4">
-	<h1 class="mt-4">User Profile</h1>
+	<h1 class="mt-4">Profile</h1>
 	<ol class="breadcrumb mb-4">
-		<li class="breadcrumb-item active">Member Info</li>
+		<li class="breadcrumb-item active"></li>
 	</ol>
 	<div class="card mb-4">
 		<div class="card-body">
@@ -151,7 +151,7 @@ function account_information($user_id)
 <div class="card mb-4">
 	<div class="card-header">
 		<i class="fas fa-table me-1"></i>
-		Account Information
+		Member Information
 	</div>
 	<div class="card-body">
 		<div class="row">
