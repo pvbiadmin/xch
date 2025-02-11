@@ -53,6 +53,161 @@ function main()
 }
 
 /**
+ * @param $user_id
+ * @param $usertype
+ * @param $admintype
+ *
+ * @return string
+ *
+ * @since version
+ */
+function view_payouts($user_id, $usertype, $admintype): string
+{
+	// $str = '<h1>Payout Logs</h1>';
+
+	if ($usertype === 'Admin' && $admintype === 'Super') {
+		$view_payouts = view_payouts_admin(true);
+	} else {
+		$view_payouts = view_payouts_user($user_id, true);
+	}
+
+	$str = <<<HTML
+	<div class="container-fluid px-4">
+		<h1 class="mt-4">Payout Logs</h1>
+		<ol class="breadcrumb mb-4">
+			<li class="breadcrumb-item active">List of Payouts</li>
+		</ol>				
+		$view_payouts
+	</div>
+	HTML;
+
+	return $str;
+}
+
+/**
+ *
+ * @return string
+ *
+ * @since version
+ */
+function view_payouts_admin($counter): string
+{
+	$currency = settings('ancillaries')->currency;
+
+	$counter_span = '';
+
+	if ($counter) {
+		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
+	}
+
+	$table_payouts = table_payouts_admin();
+
+	$str = <<<HTML
+	<div class="card mb-4">
+		<div class="card-header">
+			<i class="fas fa-table me-1"></i>
+			Payout List{$counter_span}
+		</div>
+		<div class="card-body">
+			<table id="datatablesSimple">
+				$table_payouts
+			</table>
+		</div>		
+	</div>
+HTML;
+
+	// if (!empty($payouts)) {
+	// 	$str .= '<table class="category table table-striped table-bordered table-hover">
+	//         <thead>
+	//         <tr>
+	//             <th>Date</th>
+	//             <th>User</th>
+	//             <th>Method</th>
+	//             <th>Amount (' . $currency . ')</th>
+	//             <th>Charge (' . $currency . ')</th>
+	//             <th>Total Payouts (' . $currency . ')</th>
+	//         </tr>
+	//         </thead>
+	//         <tbody>';
+
+	// 	foreach ($payouts as $payout) {
+	// 		$user = user($payout->user_id);
+
+	// 		$str .= '<tr>';
+	// 		$str .= '<td>' . date('M j, Y - g:i A', $payout->payout_date) . '</td>';
+	// 		$str .= '<td><a href="' . sef(44) . qs() . 'uid=' .
+	// 			$user->id . '">' . $user->username . '</a></td>';
+	// 		$str .= '<td>' . /* payout_method($user) */ ucwords($payout->method) . '</td>';
+	// 		$str .= '<td>' . number_format($payout->amount, 2) . '</td>';
+	// 		$str .= '<td>' . number_format($payout->total_tax, 2) . '</td>';
+	// 		$str .= '<td>' . number_format($payout->payout_total, 2) . '</td>';
+	// 		$str .= '</tr>';
+	// 	}
+
+	// 	$str .= '</tbody>
+	//     </table>';
+	// } else {
+	// 	$str .= '<hr><p>No payouts yet.</p>';
+	// }
+
+	return $str;
+}
+
+/**
+ * @param $user_id
+ *
+ * @return string
+ *
+ * @since version
+ */
+function view_payouts_user($user_id, $counter = false): string
+{
+	$setting_ancillaries = settings('ancillaries');
+
+	$cybercharge = $setting_ancillaries->cybercharge / 100;
+	$processing_fee = $setting_ancillaries->processing_fee;
+	$currency = $setting_ancillaries->currency;
+
+	$payouts = payouts_user($user_id);
+
+	$total = 0;
+
+	foreach ($payouts as $payout) {
+		$total += ($payout->amount - (($payout->amount * $cybercharge) + $processing_fee));
+	}
+
+	$total_formatted = number_format($total, 2);
+
+	$counter_span = '';
+
+	if ($counter) {
+		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
+	}
+
+	$table_payouts = table_payouts($user_id);
+
+	$str = <<<HTML
+	<div class="card mb-4">
+		<div class="card-header">
+			<i class="fas fa-table me-1"></i>
+			Payouts List{$counter_span}
+		</div>
+		<div class="card-body">
+			<table id="datatablesSimple">
+				$table_payouts
+			</table>
+		</div>
+		<div class="card-footer small text-muted">
+			<i class="fas fa-money-bill me-1"></i>
+			Total Paid: $total_formatted $currency			
+		</div>
+	</div>
+HTML;
+
+	return $str;
+}
+
+/**
  * @param $usertype
  * @param $admintype
  * @param $account_type
@@ -153,75 +308,6 @@ function payout_method($user): string
 	return $payout_method;
 }
 
-/**
- *
- * @return string
- *
- * @since version
- */
-function view_payouts_admin($counter): string
-{
-	$currency = settings('ancillaries')->currency;
-
-	$counter_span = '';
-
-	if ($counter) {
-		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
-	}
-
-	$table_payouts = table_payouts_admin();
-
-	$str = <<<HTML
-	<div class="card mb-4">
-		<div class="card-header">
-			<i class="fas fa-table me-1"></i>
-			Payout List{$counter_span}
-		</div>
-		<div class="card-body">
-			<table id="datatablesSimple">
-				$table_payouts
-			</table>
-		</div>		
-	</div>
-HTML;
-
-	if (!empty($payouts)) {
-		$str .= '<table class="category table table-striped table-bordered table-hover">
-            <thead>
-            <tr>
-                <th>Date</th>
-                <th>User</th>
-                <th>Method</th>
-                <th>Amount (' . $currency . ')</th>
-                <th>Charge (' . $currency . ')</th>
-                <th>Total Payouts (' . $currency . ')</th>
-            </tr>
-            </thead>
-            <tbody>';
-
-		foreach ($payouts as $payout) {
-			$user = user($payout->user_id);
-
-			$str .= '<tr>';
-			$str .= '<td>' . date('M j, Y - g:i A', $payout->payout_date) . '</td>';
-			$str .= '<td><a href="' . sef(44) . qs() . 'uid=' .
-				$user->id . '">' . $user->username . '</a></td>';
-			$str .= '<td>' . /* payout_method($user) */ ucwords($payout->method) . '</td>';
-			$str .= '<td>' . number_format($payout->amount, 2) . '</td>';
-			$str .= '<td>' . number_format($payout->total_tax, 2) . '</td>';
-			$str .= '<td>' . number_format($payout->payout_total, 2) . '</td>';
-			$str .= '</tr>';
-		}
-
-		$str .= '</tbody>
-        </table>';
-	} else {
-		$str .= '<hr><p>No payouts yet.</p>';
-	}
-
-	return $str;
-}
-
 function table_payouts_admin()
 {
 	$sa = settings('ancillaries');
@@ -234,8 +320,7 @@ function table_payouts_admin()
 	<thead>
 		<tr>
 			<th>Date</th>
-			<th>User</th>
-			<th>Method</th>
+			<th>User</th>			
 			<th>Amount $currency</th>
 			<th>Charge $currency</th>
 			<th>Total Payouts $currency</th>
@@ -244,8 +329,7 @@ function table_payouts_admin()
 	<tfoot>
 		<tr>
 			<th>Date</th>
-			<th>User</th>
-			<th>Method</th>
+			<th>User</th>			
 			<th>Amount $currency</th>
 			<th>Charge $currency</th>
 			<th>Total Payouts $currency</th>
@@ -265,86 +349,32 @@ function row_payouts_admin()
 
 	$str = '';
 
-	if (empty($payouts)) {
-		$str .= <<<HTML
-			<tr>
-				<td>n/a</td>
-				<td>n/a</td>
-				<td>n/a</td>
-				<td>0</td>
-				<td>0</td>
-				<td>0</td>															
-			</tr>					
-		HTML;
-	} else {
-		foreach ($payouts as $payout) {
-			$user = user($payout->user_id);
-
-			$str .= '<tr>';
-			$str .= '<td>' . date('M j, Y - g:i A', $payout->payout_date) . '</td>';
-			$str .= '<td><a href="' . sef(44) . qs() . 'uid=' .
-				$user->id . '">' . $user->username . '</a></td>';
-			$str .= '<td>' . /* payout_method($user) */ ucwords($payout->method) . '</td>';
-			$str .= '<td>' . number_format($payout->amount, 2) . '</td>';
-			$str .= '<td>' . number_format($payout->total_tax, 2) . '</td>';
-			$str .= '<td>' . number_format($payout->payout_total, 2) . '</td>';
-			$str .= '</tr>';
-		}
-	}
-
-	return $str;
-}
-
-/**
- * @param $user_id
- *
- * @return string
- *
- * @since version
- */
-function view_payouts_user($user_id, $counter = false): string
-{
-	$setting_ancillaries = settings('ancillaries');
-
-	$cybercharge = $setting_ancillaries->cybercharge / 100;
-	$processing_fee = $setting_ancillaries->processing_fee;
-	$currency = $setting_ancillaries->currency;
-
-	$payouts = payouts_user($user_id);
-
-	$total = 0;
-
+	// if (empty($payouts)) {
+	// 	$str .= <<<HTML
+	// 		<tr>
+	// 			<td>n/a</td>
+	// 			<td>n/a</td>
+	// 			<td>n/a</td>
+	// 			<td>0</td>
+	// 			<td>0</td>
+	// 			<td>0</td>															
+	// 		</tr>					
+	// 	HTML;
+	// } else {
 	foreach ($payouts as $payout) {
-		$total += ($payout->amount - (($payout->amount * $cybercharge) + $processing_fee));
+		$user = user($payout->user_id);
+
+		$str .= '<tr>';
+		$str .= '<td>' . date('M j, Y - g:i A', $payout->payout_date) . '</td>';
+		$str .= '<td><a href="' . sef(44) . qs() . 'uid=' .
+			$user->id . '">' . $user->username . '</a></td>';
+		// $str .= '<td>' . /* payout_method($user) */ ucwords($payout->method) . '</td>';
+		$str .= '<td>' . number_format($payout->amount, 2) . '</td>';
+		$str .= '<td>' . number_format($payout->total_tax, 2) . '</td>';
+		$str .= '<td>' . number_format($payout->payout_total, 2) . '</td>';
+		$str .= '</tr>';
 	}
-
-	$total_formatted = number_format($total, 2);
-
-	$counter_span = '';
-
-	if ($counter) {
-		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
-	}
-
-	$table_payouts = table_payouts($user_id);
-
-	$str = <<<HTML
-	<div class="card mb-4">
-		<div class="card-header">
-			<i class="fas fa-table me-1"></i>
-			Payouts List{$counter_span}
-		</div>
-		<div class="card-body">
-			<table id="datatablesSimple">
-				$table_payouts
-			</table>
-		</div>
-		<div class="card-footer small text-muted">
-			<i class="fas fa-money-bill me-1"></i>
-			Total Paid: $total_formatted $currency			
-		</div>
-	</div>
-HTML;
+	// }
 
 	return $str;
 }
@@ -356,15 +386,13 @@ function table_payouts($user_id)
 	$str = <<<HTML
 		<thead>
 			<tr>
-				<th>Date</th>
-				<th>Method</th>
+				<th>Date</th>				
 				<th>Amount</th>				
 			</tr>
 		</thead>
 		<tfoot>
 			<tr>
-				<th>Date</th>
-				<th>Method</th>
+				<th>Date</th>				
 				<th>Amount</th>				
 			</tr>
 		</tfoot>
@@ -387,59 +415,25 @@ function row_payouts($user_id)
 
 	$str = '';
 
-	if (empty($payouts)) {
-		$str .= <<<HTML
-			<tr>
-				<td>n/a</td>
-				<td>n/a</td>
-				<td>0</td>															
-			</tr>					
-		HTML;
-	} else {
-		foreach ($payouts as $payout) {
-			$user = user($payout->user_id);
+	// if (empty($payouts)) {
+	// 	$str .= <<<HTML
+	// 		<tr>
+	// 			<td>n/a</td>
+	// 			<td>n/a</td>
+	// 			<td>0</td>															
+	// 		</tr>					
+	// 	HTML;
+	// } else {
+	foreach ($payouts as $payout) {
+		// $user = user($payout->user_id);
 
-			$str .= '<tr>';
-			$str .= '<td>' . date('M j, Y - g:i A', $payout->payout_date) . '</td>';
-
-			$str .= /* payout_method($user) */ ucwords($payout->method);
-			$str .= '<td>' . number_format($payout->amount - (
-				($payout->amount * $cybercharge) + $processing_fee), 2) . '</td>';
-			$str .= '</tr>';
-		}
+		$str .= '<tr>';
+		$str .= '<td>' . date('M j, Y - g:i A', $payout->payout_date) . '</td>';
+		$str .= '<td>' . number_format($payout->amount - (
+			($payout->amount * $cybercharge) + $processing_fee), 2) . '</td>';
+		$str .= '</tr>';
 	}
-
-	return $str;
-}
-
-/**
- * @param $user_id
- * @param $usertype
- * @param $admintype
- *
- * @return string
- *
- * @since version
- */
-function view_payouts($user_id, $usertype, $admintype): string
-{
-	// $str = '<h1>Payout Logs</h1>';
-
-	if ($usertype === 'Admin' && $admintype === 'Super') {
-		$view_payouts = view_payouts_admin(true);
-	} else {
-		$view_payouts = view_payouts_user($user_id, true);
-	}
-
-	$str = <<<HTML
-	<div class="container-fluid px-4">
-		<h1 class="mt-4">Payout Logs</h1>
-		<ol class="breadcrumb mb-4">
-			<li class="breadcrumb-item active">List of Payouts</li>
-		</ol>				
-		$view_payouts
-	</div>
-	HTML;
+	// }
 
 	return $str;
 }

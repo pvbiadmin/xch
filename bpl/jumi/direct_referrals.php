@@ -114,27 +114,27 @@ function row_sponsored_members($user_id)
 
 	$str = '';
 
-	if (empty($directs)) {
+	// if (empty($directs)) {
+	// 	$str .= <<<HTML
+	// 		<tr>
+	// 			<td>0</td>
+	// 			<td>n/a</td>
+	// 			<td>n/a</td>
+	// 			<td>n/a</td>							
+	// 		</tr>					
+	// 	HTML;
+	// } else {
+	$ctr = 0;
+
+	foreach ($directs as $member) {
+		$ctr++;
+
+		$profile_link = sef(44) . qs() . 'uid=' . $member->id;
+
+		$package_name = $se->{$member->account_type . '_package_name'};
+		$rank_name = $sr->{$member->rank . '_rank_name'};
+
 		$str .= <<<HTML
-			<tr>
-				<td>0</td>
-				<td>n/a</td>
-				<td>n/a</td>
-				<td>n/a</td>							
-			</tr>					
-		HTML;
-	} else {
-		$ctr = 0;
-
-		foreach ($directs as $member) {
-			$ctr++;
-
-			$profile_link = sef(44) . qs() . 'uid=' . $member->id;
-
-			$package_name = $se->{$member->account_type . '_package_name'};
-			$rank_name = $sr->{$member->rank . '_rank_name'};
-
-			$str .= <<<HTML
 				<tr>
 					<td>$ctr</td>
 					<td><a href="$profile_link">$member->username</a></td>
@@ -142,8 +142,8 @@ function row_sponsored_members($user_id)
 					<td>$rank_name</td>									
 				</tr>
 			HTML;
-		}
 	}
+	// }
 
 	return $str;
 }

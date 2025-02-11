@@ -83,7 +83,7 @@ function view_transfer_efund($user_id)
 	$sa = settings('ancillaries');
 	$efund_name = $sa->efund_name;
 
-	$view_form = view_form_approve($user_id);
+	$view_form = view_form($user_id);
 	$view_transfer_history = view_transfer_history($user_id);
 	$notifications = notifications();
 
