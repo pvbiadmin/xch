@@ -315,7 +315,7 @@ function update_user($fast_track, $value_now, $donation_new)
 		]
 	);
 
-	if ($fast_track->day + 1 >= 5) {
+	if ($fast_track->day + 1 >= 10) {
 		crud(
 			'UPDATE network_users' .
 			' SET payout_transfer = :payout_transfer' .
