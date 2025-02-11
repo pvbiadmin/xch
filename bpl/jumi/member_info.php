@@ -191,12 +191,25 @@ function referral_information($user_id)
 	$username = $user->username;
 	$sponsored_members = directs($user_id);
 	$count_sponsored_members = count($sponsored_members);
-	$sponsor_id = $user->sponsor_id;
-	$sponsor = user($sponsor_id);
-	$sponsor_info_link = sef(44) . qs() . 'uid=' . $sponsor_id;
-	$sponsor_username = htmlspecialchars($sponsor->username);
 	$link = 'http://' . $_SERVER['SERVER_NAME'] . root_url() . '/' . htmlspecialchars($username);
 	$script = script_copy_referral_link();
+
+	$view_sponsor = '';
+
+	if ($user->usertype !== 'Admin') {
+		$sponsor_id = $user->sponsor_id;
+		$sponsor = user($sponsor_id);
+		$sponsor_info_link = sef(44) . qs() . 'uid=' . $sponsor_id;
+
+		$sponsor_username = htmlspecialchars($sponsor->username);
+
+		$view_sponsor = <<<HTML
+		<tr>
+			<th scope="row">Sponsor</th>
+			<td colspan="2"><a href="$sponsor_info_link">$sponsor_username</a></td>                        
+		</tr>
+HTML;
+	}
 
 	$str = <<<HTML
 <div class="card mb-4">
@@ -225,10 +238,7 @@ function referral_information($user_id)
 						<th scope="row">Sponsored Members</th>
 						<td>$count_sponsored_members</td>                        
 					</tr>
-					<tr>
-						<th scope="row">Sponsor</th>
-						<td colspan="2"><a href="$sponsor_info_link">$sponsor_username</a></td>                        
-					</tr>
+					$view_sponsor
 				</tbody>
 			</table>
 		</div>

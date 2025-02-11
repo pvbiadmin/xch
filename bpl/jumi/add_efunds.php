@@ -2,6 +2,7 @@
 
 namespace BPL\Jumi\Add_Efunds;
 
+require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'bpl/menu.php';
 require_once 'bpl/mods/ajax.php';
 require_once 'bpl/mods/query.php';
@@ -59,7 +60,7 @@ function main()
 
 	if ((int) $final !== 1) {
 		$str .= check_input2();
-		$str .= view_request_efund();
+		$str .= view_form();
 	} else {
 		$username = input_get('username');
 		$amount = input_get('amount');

@@ -234,7 +234,7 @@ function row_pending_requests($user_id): string
 {
 	$user_id = session_get('user_id');
 	$pending = user_efund_request($user_id);
-	$efund_name = settings('ancillaries')->efund_name;
+	// $efund_name = settings('ancillaries')->efund_name;
 
 	$str = '';
 

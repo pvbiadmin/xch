@@ -14,7 +14,7 @@ use Exception;
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Exception\ExceptionHandler;
 
-use function BPL\Mods\Payout_Method\main as payout_method;
+// use function BPL\Mods\Payout_Method\main as payout_method;
 
 use function Templates\SB_Admin\Tmpl\Master\main as master;
 
@@ -88,10 +88,16 @@ function main()
 
 function view_approve_withdrawals($uid, $final, $mode): string
 {
-	$view_form_approve = '';
+	$view_form_card = '';
 
 	if ($uid !== '' && (int) $final !== 1) {
 		$view_form_approve = view_form_approve($uid, $mode);
+
+		$view_form_card = <<<HTML
+			<div class="card mb-4">
+				$view_form_approve
+			</div>
+		HTML;
 	}
 
 	$notifications = notifications();
@@ -101,11 +107,9 @@ function view_approve_withdrawals($uid, $final, $mode): string
 	return <<<HTML
     <div class="container-fluid px-4">        
 		<div class="row justify-content-center">
-			<div class="col-lg-5">
+			<div class="col-lg-8">
 				$notifications
-				<div class="card mb-4">
-					$view_form_approve
-				</div>
+				$view_form_card
         	</div>		
 		</div>
         $view_withdrawals_pending
@@ -361,7 +365,7 @@ function row_form_approve($uid, $mode): string
 		'</td>
 				<td>' . ucwords($withdrawal->method) . '</td>
 				<td><input type="submit" value="' . ((int) $mode === 1 ? 'Approve' : 'Deny') .
-		'" name="submit" class="uk-button uk-button-primary"></td>
+		'" name="submit" class="btn btn-primary"></td>
 			</tr>';
 
 	// $str .= '</tbody>

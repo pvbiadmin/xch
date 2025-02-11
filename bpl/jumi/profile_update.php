@@ -46,10 +46,10 @@ master($content);
  */
 function main()
 {
-	$username = session_get('username');
+	// $username = session_get('username');
 	$usertype = session_get('usertype');
 	$admintype = session_get('admintype');
-	$account_type = session_get('account_type');
+	// $account_type = session_get('account_type');
 	$user_id = session_get('user_id');
 	$uid = input_get('uid');
 	$final = input_get('final');
@@ -485,7 +485,7 @@ function view_form($user_id, $admintype, $usertype): string
 	$str .= '<table class="category table table-striped table-bordered table-hover">';
 
 	$str .= view_form_super_access($admintype, $usertype, $user_id);
-	$str .= view_form_admin_access($user_id, $usertype);
+	// $str .= view_form_admin_access($user_id, $usertype);
 	$str .= view_form_account_info($user_id);
 	$str .= view_form_payment_method($user_id);
 	//	$str .= view_form_beneficiary($user_id);
@@ -1149,12 +1149,12 @@ function fill_payout_method($user)
 	}
 	/* } else if ($tokens) { */
 	/* foreach ($tokens as $token) {
-											   $strl_token = strtolower($token);
+															  $strl_token = strtolower($token);
 
-											   if ($payout_method === $strl_token) {
-												   $payout_method_user[$strl_token] = input_get($strl_token . '_address', '', 'RAW');
-											   }
-										   } */
+															  if ($payout_method === $strl_token) {
+																  $payout_method_user[$strl_token] = input_get($strl_token . '_address', '', 'RAW');
+															  }
+														  } */
 	/* } */
 
 	return $payout_method_user;
@@ -1556,11 +1556,11 @@ function process_form($user_id, $usertype, $admintype)
 
 	$edit = session_get('edit', false);
 
-	if ($admintype === 'Super') {
-		$usertype_edit = input_get('usertype', '', 'RAW');
-	} else {
-		$usertype_edit = $user->usertype;
-	}
+	/* if ($admintype === 'Super') {
+					$usertype_edit = input_get('usertype', '', 'RAW');
+				} else {
+					$usertype_edit = $user->usertype;
+				} */
 
 	$account_type = substr(input_get('account_type', '', 'RAW'), 0, 60);
 
@@ -1603,61 +1603,61 @@ function process_form($user_id, $usertype, $admintype)
 	$contact_info_user['landline'] = $input_landline;
 
 	/* switch ($contact) {
-										 case 'whatsapp':
-											 if (!empty($input_whatsapp)) {
-												 $contact_info_user['whatsapp'] = $input_whatsapp;
-											 }
+														case 'whatsapp':
+															if (!empty($input_whatsapp)) {
+																$contact_info_user['whatsapp'] = $input_whatsapp;
+															}
 
-											 break;
-										 case 'telegram':
-											 if (!empty($input_telegram)) {
-												 $contact_info_user['telegram'] = $input_telegram;
-											 }
+															break;
+														case 'telegram':
+															if (!empty($input_telegram)) {
+																$contact_info_user['telegram'] = $input_telegram;
+															}
 
-											 break;
-										 case 'messenger':
-											 if (!empty($input_messenger)) {
-												 $contact_info_user['messenger'] = $input_messenger;
-											 }
+															break;
+														case 'messenger':
+															if (!empty($input_messenger)) {
+																$contact_info_user['messenger'] = $input_messenger;
+															}
 
-											 break;
-										 case 'mobile':
-											 if (!empty($input_mobile)) {
-												 $contact_info_user['mobile'] = $input_mobile;
-											 }
+															break;
+														case 'mobile':
+															if (!empty($input_mobile)) {
+																$contact_info_user['mobile'] = $input_mobile;
+															}
 
-											 break;
-										 case 'landline':
-											 if (!empty($input_landline)) {
-												 $contact_info_user['landline'] = $input_landline;
-											 }
+															break;
+														case 'landline':
+															if (!empty($input_landline)) {
+																$contact_info_user['landline'] = $input_landline;
+															}
 
-											 break;
-									 } */
+															break;
+													} */
 
 	/* //	$beneficiary_info_user = arr_beneficiary_info($user);
-			   //	$beneficiary           = input_get('beneficiary', '', 'RAW');
-			   //
-			   //	$beneficiary_name    = input_get('beneficiary_name_input', '', 'RAW');
-			   //	$beneficiary_contact = input_get('beneficiary_contact_input', '', 'RAW');
-			   //
-			   //	switch ($beneficiary)
-			   //	{
-			   //		case 'beneficiary_name':
-			   //			if (!empty($beneficiary_name))
-			   //			{
-			   //				$beneficiary_info_user['name'] = $beneficiary_name;
-			   //			}
-			   //
-			   //			break;
-			   //		case 'beneficiary_contact':
-			   //			if (!empty($beneficiary_contact))
-			   //			{
-			   //				$beneficiary_info_user['contact'] = $beneficiary_contact;
-			   //			}
-			   //
-			   //			break;
-			   //	} */
+							  //	$beneficiary           = input_get('beneficiary', '', 'RAW');
+							  //
+							  //	$beneficiary_name    = input_get('beneficiary_name_input', '', 'RAW');
+							  //	$beneficiary_contact = input_get('beneficiary_contact_input', '', 'RAW');
+							  //
+							  //	switch ($beneficiary)
+							  //	{
+							  //		case 'beneficiary_name':
+							  //			if (!empty($beneficiary_name))
+							  //			{
+							  //				$beneficiary_info_user['name'] = $beneficiary_name;
+							  //			}
+							  //
+							  //			break;
+							  //		case 'beneficiary_contact':
+							  //			if (!empty($beneficiary_contact))
+							  //			{
+							  //				$beneficiary_info_user['contact'] = $beneficiary_contact;
+							  //			}
+							  //
+							  //			break;
+							  //	} */
 
 	$password1 = input_get('password1');
 	$password2 = input_get('password2');
@@ -1666,9 +1666,9 @@ function process_form($user_id, $usertype, $admintype)
 
 	$date = time();
 
-	if ($edit && $admintype === 'Super') {
-		$date = input_get('date', '', 'RAW');
-	}
+	/* if ($edit && $admintype === 'Super') {
+					$date = input_get('date', '', 'RAW');
+				} */
 
 	$app = application();
 
@@ -1693,11 +1693,11 @@ function process_form($user_id, $usertype, $admintype)
 		if (($admintype === 'Super' && $usertype === 'Admin') /*|| $usertype === 'manager'*/) {
 			if ($password1 !== '' && ($password1 === $password2)) {
 				$fields = [
-					'`account_type` = ' . $db->quote($account_type),
-					'`rank` = ' . $db->quote($rank),
+					/* '`account_type` = ' . $db->quote($account_type), */
+					/* '`rank` = ' . $db->quote($rank), */
 					'`username` = ' . $db->quote($username),
 					'`fullname` = ' . $db->quote($fullname),
-					'`usertype` = ' . $db->quote($usertype_edit),
+					/* '`usertype` = ' . $db->quote($usertype_edit), */
 					'`email` = ' . $db->quote($email),
 					'`date_registered` = ' . $db->quote($date),
 					'`date_activated` = ' . $db->quote($date),
@@ -1707,11 +1707,11 @@ function process_form($user_id, $usertype, $admintype)
 
 			} else {
 				$fields = [
-					'`account_type` = ' . $db->quote($account_type),
-					'`rank` = ' . $db->quote($rank),
+					/* '`account_type` = ' . $db->quote($account_type), */
+					/* '`rank` = ' . $db->quote($rank), */
 					'`username` = ' . $db->quote($username),
 					'`fullname` = ' . $db->quote($fullname),
-					'`usertype` = ' . $db->quote($usertype_edit),
+					/* '`usertype` = ' . $db->quote($usertype_edit), */
 					'`email` = ' . $db->quote($email),
 					'`date_registered` = ' . $db->quote($date),
 					'`date_activated` = ' . $db->quote($date),
@@ -1723,7 +1723,7 @@ function process_form($user_id, $usertype, $admintype)
 				$fields = [
 					'`username` = ' . $db->quote($username),
 					'`fullname` = ' . $db->quote($fullname),
-					'`usertype` = ' . $db->quote($usertype_edit),
+					/* '`usertype` = ' . $db->quote($usertype_edit), */
 					'`email` = ' . $db->quote($email),
 					'`date_registered` = ' . $db->quote($date),
 					'`date_activated` = ' . $db->quote($date),
@@ -1735,7 +1735,7 @@ function process_form($user_id, $usertype, $admintype)
 				$fields = [
 					'`username` = ' . $db->quote($username),
 					'`fullname` = ' . $db->quote($fullname),
-					'`usertype` = ' . $db->quote($usertype_edit),
+					/* '`usertype` = ' . $db->quote($usertype_edit), */
 					'`email` = ' . $db->quote($email),
 					'`date_registered` = ' . $db->quote($date),
 					'`date_activated` = ' . $db->quote($date),
