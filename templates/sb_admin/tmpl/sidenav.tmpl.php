@@ -532,15 +532,15 @@ function wallet_admin($admintype)
         return '';
     }
 
-    $add_ecash_link = sef(116);
+    // $add_ecash_link = sef(116);
 
     $add_ecash = '';
 
-    if ($admintype === 'Super') {
-        $add_ecash = <<<HTML
-        <a class="nav-link" href="{$add_ecash_link}">Add E-Cash</a>
-        HTML;
-    }
+    // if ($admintype === 'Super') {
+    //     $add_ecash = <<<HTML
+    //     <a class="nav-link" href="{$add_ecash_link}">Add E-Cash</a>
+    //     HTML;
+    // }
 
     $convert_to_efund_link = sef(15);
     $withdrawal_requests_link = sef(113);
