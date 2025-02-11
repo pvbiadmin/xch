@@ -3,13 +3,9 @@
 namespace BPL\Jumi\Sales_Overview;
 
 require_once 'templates/sb_admin/tmpl/master.tmpl.php';
-// require_once 'bpl/menu.php';
 require_once 'bpl/mods/helpers.php';
 
 use Joomla\CMS\Uri\Uri;
-
-// use function BPL\Menu\admin;
-// use function BPL\Menu\admin as menu_admin;
 
 use function Templates\SB_Admin\Tmpl\Master\main as master;
 
@@ -20,7 +16,6 @@ use function BPL\Mods\Helpers\application;
 use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\users;
-// use function BPL\Mods\Helpers\page_reload;
 use function BPL\Mods\Helpers\live_reload;
 
 $content = main();
@@ -35,16 +30,8 @@ master($content);
 function main()
 {
 	$usertype = session_get('usertype');
-	// $admintype    = session_get('admintype');
-	// $account_type = session_get('account_type');
-	// $user_id      = session_get('user_id');
-	// $username     = session_get('username');
 
 	page_validate($usertype);
-
-	// $str = menu_admin($admintype, $account_type, $user_id, $username);
-
-	// $str .= page_reload();
 
 	$str = live_reload(true);
 
@@ -153,45 +140,6 @@ function row_sales(): string
 		</tr>
 	</tbody>
 HTML;
-
-	// $str = '
-	// 	<table class="category table table-striped table-bordered table-hover" style="width:900px;">
-	// 		<tr>
-	// 			<td style="width: 21%">Members:</td>
-	// 			<td style="width: 43%">' . count(users()) . '
-	// 				<a style="float:right" href="' . sef(40) . '">View All Members</a>
-	// 			</td>
-	// 		</tr>
-	// 		<tr>
-	// 			<td>Overall Sales:</td>
-	// 			<td>' . number_format($total_sales, 5) . ' ' . $currency . '
-	// 				<a style="float:right" href="' . sef(35) . '">View Income Log</a>
-	// 			</td>
-	// 		</tr>
-	// 		<tr>
-	// 			<td>CD Sales:</td>
-	// 			<td>' . number_format($cd_sales, 5) . ' ' . $currency . '
-	// 			</td>
-	// 		</tr>
-	// 		<tr>
-	// 			<td>Payouts:</td>
-	// 			<td>' . number_format($total_payouts, 5) . ' ' . $currency . '
-	// 				<a style="float:right" href="' . sef(49) . '">View Payout Log</a>
-	// 			</td>
-	// 		</tr>';
-
-	// if (settings('plans')->trading) {
-	// 	$str .= '<tr>
-	// 				<td>' . settings('trading')->token_name . ' Profit:</td>
-	// 				<td>' . number_format($fmc_purchase, 5) . ' ' . $currency . '</td>
-	// 			</tr>';
-	// }
-
-	// $str .= '<tr>
-	// 			<td>Net Sales:</td>
-	// 			<td>' . number_format($net_sales, 5) . ' ' . $currency . '</td>
-	// 		</tr>
-	// 	</table>';
 
 	return $str;
 }

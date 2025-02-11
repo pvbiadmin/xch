@@ -2,20 +2,26 @@
 
 namespace BPL\Jumi\List_Members;
 
+require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'bpl/mods/helpers.php';
 
 use function BPL\Mods\Url_SEF\sef;
 use function BPL\Mods\Url_SEF\qs;
 
+use function Templates\SB_Admin\Tmpl\Master\main as master;
+
 use function BPL\Mods\Helpers\db;
-use function BPL\Mods\Helpers\menu;
+use function BPL\Mods\Helpers\user;
 use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\input_get;
 use function BPL\Mods\Helpers\page_validate;
 use function BPL\Mods\Helpers\settings;
-use function BPL\Mods\Helpers\page_reload;
+// use function BPL\Mods\Helpers\page_reload;
+use function BPL\Mods\Helpers\live_reload;
 
-main();
+$content = main();
+
+master($content);
 
 /**
  *
@@ -26,19 +32,101 @@ function main()
 {
 	page_validate();
 
-	$str = menu();
+	// $str = menu();
 
-	$str .= page_reload();
-	$str .= paginate();
-	$str .= header();
+	// $str .= page_reload();
+	// $str .= paginate();
+	// $str .= header();
 
-	if (count(users_desc()) > 0) {
-		$str .= view_members(5);
-	} else {
-		$str .= '<hr><p>No members yet.</p>';
+	$user_id = session_get('user_id');
+
+	$str = live_reload(true);
+
+	// if (count(users_desc()) > 0) {
+	// 	$str .= view_members(5);
+	// } else {
+	// 	$str .= '<hr><p>No members yet.</p>';
+	// }
+
+	$view_members = view_members($user_id, true);
+
+	$str .= <<<HTML
+	<div class="container-fluid px-4">
+		<h1 class="mt-4">Members List</h1>
+		<ol class="breadcrumb mb-4">
+			<li class="breadcrumb-item active">List of All Members</li>
+		</ol>				
+		$view_members
+	</div>
+	HTML;
+
+	return $str;
+}
+
+function view_members($user_id, $counter)
+{
+	$counter_span = '';
+
+	if ($counter) {
+		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
 	}
 
-	echo $str;
+	$table_all_members = table_all_members($user_id);
+
+	return <<<HTML
+		<div class="card mb-4">
+			<div class="card-header">
+				<i class="fas fa-table me-1"></i>
+				All Members{$counter_span}
+			</div>
+			<div class="card-body">
+				<table id="datatablesSimple">
+					$table_all_members
+				</table>
+			</div>
+		</div>
+	HTML;
+}
+
+function table_all_members($user_id)
+{
+	$user = user($user_id);
+
+	$usertype = $user->usertype;
+
+	$row_members = row_members();
+
+	$actions = '';
+
+	if ($usertype === 'Admin') {
+		$actions = '<th>Actions</th>';
+	}
+
+	$str = <<<HTML
+		<thead>
+			<tr>
+				<th>Date Registered</th>
+				<th>Username</th>
+				<th>Account</th>
+				<th>Balance</th>
+				$actions
+			</tr>
+		</thead>
+		<tfoot>
+			<tr>
+				<th>Date Registered</th>
+				<th>Username</th>
+				<th>Account</th>
+				<th>Balance</th>
+				$actions
+			</tr>
+		</tfoot>
+		<tbody>
+			$row_members						
+		</tbody>
+	HTML;
+
+	return $str;
 }
 
 /**
@@ -49,64 +137,165 @@ function main()
  *
  * @since version
  */
-function view_members($limit): string
+function row_members(): string
+{
+	// $usertype = session_get('usertype');
+	// $username = input_get('username');
+	// $page = substr(input_get('page', 0), 0, 3);
+
+	// $settings_ancillaries = settings('ancillaries');
+	// $settings_plans = settings('plans');
+
+	// $currency = $settings_ancillaries->currency;
+
+	// $limit_to = $limit;
+	// $limit_from = $limit_to * $page;
+
+	// $str = '<table class="category table table-striped table-bordered table-hover">';
+	// $str .= '<thead>';
+
+	// $str .= search_member();
+
+	// $str .= '<tr>';
+	// $str .= '<th>Date Registered</th>';
+	// $str .= '<th>Username</th>';
+	// $str .= '<th>Account</th>';
+
+	// if ($settings_plans->royalty) {
+	// 	$str .= '<th>' . $settings_plans->royalty_name . '</th>';
+	// }
+
+	// $str .= '<th>Balance (' . $currency . ')</th>';
+
+	// if (
+	// 	$settings_plans->binary_pair &&
+	// 	binary_all()
+	// ) {
+	// 	$str .= '<th>Left</th>';
+	// 	$str .= '<th>Right</th>';
+	// }
+
+	// if ($usertype === 'Admin') {
+	// 	$str .= '<th>Actions</th>';
+	// }
+
+	// $str .= '</tr>';
+	// $str .= '</thead>';
+	// $str .= '<tbody>';
+
+	// if ($username === '') {
+	// $members_limit = users_desc_lim($limit_from, $limit_to);
+
+	$members = users_desc();
+
+	$str = '';
+
+	foreach ($members as $member) {
+		$str .= view_member($member);
+	}
+	// } else {
+	// 	$str .= search_result($username);
+	// }
+
+	// $str .= '</tbody>';
+	// $str .= '</table>';
+
+	return $str;
+}
+
+/**
+ * @param $member
+ *
+ * @return string
+ *
+ * @since version
+ */
+function view_member($member): string
 {
 	$usertype = session_get('usertype');
-	$username = input_get('username');
-	$page = substr(input_get('page', 0), 0, 3);
 
 	$settings_ancillaries = settings('ancillaries');
 	$settings_plans = settings('plans');
 
-	$currency = $settings_ancillaries->currency;
+	$account_type = $member->account_type;
 
-	$limit_to = $limit;
-	$limit_from = $limit_to * $page;
+	$payment_mode = $settings_ancillaries->payment_mode;
 
-	$str = '<table class="category table table-striped table-bordered table-hover">';
-	$str .= '<thead>';
+	$user_cd = user_cd($member->id);
 
-	$str .= search_member();
+	// $user_binary = user_binary($member->id);
 
-	$str .= '<tr>';
-	$str .= '<th>Date Registered</th>';
-	$str .= '<th>Username</th>';
-	$str .= '<th>Account</th>';
+	$account_rd = settings('entry')->{$account_type . '_package_name'} . ($user_cd ? ' CD' : '');
 
-	if ($settings_plans->royalty) {
-		$str .= '<th>' . $settings_plans->royalty_name . '</th>';
-	}
+	// $account_rd .= !0 ? '' : harvest_append($member);
 
-	$str .= '<th>Balance (' . $currency . ')</th>';
+	// $psv = $account_type !== 'starter' ? settings('binary')->{$account_type . '_pairs'} : 0; // pair set value
 
-	if (
-		$settings_plans->binary_pair &&
-		binary_all()
-	) {
-		$str .= '<th>Left</th>';
-		$str .= '<th>Right</th>';
+	$str = '<tr>';
+	$str .= '<td>' . date('M j, Y - G:i', $member->date_registered) . '</td>';
+	$str .= '<td><a href="' . sef(44) . qs() .
+		'uid=' . $member->id . '">' . $member->username . '</a></td>';
+	$str .= '<td>' . $account_rd . '</td>';
+	// $str .= ($settings_plans->royalty ? ('<td>' .
+	// 	settings('royalty')->{$member->rank . '_rank_name'} . '</td>') : "\n");
+	$str .= '<td>' . number_format($member->payout_transfer, 2) . '</td>';
+	$str .= '<td>';
+
+	// if (
+	// 	$settings_plans->binary_pair &&
+	// 	binary_all()
+	// ) {
+	// 	$str .= '<td>' . ($user_binary->ctr_left ?? 'n/a') . '</td>';
+	// 	$str .= '<td>' . ($user_binary->ctr_right ?? 'n/a') . '</td>';
+	// }
+
+	// $str .= ($settings_plans->binary_pair && $user_binary && $psv ?
+	// 	('<td>' . $user_binary->ctr_left . '</td>' . '<td>' .
+	// 		$user_binary->ctr_right . '</td>') : ('<td>N/A</td>' . '<td>N/A</td>'));
+
+	$link_block = sef(8) . qs() . 'uid=' . $member->id;
+	$link_unblock = sef(107) . qs() . 'uid=' . $member->id;
+
+	$block_btn = <<<HTML
+		<a href="$link_block" type="button" class="btn btn-primary btn-sm">Block</a>
+HTML;
+
+	$unblock_btn = <<<HTML
+		<a href="$link_unblock" type="button" class="btn btn-primary btn-sm">Unblock</a>
+HTML;
+
+	$actions = $block_btn;
+
+	if ($member->block) {
+		$actions = $unblock_btn;
 	}
 
 	if ($usertype === 'Admin') {
-		$str .= '<th>Actions</th>';
+		$str .= $actions;
+
+		// $str .= '<td>';
+		// $str .= '<div class="uk-button-group">';
+		// $str .= '<button class="uk-button uk-button-primary">Select</button>';
+		// $str .= '<div class="" data-uk-dropdown="{mode:\'click\'}">';
+		// $str .= '<button class="uk-button uk-button-primary"><i class="uk-icon-caret-down"></i></button>';
+		// $str .= '<div style="" class="uk-dropdown uk-dropdown-small">';
+		// $str .= '<ul class="uk-nav uk-nav-dropdown">';
+		// $str .= '<li>';
+		// $str .= (!$member->block ?
+		// 	'<a href="' . sef(8) . qs() . 'uid=' . $member->id . '">Block</a>' :
+		// 	'<a href="' . sef(107) . qs() . 'uid=' . $member->id . '">Unblock</a>');
+		// $str .= '</li>';
+		// $str .= $payment_mode === 'CODE' && $settings_ancillaries->cd_mode === 'cd' ?
+		// 	('<li>' . (!$user_cd ? '<a href="' . sef(11) . qs() . 'uid=' . $member->id . '">CD</a>' :
+		// 		'<a href="' . sef(108) . qs() . 'uid=' . $member->id . '">UnCD</a>') . '</li>') : '';
+		// $str .= '</ul>';
+		// $str .= '</div>';
+		// $str .= '</div>';
+		// $str .= '</div>';
+		$str .= '</td>';
 	}
 
 	$str .= '</tr>';
-	$str .= '</thead>';
-	$str .= '<tbody>';
-
-	if ($username === '') {
-		$members_limit = users_desc_lim($limit_from, $limit_to);
-
-		foreach ($members_limit as $member) {
-			$str .= view_member($member);
-		}
-	} else {
-		$str .= search_result($username);
-	}
-
-	$str .= '</tbody>';
-	$str .= '</table>';
 
 	return $str;
 }
@@ -367,80 +556,4 @@ function harvest_append($member): string
 	}
 
 	return $account_rd;
-}
-
-/**
- * @param $member
- *
- * @return string
- *
- * @since version
- */
-function view_member($member): string
-{
-	$usertype = session_get('usertype');
-
-	$settings_ancillaries = settings('ancillaries');
-	$settings_plans = settings('plans');
-
-	$account_type = $member->account_type;
-
-	$payment_mode = $settings_ancillaries->payment_mode;
-
-	$user_cd = user_cd($member->id);
-
-	$user_binary = user_binary($member->id);
-
-	$account_rd = settings('entry')->{$account_type . '_package_name'} . ($user_cd ? ' CD' : '');
-
-	$account_rd .= !0 ? '' : harvest_append($member);
-
-	$psv = $account_type !== 'starter' ? settings('binary')->{$account_type . '_pairs'} : 0; // pair set value
-
-	$str = '<tr>';
-	$str .= '<td>' . date('M j, Y - G:i', $member->date_registered) . '</td>';
-	$str .= '<td><a href="' . sef(44) . qs() .
-		'uid=' . $member->id . '">' . $member->username . '</a></td>';
-	$str .= '<td>' . $account_rd . '</td>';
-	$str .= ($settings_plans->royalty ? ('<td>' .
-		settings('royalty')->{$member->rank . '_rank_name'} . '</td>') : "\n");
-	$str .= '<td>' . number_format($member->payout_transfer, 8) . '</td>';
-	if (
-		$settings_plans->binary_pair &&
-		binary_all()
-	) {
-		$str .= '<td>' . ($user_binary->ctr_left ?? 'n/a') . '</td>';
-		$str .= '<td>' . ($user_binary->ctr_right ?? 'n/a') . '</td>';
-	}
-
-	// $str .= ($settings_plans->binary_pair && $user_binary && $psv ?
-	// 	('<td>' . $user_binary->ctr_left . '</td>' . '<td>' .
-	// 		$user_binary->ctr_right . '</td>') : ('<td>N/A</td>' . '<td>N/A</td>'));
-
-	if ($usertype === 'Admin') {
-		$str .= '<td>';
-		$str .= '<div class="uk-button-group">';
-		$str .= '<button class="uk-button uk-button-primary">Select</button>';
-		$str .= '<div class="" data-uk-dropdown="{mode:\'click\'}">';
-		$str .= '<button class="uk-button uk-button-primary"><i class="uk-icon-caret-down"></i></button>';
-		$str .= '<div style="" class="uk-dropdown uk-dropdown-small">';
-		$str .= '<ul class="uk-nav uk-nav-dropdown">';
-		$str .= '<li>';
-		$str .= (!$member->block ?
-			'<a href="' . sef(8) . qs() . 'uid=' . $member->id . '">Block</a>' :
-			'<a href="' . sef(107) . qs() . 'uid=' . $member->id . '">Unblock</a>');
-		$str .= '</li>';
-		$str .= $payment_mode === 'CODE' && $settings_ancillaries->cd_mode === 'cd' ?
-			('<li>' . (!$user_cd ? '<a href="' . sef(11) . qs() . 'uid=' . $member->id . '">CD</a>' :
-				'<a href="' . sef(108) . qs() . 'uid=' . $member->id . '">UnCD</a>') . '</li>') : '';
-		$str .= '</ul>';
-		$str .= '</div>';
-		$str .= '</div>';
-		$str .= '</div>';
-		$str .= '</td>';
-	}
-
-	$str .= '</tr>';
-
-	return $str;
 }

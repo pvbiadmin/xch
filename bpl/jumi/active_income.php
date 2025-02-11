@@ -2,8 +2,8 @@
 
 namespace BPL\Jumi\Active_Income;
 
-require_once 'bpl/leadership_fast_track_principal.php';
 require_once 'templates/sb_admin/tmpl/master.tmpl.php';
+require_once 'bpl/leadership_fast_track_principal.php';
 require_once 'bpl/mods/income.php';
 require_once 'bpl/mods/account_summary.php';
 require_once 'bpl/mods/root_url_upline.php';
@@ -65,7 +65,7 @@ function main()
 
 	switch (session_get('usertype')) {
 		case 'Admin':
-			$str .= admin($user_id);
+			$str .= admin($user_id, true);
 
 			break;
 		case 'Member':
@@ -125,21 +125,6 @@ function member($user_id, $counter = false): string
 			$view_fast_track
 		</div>
 	HTML;
-
-	// $str .= tableStyle();
-
-	// $str .= '<div class="card">';
-	// $str .= '<div class="card-header">Agent Dashboard</div>';
-	// $str .= '<div class="table-responsive">';
-	// $str .= '<table class="category table table-striped table-bordered table-hover" style="width: 100%;">';
-
-	// $str .= core($user_id);
-
-	// $str .= '</table>';
-	// $str .= '</div></div>';
-
-	// $str .= table_binary_summary($user_id);
-	// $str .= user_info(user($user_id));
 
 	return $str;
 }
@@ -414,40 +399,40 @@ function row_fast_track($user_id)
 
 	$str = '';
 
-	if (empty($fast_tracks)) {
+	// if (empty($fast_tracks)) {
+	// 	$str .= <<<HTML
+	// 		<tr>
+	// 			<td>0.00</td>
+	// 			<td>0.00</td>
+	// 			<td>0</td>
+	// 			<td>n/a</td>
+	// 			<td>n/a</td>				
+	// 		</tr>					
+	// 	HTML;
+	// } else {
+	foreach ($fast_tracks as $ft) {
+		$start = new DateTime('@' . $ft->date_entry);
+		$end = new DateInterval('P' . $maturity . 'D');
+
+		$start->add($end);
+
+		$starting_value = number_format($ft->principal, 2);
+		$current_value = number_format($ft->value_last, 2);
+		$maturity_date = $start->format('F d, Y');
+		$status = time_remaining($ft->day, $ft->processing, $interval, $maturity);
+
+		$remaining = ($ft->processing + $maturity - $ft->day) * $interval;
+		$remain_maturity = ($maturity - $ft->day) * $interval;
+
+		$type_day = '';
+
+		if ($remaining > $maturity && $ft->processing) {
+			$type_day = 'Days for Processing: ';
+		} elseif ($remain_maturity > 0) {
+			$type_day = 'Days Remaining: ';
+		}
+
 		$str .= <<<HTML
-			<tr>
-				<td>0.00</td>
-				<td>0.00</td>
-				<td>0</td>
-				<td>n/a</td>
-				<td>n/a</td>				
-			</tr>					
-		HTML;
-	} else {
-		foreach ($fast_tracks as $ft) {
-			$start = new DateTime('@' . $ft->date_entry);
-			$end = new DateInterval('P' . $maturity . 'D');
-
-			$start->add($end);
-
-			$starting_value = number_format($ft->principal, 2);
-			$current_value = number_format($ft->value_last, 2);
-			$maturity_date = $start->format('F d, Y');
-			$status = time_remaining($ft->day, $ft->processing, $interval, $maturity);
-
-			$remaining = ($ft->processing + $maturity - $ft->day) * $interval;
-			$remain_maturity = ($maturity - $ft->day) * $interval;
-
-			$type_day = '';
-
-			if ($remaining > $maturity && $ft->processing) {
-				$type_day = 'Days for Processing: ';
-			} elseif ($remain_maturity > 0) {
-				$type_day = 'Days Remaining: ';
-			}
-
-			$str .= <<<HTML
 				<tr>
 					<td>$starting_value</td>
 					<td>$current_value</td>
@@ -456,8 +441,8 @@ function row_fast_track($user_id)
 					<td>{$type_day}{$status}</td>				
 				</tr>
 			HTML;
-		}
 	}
+	// }
 
 	return $str;
 }
@@ -1192,23 +1177,62 @@ function table_binary_summary($user_id): string
  *
  * @since version
  */
-function admin($user_id): string
+function admin($user_id, $counter): string
 {
 	// $str = page_reload();
 
 	// $str .= tableStyle();
 
-	$str = '<h2>Profit Chart</h2>';
-	$str .= '<div class="card">
-		<div class="table-responsive">';
-	$str .= '<table class="category table table-striped table-bordered table-hover" style="width: 100%;">';
+	// $str = '<h2>Profit Chart</h2>';
+	// $str .= '<div class="card">
+	// 	<div class="table-responsive">';
+	// $str .= '<table class="category table table-striped table-bordered table-hover" style="width: 100%;">';
 
-	$str .= core($user_id);
+	// $str .= core($user_id);
 
-	$str .= '</table>';
-	$str .= '</div></div>';
+	// $str .= '</table>';
+	// $str .= '</div></div>';
 
-	$str .= table_binary_summary($user_id);
+	$sp = settings('plans');
+
+	$reactivate_binary = '';
+
+	if ($sp->binary_pair && user_binary($user_id)) {
+		$user_binary = user_binary($user_id);
+
+		$status = $user_binary->status;
+
+		$reactivate_count = $user_binary->reactivate_count;
+		$capping_cycle_max = settings('binary')->{$user_binary->account_type . '_capping_cycle_max'};
+
+		if ($status === 'inactive' && $reactivate_count < $capping_cycle_max) {
+			$reactivate_binary = <<<HTML
+				<div class="reactivate_binary notification alert alert-info alert-dismissible fade show" 
+					role="alert">Reactivate $sp->binary_pair_name!<button type="button" class="btn-close" 
+						data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>	
+			HTML;
+		}
+	}
+
+	// $str .= table_binary_summary($user_id);
+
+	$view_agent_dashboard = view_agent_dashboard($user_id, $counter);
+	$view_fast_track = view_fast_track($user_id);
+
+	$str = <<<HTML
+		<div class="container-fluid px-4">
+			<h1 class="mt-4">Marketing Plan</h1>
+			<ol class="breadcrumb mb-4">
+				<li class="breadcrumb-item active">Income Summary</li>
+			</ol>
+			$reactivate_binary						
+			$view_agent_dashboard
+			$view_fast_track
+		</div>
+	HTML;
+
+	return $str;
 
 	return $str;
 }

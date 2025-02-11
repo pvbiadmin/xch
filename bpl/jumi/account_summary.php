@@ -2,9 +2,12 @@
 
 namespace BPL\Jumi\Account_Summary;
 
+require_once 'templates/sb_admin/tmpl/master.tmpl.php';
 require_once 'bpl/mods/account_summary.php';
 require_once 'bpl/ajax/ajaxer/table_fast_track.php';
 require_once 'bpl/mods/helpers.php';
+
+use function Templates\SB_Admin\Tmpl\Master\main as master;
 
 use function BPL\Mods\Account_Summary\row_referral_link;
 use function BPL\Mods\Account_Summary\row_username;
@@ -20,32 +23,31 @@ use function BPL\Mods\Account_Summary\script_coin_price;
 use function BPL\Ajax\Ajaxer\Table_Fast_Track\main as table_fast_track;
 use function BPL\Mods\Url_SEF\sef;
 
-use function BPL\Mods\Helpers\menu;
+// use function BPL\Mods\Helpers\menu;
 use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\page_validate;
-use function BPL\Mods\Helpers\page_reload;
+// use function BPL\Mods\Helpers\page_reload;
 use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\settings;
 use function BPL\Mods\Helpers\user;
+use function BPL\Mods\Helpers\live_reload;
 
-main();
+$content = main();
 
-/**
- *
- * @return void
- *
- * @since version
- */
+master($content);
+
 function main()
 {
 	page_validate();
 
 	$user = user(session_get('user_id'));
 
-	$str = menu();
+	// $str = menu();
+
+	$str = live_reload(true);
 
 	$str .= script_trading();
-	$str .= page_reload();
+	// $str .= page_reload();
 	$str .= header();
 
 	$str .= '<table class="category table table-striped table-bordered table-hover">';
@@ -64,7 +66,70 @@ function main()
 
 	$str .= row_fast_track($user);
 
-	echo $str;
+	$table_account_details = account_details();
+
+	$str .= <<<HTML
+	<div class="container-fluid px-4">
+		<h1 class="mt-4">Account Summary</h1>
+		<ol class="breadcrumb mb-4">
+			<li class="breadcrumb-item active">List of Details</li>
+		</ol>				
+		$table_account_details
+	</div>
+	HTML;
+
+	return $str;
+}
+
+function account_details($counter)
+{
+	$counter_span = '';
+
+	if ($counter) {
+		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
+	}
+
+	$row_details = row_details();
+
+	return <<<HTML
+		<div class="card mb-4">
+			<div class="card-header">
+				<i class="fas fa-table me-1"></i>
+				Details{$counter_span}
+			</div>
+			<div class="card-body">
+				<table class="table">
+					$row_details
+				</table>
+			</div>
+		</div>
+	HTML;
+}
+
+function row_details()
+{
+	$str = <<<HTML
+		<tbody>
+		<tr>
+			<th scope="row">Members</th>
+			<td>$count_users{$button_directs}</td>			
+		</tr>
+		<tr>
+			<th scope="row">Profit</th>
+			<td>$total_sales_format $currency{$button_income_log}</td>
+		</tr>
+		<tr>
+			<th scope="row">Payouts</th>
+			<td colspan="2">$payouts_format $currency{$button_payout_log}</td>
+		</tr>
+		<tr>
+			<th scope="row">Net Profit</th>
+			<td colspan="2">$net_profit_format $currency{$button_payout_log}</td>
+		</tr>
+	</tbody>
+HTML;
+
+	return $str;
 }
 
 /**
@@ -93,8 +158,7 @@ function script_trading(): string
 
 	$jquery_number = 'bpl/plugins/jquery.number.js';
 
-	if (settings('plans')->trading)
-	{
+	if (settings('plans')->trading) {
 		$str .= '<script>';
 
 		$str .= script_coin_price();
@@ -131,8 +195,7 @@ function row_royalty($user): string
 
 	$str = '';
 
-	if ($settings_plans->royalty)
-	{
+	if ($settings_plans->royalty) {
 		$str .= '<tr>
         <td>' . $settings_plans->royalty_name . ':</td>
         <td>' . settings('royalty')->{$user->rank . '_rank_name'} . '</td>
@@ -185,10 +248,11 @@ function row_fast_track($user): string
 
 	$str = '';
 
-	if ($user->account_type !== 'starter' &&
+	if (
+		$user->account_type !== 'starter' &&
 		$settings_plans->fast_track &&
-		has_fast_track($user))
-	{
+		has_fast_track($user)
+	) {
 		$str .= '<br>
             <hr><br>
             <h2>' . $settings_plans->fast_track_name .

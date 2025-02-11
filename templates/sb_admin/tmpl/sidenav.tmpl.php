@@ -233,7 +233,7 @@ function dashboard_admin($admintype)
     <nav class="sb-sidenav-menu-nested nav">
         <a class="nav-link" href="{$dashboard_link}">Home</a>
         <a class="nav-link" href="{$sales_overview_link}">Sales Overview</a>
-        <a class="nav-link" href="{$account_summary_link}">Account Summary</a>
+        <!-- <a class="nav-link" href="{$account_summary_link}">Account Summary</a> -->
         <a class="nav-link" href="{$active_income_link}">Active Income</a>
         {$system_reset}
     </nav>
