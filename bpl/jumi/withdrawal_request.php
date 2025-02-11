@@ -325,6 +325,14 @@ function validate_input($amount, $user_id, $method, $edit)
 
 	$app = application();
 
+	// Check if today is Monday
+	if (date('N') != 1) { // 'N' returns the day of the week (1 for Monday, 7 for Sunday)
+		$app = application();
+		$app->enqueueMessage("Payout request available only on Mondays!", 'error');
+		$app->redirect(Uri::current());
+		return; // Stop further execution
+	}
+
 	if (empty($method)) {
 		$app->enqueueMessage("Please Fillup Payment Method!", 'error');
 		$app->redirect(Uri::current());
