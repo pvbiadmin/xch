@@ -1,6 +1,6 @@
 <?php
 
-namespace BPL\Ajax\Ajaxer\Genealogy;
+namespace BPL\Ajax\Ajaxer\Genealogy1;
 
 /**
  * Generates the complete HTML, CSS, and JavaScript for the genealogy visualization.

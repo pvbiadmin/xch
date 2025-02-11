@@ -18,9 +18,9 @@ use function BPL\Mods\Helpers\db;
  */
 function main($type, $user_id, string $plan = 'binary_pair'): string
 {
-	$dir_font  = 'bpl/plugins/orgchart/assets/css/font-awesome.min.css';
+	$dir_font = 'bpl/plugins/orgchart/assets/css/font-awesome.min.css';
 	$dir_style = 'bpl/plugins/orgchart/assets/css/style.css';
-	$dir_d3    = 'bpl/plugins/orgchart/assets/js/d3.min.js';
+	$dir_d3 = 'bpl/plugins/orgchart/assets/js/d3.min.js';
 
 	$str = '<link rel="stylesheet" href="' . $dir_font . '">';
 	$str .= '<link rel=\'stylesheet prefetch\' href=\'https://fonts.googleapis.com/css?family=Roboto\'>';
@@ -51,15 +51,16 @@ function main($type, $user_id, string $plan = 'binary_pair'): string
 function plan_attr(): array
 {
 	return [
-		'indirect_referral'  => 'bonus_indirect_referral',
-		'unilevel'           => 'unilevel',
-		'binary_pair'        => 'income_cycle',
-		'leadership_binary'  => 'bonus_leadership',
+		'indirect_referral' => 'bonus_indirect_referral',
+		'unilevel' => 'unilevel',
+		'binary_pair' => 'income_cycle',
+		'leadership_binary' => 'bonus_leadership',
 		'leadership_passive' => 'bonus_leadership_passive',
-		'matrix'             => 'bonus_matrix',
-		'power'              => 'bonus_power',
-		'matrix_table'       => 'bonus_share',
-		'harvest'            => 'bonus_harvest'
+		'leadership_fast_track_principal' => 'bonus_leadership_fast_track_principal',
+		'matrix' => 'bonus_matrix',
+		'power' => 'bonus_power',
+		'matrix_table' => 'bonus_share',
+		'harvest' => 'bonus_harvest'
 	];
 }
 
@@ -75,9 +76,9 @@ function details($plan): string
 	$attr = set_attr($plan);
 
 	$img = $plan !== 'binary_pair' ? '"active.png"' :
-        '(d.caption === "Y" || d.caption === "X" ? "active.png" : "inactive.png")';
+		'(d.caption === "Y" || d.caption === "X" ? "active.png" : "inactive.png")';
 	$usr = $plan !== 'binary_pair' ? '"emp-name"' :
-        '(d.caption === "Y" || d.caption === "X" ? "emp-name" : "inactive-binary")';
+		'(d.caption === "Y" || d.caption === "X" ? "emp-name" : "inactive-binary")';
 
 	$str = 'nodeGroup.append("text")
 	            .attr("x", dynamic.nodeTextLeftMargin)
@@ -728,10 +729,8 @@ function set_attr($plan): string
 {
 	$attr = 'status';
 
-	foreach (plan_attr() as $k => $v)
-	{
-		if ($k === $plan && $v !== 'status')
-		{
+	foreach (plan_attr() as $k => $v) {
+		if ($k === $plan && $v !== 'status') {
 			$attr = $v;
 		}
 	}
