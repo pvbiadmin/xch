@@ -80,8 +80,8 @@ function main()
 			}
 
 			mature();
-			leadership_fast_track();
-			reap_fast_track();
+			// leadership_fast_track();
+			// reap_fast_track();
 
 			$dbh->commit();
 		} catch (Exception $e) {
@@ -302,11 +302,11 @@ function update_fast_track($user, $value_now, $donation_new)
 function update_user($fast_track, $value_now, $donation_new)
 {
 	crud(
-		'UPDATE network_users ' .
-		'SET donation = :donation, ' .
-		'fast_track_interest = :fast_track_interest, ' .
-		'fast_track_balance = :fast_track_balance ' .
-		'WHERE id = :id',
+		'UPDATE network_users' .
+		' SET donation = :donation' .
+		', fast_track_interest = :fast_track_interest' .
+		', fast_track_balance = :fast_track_balance' .
+		' WHERE id = :id',
 		[
 			'donation' => ($fast_track->donation + $donation_new),
 			'fast_track_interest' => ($fast_track->fast_track_interest + $value_now),
@@ -314,6 +314,18 @@ function update_user($fast_track, $value_now, $donation_new)
 			'id' => $fast_track->user_id
 		]
 	);
+
+	if ($fast_track->day + 1 >= 5) {
+		crud(
+			'UPDATE network_users' .
+			' SET payout_transfer = :payout_transfer' .
+			' WHERE id = :id',
+			[
+				'payout_transfer' => ($fast_track->payout_transfer + $value_now),
+				'id' => $fast_track->user_id
+			]
+		);
+	}
 }
 
 /**

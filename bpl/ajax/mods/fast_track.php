@@ -253,16 +253,19 @@ function update_user_bonus_lftp($current_sponsor_id, $bonus)
 
     // Get current values
     $bonus_lftp = $sponsor->bonus_leadership_fast_track_principal;
-    $balance = $sponsor->payout_transfer;
+    $bonus_lftp_bal = $sponsor->bonus_leadership_fast_track_principal_balance;
+    // $balance = $sponsor->payout_transfer;
 
     $update_user_bonus_lftp = crud(
         'UPDATE network_users' .
         ' SET bonus_leadership_fast_track_principal = :bonus_lftp' .
-        ', payout_transfer = :payout_transfer' .
+        ', bonus_leadership_fast_track_principal_balance = :bonus_lftp_bal' .
+        // ', payout_transfer = :payout_transfer' .
         ' WHERE id = :id',
         [
             'bonus_lftp' => $bonus_lftp + $bonus,
-            'payout_transfer' => $balance + $bonus,
+            'bonus_lftp_bal' => $bonus_lftp_bal + $bonus,
+            // 'payout_transfer' => $balance + $bonus,
             'id' => $current_sponsor_id
         ]
     );

@@ -97,14 +97,30 @@ function notifications()
             notification.textContent = message;
             notification.style.display = 'block';
             
+            // Run the original silentReload immediately
+            if (type === 'success_fast_track') {
+                silentReload();
+
+                // Disable the submit button and clear the input field
+                const submitButton = document.getElementById('fast_track');
+                const inputField = document.getElementById('fast_track_input');
+                if (submitButton && inputField) {
+                    submitButton.disabled = true;
+                    inputField.value = ''; // Clear the input field
+                }
+            }
+
             setTimeout(() => {
                 notification.style.display = 'none';
                 
-                if (type === 'success_fast_track') {
-                    silentReload();
-                }
+                // // After the notification is hidden, start reloading the table every 5 seconds
+                // if (type === 'success_fast_track') {
+                //     setInterval(silentReloadTable, 5000); // Reload table every 5 seconds
+                // }
             }, 5000);
         }
+
+        setInterval(silentReloadTable, 5000);
 
         function silentReload() {
             fetch(window.location.href, {
@@ -118,24 +134,45 @@ function notifications()
                 // Update specific parts of the page without a full refresh
                 const parser = new DOMParser();
                 const newDoc = parser.parseFromString(html, 'text/html');
-                
-                // Update the shares value
-                const newSharesValue = newDoc.querySelector('.fast_track_value_last').textContent;
-                document.querySelector('.fast_track_value_last').textContent = newSharesValue;
 
                 // Update the principal value
                 const newPrincipalValue = newDoc.querySelector('.fast_track_principal').textContent;
                 document.querySelector('.fast_track_principal').textContent = newPrincipalValue;
 
                 // Update the table
-                const newTableBody = newDoc.querySelector('#datatablesSimple tbody');
-                document.querySelector('#datatablesSimple tbody').innerHTML = newTableBody.innerHTML;
+                // const newTableBody = newDoc.querySelector('#datatablesSimple tbody');
+                // document.querySelector('#datatablesSimple tbody').innerHTML = newTableBody.innerHTML;
 
                 // Clear the input field
                 document.getElementById('fast_track_input').value = '';
+                document.getElementById('fast_track').disabled = true;
             })
             .catch(error => {
                 console.error('Error during silent reload:', error);
+            });
+        }
+
+        function silentReloadTable() {
+            fetch(window.location.href, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Update only the table
+                const parser = new DOMParser();
+                const newDoc = parser.parseFromString(html, 'text/html');
+                const newTableBody = newDoc.querySelector('#datatablesSimple tbody');
+                document.querySelector('#datatablesSimple tbody').innerHTML = newTableBody.innerHTML;
+
+                // Update the shares value
+                const newSharesValue = newDoc.querySelector('.fast_track_value_last').textContent;
+                document.querySelector('.fast_track_value_last').textContent = newSharesValue;
+            })
+            .catch(error => {
+                console.error('Error during table reload:', error);
             });
         }
     JS;
@@ -318,40 +355,40 @@ function row_list_stakes($user_id)
 
     $str = '';
 
-    if (empty($fast_tracks)) {
+    // if (empty($fast_tracks)) {
+    //     $str .= <<<HTML
+    // 		<tr>
+    // 			<td>0.00</td>
+    // 			<td>0.00</td>
+    // 			<td>0</td>
+    // 			<td>n/a</td>
+    // 			<td>n/a</td>				
+    // 		</tr>					
+    // 	HTML;
+    // } else {
+    foreach ($fast_tracks as $ft) {
+        $start = new DateTime('@' . $ft->date_entry);
+        $end = new DateInterval('P' . $maturity . 'D');
+
+        $start->add($end);
+
+        $starting_value = number_format($ft->principal, 2);
+        $current_value = number_format($ft->value_last, 2);
+        $maturity_date = $start->format('F d, Y');
+        $status = time_remaining($ft->day, $ft->processing, $interval, $maturity);
+
+        $remaining = ($ft->processing + $maturity - $ft->day) * $interval;
+        $remain_maturity = ($maturity - $ft->day) * $interval;
+
+        $type_day = '';
+
+        if ($remaining > $maturity && $ft->processing) {
+            $type_day = 'Days for Processing: ';
+        } elseif ($remain_maturity > 0) {
+            $type_day = 'Days Remaining: ';
+        }
+
         $str .= <<<HTML
-			<tr>
-				<td>0.00</td>
-				<td>0.00</td>
-				<td>0</td>
-				<td>n/a</td>
-				<td>n/a</td>				
-			</tr>					
-		HTML;
-    } else {
-        foreach ($fast_tracks as $ft) {
-            $start = new DateTime('@' . $ft->date_entry);
-            $end = new DateInterval('P' . $maturity . 'D');
-
-            $start->add($end);
-
-            $starting_value = number_format($ft->principal, 2);
-            $current_value = number_format($ft->value_last, 2);
-            $maturity_date = $start->format('F d, Y');
-            $status = time_remaining($ft->day, $ft->processing, $interval, $maturity);
-
-            $remaining = ($ft->processing + $maturity - $ft->day) * $interval;
-            $remain_maturity = ($maturity - $ft->day) * $interval;
-
-            $type_day = '';
-
-            if ($remaining > $maturity && $ft->processing) {
-                $type_day = 'Days for Processing: ';
-            } elseif ($remain_maturity > 0) {
-                $type_day = 'Days Remaining: ';
-            }
-
-            $str .= <<<HTML
 				<tr>
 					<td>$starting_value</td>
 					<td>$current_value</td>
@@ -360,8 +397,8 @@ function row_list_stakes($user_id)
 					<td>{$type_day}{$status}</td>				
 				</tr>
 			HTML;
-        }
     }
+    // }
 
     return $str;
 }

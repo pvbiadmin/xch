@@ -5,7 +5,7 @@ class JConfig
 	public $offline_message = 'This site is down for maintenance.<br />Please check back again soon.';
 	public $display_offline_message = '1';
 	public $offline_image = '';
-	public $sitename = 'B2P - Holders';
+	public $sitename = 'Escudero Animal Raising';
 	public $editor = 'tinymce';
 	public $captcha = '0';
 	public $list_limit = '20';
@@ -100,7 +100,7 @@ class JConfig
 	public $cookie_domain = '';
 	public $cookie_path = '';
 	public $asset_id = '1';
-	public $jumi_redirect_error = 'xch';
+	public $jumi_redirect_error = 'account';
 	public $behind_loadbalancer = '0';
 	public $block_floc = '1';
 }

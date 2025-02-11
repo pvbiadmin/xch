@@ -66,71 +66,71 @@ function main()
 
 	$str .= row_fast_track($user);
 
-	$table_account_details = account_details();
+	// $table_account_details = account_details(true);
 
-	$str .= <<<HTML
-	<div class="container-fluid px-4">
-		<h1 class="mt-4">Account Summary</h1>
-		<ol class="breadcrumb mb-4">
-			<li class="breadcrumb-item active">List of Details</li>
-		</ol>				
-		$table_account_details
-	</div>
-	HTML;
-
-	return $str;
-}
-
-function account_details($counter)
-{
-	$counter_span = '';
-
-	if ($counter) {
-		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
-	}
-
-	$row_details = row_details();
-
-	return <<<HTML
-		<div class="card mb-4">
-			<div class="card-header">
-				<i class="fas fa-table me-1"></i>
-				Details{$counter_span}
-			</div>
-			<div class="card-body">
-				<table class="table">
-					$row_details
-				</table>
-			</div>
-		</div>
-	HTML;
-}
-
-function row_details()
-{
-	$str = <<<HTML
-		<tbody>
-		<tr>
-			<th scope="row">Members</th>
-			<td>$count_users{$button_directs}</td>			
-		</tr>
-		<tr>
-			<th scope="row">Profit</th>
-			<td>$total_sales_format $currency{$button_income_log}</td>
-		</tr>
-		<tr>
-			<th scope="row">Payouts</th>
-			<td colspan="2">$payouts_format $currency{$button_payout_log}</td>
-		</tr>
-		<tr>
-			<th scope="row">Net Profit</th>
-			<td colspan="2">$net_profit_format $currency{$button_payout_log}</td>
-		</tr>
-	</tbody>
-HTML;
+	// $str .= <<<HTML
+	// <div class="container-fluid px-4">
+	// 	<h1 class="mt-4">Account Summary</h1>
+	// 	<ol class="breadcrumb mb-4">
+	// 		<li class="breadcrumb-item active">List of Details</li>
+	// 	</ol>				
+	// 	$table_account_details
+	// </div>
+	// HTML;
 
 	return $str;
 }
+
+// function account_details($counter)
+// {
+// 	$counter_span = '';
+
+// 	if ($counter) {
+// 		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
+// 	}
+
+// 	// $row_details = row_details();
+
+// 	return <<<HTML
+// 		<div class="card mb-4">
+// 			<div class="card-header">
+// 				<i class="fas fa-table me-1"></i>
+// 				Details{$counter_span}
+// 			</div>
+// 			<div class="card-body">
+// 				<table class="table">
+// 					<!-- $row_details -->
+// 				</table>
+// 			</div>
+// 		</div>
+// 	HTML;
+// }
+
+// function row_details()
+// {
+// 	$str = <<<HTML
+// 		<tbody>
+// 		<tr>
+// 			<th scope="row">Members</th>
+// 			<td>$count_users{$button_directs}</td>			
+// 		</tr>
+// 		<tr>
+// 			<th scope="row">Profit</th>
+// 			<td>$total_sales_format $currency{$button_income_log}</td>
+// 		</tr>
+// 		<tr>
+// 			<th scope="row">Payouts</th>
+// 			<td colspan="2">$payouts_format $currency{$button_payout_log}</td>
+// 		</tr>
+// 		<tr>
+// 			<th scope="row">Net Profit</th>
+// 			<td colspan="2">$net_profit_format $currency{$button_payout_log}</td>
+// 		</tr>
+// 	</tbody>
+// HTML;
+
+// 	return $str;
+// }
 
 /**
  *
