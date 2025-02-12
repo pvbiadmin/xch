@@ -8,6 +8,7 @@ use DateTime;
 use DateTimeZone;
 use Exception;
 
+use function BPL\Mods\Local\Database\Query\fetch;
 use function BPL\Mods\Local\Database\Query\fetch_all;
 use function BPL\Mods\Local\Database\Query\crud;
 
@@ -177,6 +178,8 @@ function leadership_fast_track_principal($user_id, $input)
  */
 function insert_fast_track($user_id, $input)
 {
+    $dbh = DB::connect();
+
     $settings_investment = settings('investment');
 
     $account_type = user($user_id)->account_type;
@@ -217,6 +220,45 @@ function insert_fast_track($user_id, $input)
             'processing' => $fast_track_processing,
             'date_last_cron' => $now
         ]
+    );
+
+    $insert_id = $dbh->lastInsertId();
+
+    log_income_admin($insert_id, $input);
+}
+
+function log_income_admin($insert_id, $input)
+{
+    $income_admin = income_admin();
+
+    $income_total = $income_admin->income_total + $input;
+
+    crud(
+        'INSERT INTO network_income' .
+        ' (transaction_id' .
+        ', amount' .
+        ', income_total' .
+        ', income_date)' .
+        ' VALUES' .
+        ' (:transaction_id' .
+        ', :amount' .
+        ', :income_total' .
+        ', :income_date)',
+        [
+            'transaction_id' => $insert_id,
+            'amount' => $input,
+            'income_total' => $income_total,
+            'income_date' => time()
+        ]
+    );
+}
+
+function income_admin()
+{
+    return fetch(
+        'SELECT * ' .
+        'FROM network_income ' .
+        'ORDER BY income_id DESC'
     );
 }
 

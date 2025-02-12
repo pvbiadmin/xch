@@ -83,7 +83,7 @@ function main()
 	$arr_payment_method = arr_payment_method($user);
 
 	if (empty($arr_payment_method)) {
-		$app->enqueueMessage('Please Fill Up Your Payment Method.', 'error');
+		$app->enqueueMessage('Please Completely Fill Up Your Details.', 'error');
 		$app->redirect(Uri::root(true) . '/' . sef(60) . qs() . 'uid=' . $user_id);
 	}
 
