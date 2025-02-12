@@ -122,23 +122,23 @@ function row_sales(): string
 
 	$str = <<<HTML
 		<tbody>
-		<tr>
-			<th scope="row">Members</th>
-			<td>$count_users{$button_directs}</td>			
-		</tr>
-		<tr>
-			<th scope="row">Profit</th>
-			<td>$total_sales_format $currency{$button_income_log}</td>
-		</tr>
-		<tr>
-			<th scope="row">Payouts</th>
-			<td colspan="2">$payouts_format $currency{$button_payout_log}</td>
-		</tr>
-		<tr>
-			<th scope="row">Net Profit</th>
-			<td colspan="2">$net_profit_format $currency{$button_payout_log}</td>
-		</tr>
-	</tbody>
+			<tr>
+				<th scope="row">Members</th>
+				<td>$count_users{$button_directs}</td>			
+			</tr>
+			<tr>
+				<th scope="row">Total Cash-in</th>
+				<td>$total_sales_format $currency{$button_income_log}</td>
+			</tr>
+			<tr>
+				<th scope="row">Payouts</th>
+				<td colspan="2">$payouts_format $currency{$button_payout_log}</td>
+			</tr>
+			<tr>
+				<th scope="row">Remaining Cash Balance</th>
+				<td colspan="2">$net_profit_format $currency{$button_payout_log}</td>
+			</tr>
+		</tbody>
 HTML;
 
 	return $str;
