@@ -40,7 +40,7 @@ function main()
 
 	$str .= <<<HTML
 	<div class="container-fluid px-4">
-		<h1 class="mt-4">Directs</h1>
+		<h1 class="mt-4">Sponsored</h1>
 		<ol class="breadcrumb mb-4">
 			<li class="breadcrumb-item active">List of Sponsored Accounts</li>
 		</ol>				
@@ -65,7 +65,7 @@ function view_sponsored_members($user_id, $counter)
 		<div class="card mb-4">
 			<div class="card-header">
 				<i class="fas fa-table me-1"></i>
-				Sponsored Accounts{$counter_span}
+				Sponsored{$counter_span}
 			</div>
 			<div class="card-body">
 				<table id="datatablesSimple">

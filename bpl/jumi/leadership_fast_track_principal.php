@@ -158,10 +158,12 @@ function view_total_bonus($user_id)
 
 function view_lftp($user_id, $counter): string
 {
-	$counter_span = '';
+	$lftp_deposit_link = sef(159);
 
-	if ($counter) {
-		$counter_span = '<span id="counter" style="float:right">00:00:00</span>';
+	$hldr_span = '<a href="' . $lftp_deposit_link . '" class="btn btn-primary">Transfer</a>';
+
+	if ($counter && 'hghggh') {
+		$hldr_span = '<span id="counter" style="float:right">00:00:00</span>';
 	}
 
 	$table_profit_chart = table_profit_chart($user_id);
@@ -170,7 +172,7 @@ function view_lftp($user_id, $counter): string
 		<div class="card mb-4">
 			<div class="card-header">
 				<i class="fas fa-table me-1"></i>
-				Profit Chart{$counter_span}
+				Profit Chart{$hldr_span}
 			</div>
 			<div class="card-body">
 				<table id="datatablesSimple">

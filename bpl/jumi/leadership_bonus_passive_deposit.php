@@ -50,7 +50,7 @@ function main()
 		process_form($user_id, $amount);
 	}
 
-	$str .= view_request_efund($user_id);
+	$str .= view_form($user_id);
 
 	echo $str;
 }
