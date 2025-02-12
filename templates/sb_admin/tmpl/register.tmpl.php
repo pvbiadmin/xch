@@ -80,8 +80,10 @@ function body()
     $view_registration = view_registration();
     $footer = footer();
 
+    $backgroundImageUrl = 'templates/sb_admin/assets/img/03.jpg';
+
     return <<<HTML
-<body class="bg-primary">
+<body style="background-image: url('{$backgroundImageUrl}'); background-size: cover; background-position: center; background-repeat: no-repeat;">
     <div id="layoutAuthentication">
         <div id="layoutAuthentication_content">
             <main>
@@ -161,7 +163,7 @@ HTML;
     // Build the registration form
     $str .= <<<HTML
 <div class="card shadow-lg border-0 rounded-lg mt-5">
-    <div class="card-header"><h3 class="text-center font-weight-light my-4">Create Account</h3></div>
+    <div class="card-header"><h3 class="text-center font-weight-light my-4"><img src="templates/sb_admin/assets/img/logo.png" alt=""></h3></div>
     <div class="card-body">
         <form name="regForm" method="post" enctype="multipart/form-data" onsubmit="submit.disabled = true; return validateForm()">
             {$form_token}

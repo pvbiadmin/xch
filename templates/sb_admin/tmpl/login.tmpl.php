@@ -64,8 +64,11 @@ function body()
     $view_login = view_login();
     $footer = footer();
 
+    // Define the full URL to the background image
+    $backgroundImageUrl = 'templates/sb_admin/assets/img/01.jpg';
+
     return <<<HTML
-<body class="bg-primary">
+<body style="background-image: url('{$backgroundImageUrl}'); background-size: cover; background-position: center; background-repeat: no-repeat;">
     <div id="layoutAuthentication">
         <div id="layoutAuthentication_content">
             <main>
@@ -104,7 +107,7 @@ function view_login()
     // Build the login form
     $str .= <<<HTML
 <div class="card shadow-lg border-0 rounded-lg mt-5">
-    <div class="card-header"><h3 class="text-center font-weight-light my-4">Login</h3></div>
+    <div class="card-header"><h3 class="text-center font-weight-light my-4"><img src="templates/sb_admin/assets/img/logo.png" alt=""></h3></div>
     <div class="card-body">
         <form method="post">
             {$form_token}
