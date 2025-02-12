@@ -6,6 +6,7 @@ require_once 'bpl/mods/helpers.php';
 require_once 'bpl/mods/url_sef.php';
 
 use function BPL\Mods\Helpers\session_get;
+use function BPL\Mods\Helpers\user;
 use function BPL\Mods\Url_SEF\sef;
 
 function main()
@@ -16,10 +17,20 @@ function main()
         return '';
     }
 
+    $user = user($user_id);
+
+    $usertype = $user->usertype;
+
     $activity_link = sef(3);
     $logout_link = sef(41);
     $home_link = sef(43);
     $profile_link = sef(44);
+
+    $member_menu_name = 'Member';
+
+    if ($usertype === 'Admin') {
+        $member_menu_name = 'Admin';
+    }
 
     return <<<HTML
 <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
@@ -39,7 +50,7 @@ function main()
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" id="navbarDropdown" href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-user fa-fw"></i></a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                <li><a class="dropdown-item" href="{$profile_link}">Profile</a></li>
+                <li><a class="dropdown-item" href="{$profile_link}">$member_menu_name</a></li>
                 <!-- li><a class="dropdown-item" href="{$activity_link}">Activity Log</a></li> -->
                 <li><hr class="dropdown-divider" /></li>
                 <li><a class="dropdown-item" href="{$logout_link}">Logout</a></li>

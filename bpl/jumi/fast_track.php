@@ -316,7 +316,7 @@ function table_list_stakes($user_id)
     $str = <<<HTML
 		<thead>
 			<tr>
-				<th>Package</th>
+				<th>Principal</th>
 				<th>Profit</th>
 				<th>Day</th>
 				<th>Time Frame ($maturity days)</th>
@@ -325,7 +325,7 @@ function table_list_stakes($user_id)
 		</thead>
 		<tfoot>
             <tr>
-				<th>Package</th>
+				<th>Principal</th>
 				<th>Profit</th>
 				<th>Day</th>
 				<th>Time Frame ($maturity days)</th>
@@ -385,7 +385,7 @@ function row_list_stakes($user_id)
         if ($remaining > $maturity && $ft->processing) {
             $type_day = 'Days for Processing: ';
         } elseif ($remain_maturity > 0) {
-            $type_day = 'Days Remaining: ';
+            $type_day = 'Time Balance: ';
         }
 
         $str .= <<<HTML

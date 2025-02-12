@@ -229,7 +229,7 @@ function view_direct_agents($user_id)
 	return <<<HTML
 		<div class="col-xl-3 col-md-6">
 			<div class="card mb-4">
-				<div class="card-body">Direct Agents<span id="direct_agents" style="float:right">
+				<div class="card-body">Sponsored Members<span id="direct_agents" style="float:right">
 					$count_directs</span></div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
 					<span class="small"><a href="$link_sponsored_members">View Sponsored Members</a></span>
@@ -292,7 +292,9 @@ function view_lftp($user_id)
 
 	$lftp_name = $sp->leadership_fast_track_principal_name;
 
-	$link_add_royalty = sef(19);
+	// $link_add_royalty = sef(19);
+
+	$bounty_chart_link = sef(156);
 
 	return <<<HTML
 		<div class="col-xl-3 col-md-6">
@@ -300,7 +302,7 @@ function view_lftp($user_id)
 				<div class="card-body">$lftp_name<span id="lftp" style="float:right">
 					$lftp_total_format $sa->currency</span></div>
 				<div class="card-footer d-flex align-items-center justify-content-between">
-					<a class="small" href="$link_add_royalty">Add Package</a>
+					<a class="small" href="$bounty_chart_link">View Chart</a>
 					<div class="small"><i class="fas fa-angle-right"></i></div>
 				</div>
 			</div>
@@ -603,7 +605,7 @@ function row_direct_referral($user_id): string
 	) {
 		$str .= '<tr>
 	            <td><a href="' .
-			sef(13) . '">Direct Agents</a>:</td>
+			sef(13) . '">Sponsored Members</a>:</td>
 	            <td>' . count(user_direct($user_id)) . '</td>
 	        </tr>
 	        <tr>

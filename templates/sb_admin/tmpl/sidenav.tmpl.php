@@ -231,10 +231,10 @@ function dashboard_admin($admintype)
 <div class="collapse" id="collapseDashboardAdmin" aria-labelledby="headingOne"
     data-bs-parent="#sidenavAccordion">
     <nav class="sb-sidenav-menu-nested nav">
-        <a class="nav-link" href="{$dashboard_link}">Home</a>
-        <a class="nav-link" href="{$sales_overview_link}">Sales Overview</a>
+        <!-- <a class="nav-link" href="{$dashboard_link}">Home</a> -->
+        <a class="nav-link" href="{$sales_overview_link}">System Monitoring</a>
         <!-- <a class="nav-link" href="{$account_summary_link}">Account Summary</a> -->
-        <a class="nav-link" href="{$active_income_link}">Active Income</a>
+        <!-- <a class="nav-link" href="{$active_income_link}">Active Income</a> -->
         {$system_reset}
     </nav>
 </div>
@@ -243,24 +243,24 @@ HTML;
 
 function dashboard_member($user_id)
 {
-    $sa = settings('ancillaries');
-    $payment_mode = $sa->payment_mode;
+    // $sa = settings('ancillaries');
+    // $payment_mode = $sa->payment_mode;
 
-    $user = user($user_id);
-    $account_type = $user->account_type;
+    // $user = user($user_id);
+    // $account_type = $user->account_type;
 
     $home_link = sef(2);
     $account_info_link = sef(44);
     $add_account_link = sef(144);
-    $buy_package_link = sef(10);
+    // $buy_package_link = sef(10);
 
     $buy_package = '';
 
-    if ($account_type === 'starter' && $payment_mode === 'ECASH') {
+    /* if ($account_type === 'starter' && $payment_mode === 'ECASH') {
         $buy_package = <<<HTML
         <a class="nav-link" href="{$buy_package_link}">Buy Package</a>
         HTML;
-    }
+    } */
 
     return <<<HTML
     <a class="nav-link collapsed" href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseDashboardMember"
@@ -353,10 +353,10 @@ function members_admin($admintype)
 <div class="collapse" id="collapseMembersAdmin" aria-labelledby="headingOne"
     data-bs-parent="#sidenavAccordion">
     <nav class="sb-sidenav-menu-nested nav">
-        <a class="nav-link" href="{$list_members_link}">List Members</a>
+        <a class="nav-link" href="{$list_members_link}">All Members</a>
         <a class="nav-link" href="{$registration_link}">Registration</a>
-        <a class="nav-link" href="{$member_info_link}">Member Info</a>
-        <a class="nav-link" href="{$profile_update_link}">Profile Update</a>
+        <!-- <a class="nav-link" href="{$member_info_link}">Information</a>
+        <a class="nav-link" href="{$profile_update_link}">Edit Details</a> -->
         {$admin_account_update}
     </nav>
 </div>
@@ -464,22 +464,26 @@ function efund($admintype, $user_id)
     $approved_efund_withdrawals_link = sef(59);
     $efund_withdrawal_logs_link = sef(122);
 
-    $buy_efund_pending = '';
+    $buy_efund_pending = <<<HTML
+        <a class="nav-link" href="{$buy_efund_pending_link}">Request {$efund_name} Pending</a>
+    HTML;
+
     $add_efund = '';
+    $transfer = '';
     $pending_efund_withdrawals = '';
     $withdraw_efund = '';
     $approved_efund_withdrawals = '';
     $efund_withdrawal_logs = '';
 
     if ($admintype === 'Super') {
-        $buy_efund_pending = <<<HTML
-        <a class="nav-link" href="{$buy_efund_pending_link}">Buy {$efund_name} Pending</a>
-    HTML;
         $add_efund = <<<HTML
         <a class="nav-link" href="{$add_efund_link}">Add {$efund_name}</a>
     HTML;
         $pending_efund_withdrawals = <<<HTML
         <a class="nav-link" href="{$pending_efund_withdrawal_link}">Pending {$efund_name} Withdrawals</a>
+    HTML;
+        $transfer = <<<HTML
+        <a class="nav-link" href="{$efund_transfer_link}">{$efund_name} Transfer</a>
     HTML;
     }
 
@@ -505,12 +509,12 @@ function efund($admintype, $user_id)
     <div class="collapse" id="collapseEfundAdmin" aria-labelledby="headingOne"
         data-bs-parent="#sidenavAccordion">
         <nav class="sb-sidenav-menu-nested nav">            
-            <a class="nav-link" href="{$buy_efund_link}">Buy {$efund_name}</a> 
-            <a class="nav-link" href="{$buy_efund_confirmed_link}">Buy {$efund_name} Confirmed</a>    
+            <!-- <a class="nav-link" href="{$buy_efund_link}">Buy {$efund_name}</a> --> 
+            <a class="nav-link" href="{$buy_efund_confirmed_link}">Request {$efund_name} History</a>    
             {$buy_efund_pending}     
             {$add_efund}      
-            <a class="nav-link" href="{$efund_transfer_link}">{$efund_name} Transfer</a>     
-            <a class="nav-link" href="{$buy_efund_logs_link}">Buy {$efund_name} Logs</a>
+            $transfer
+            <!-- <a class="nav-link" href="{$buy_efund_logs_link}">Request {$efund_name} Logs</a> -->
             <!-- {$withdraw_efund}
             {$pending_efund_withdrawals}
             {$approved_efund_withdrawals}
@@ -559,11 +563,11 @@ function wallet_admin($admintype)
         data-bs-parent="#sidenavAccordion">
         <nav class="sb-sidenav-menu-nested nav">    
             {$add_ecash}        
-            <a class="nav-link" href="{$convert_to_efund_link}">Convert to {$efund_name}</a> 
-            <a class="nav-link" href="{$withdrawal_requests_link}">Withdrawal Request</a>
-            <a class="nav-link" href="{$withdrawal_confirm_link}">Withdrawal Confirm</a>
-            <a class="nav-link" href="{$withdrawal_completed_link}">Withdrawal Completed</a>
-            <a class="nav-link" href="{$payout_logs_link}">Payout Logs</a>
+            <!-- <a class="nav-link" href="{$convert_to_efund_link}">Convert to {$efund_name}</a> 
+            <a class="nav-link" href="{$withdrawal_requests_link}">Withdrawal Request</a> -->
+            <a class="nav-link" href="{$withdrawal_confirm_link}">Pending Withdrawals</a>
+            <a class="nav-link" href="{$withdrawal_completed_link}">Withdrawals History</a>
+            <!-- <a class="nav-link" href="{$payout_logs_link}">Payout Logs</a> -->
         </nav>
     </div>
     HTML;

@@ -54,7 +54,7 @@ function main()
 
 	$str .= <<<HTML
 <div class="container-fluid px-4">
-	<h1 class="mt-4">Profile</h1>
+	<h1 class="mt-4">Details</h1>
 	<ol class="breadcrumb mb-4">
 		<li class="breadcrumb-item active"></li>
 	</ol>
@@ -88,7 +88,7 @@ function btn_profile_update()
 	if (!empty($user_id) && (empty($uid) || $uid === $user_id)) {
 		$url = sef(60) . qs() . 'uid=' . $user->id;
 		$str .= '<a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') .
-			'" class="btn btn-primary">Update Profile</a>';
+			'" class="btn btn-primary">Edit Details</a>';
 	}
 
 	return $str;

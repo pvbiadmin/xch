@@ -11,35 +11,60 @@ function main(): string
             <div class="modal-content">
                 <!-- Modal Header -->
                 <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">Terms and Conditions</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Terms and Conditions</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
                 <!-- Modal Body -->
                 <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                     <h5 class="text-center mb-4">
-                        The Software <br>
-                        <span class="fs-4">Earnings Disclaimer</span><br>
-                        <span class="fs-6">(IMPORTANT - PLEASE READ)</span>
+                        <span class="fs-4">Agreement on Terms and Conditions</span><br>
+                        <span class="fs-6">(IMPORTANT – PLEASE READ CAREFULLY)</span>
                     </h5>
-                    
-                    <p><strong>EVERY EFFORT HAS BEEN MADE TO ACCURATELY REPRESENT THIS PRODUCT AND ITS POTENTIAL.</strong> EVEN THOUGH THIS INDUSTRY IS ONE OF THE FEW WHERE ONE CAN WRITE THEIR OWN CHECK IN TERMS OF EARNINGS, THERE IS NO GUARANTEE THAT YOU WILL EARN ANY MONEY USING THE TECHNIQUES AND IDEAS IN THESE MATERIALS. EXAMPLES IN THESE MATERIALS ARE NOT TO BE INTERPRETED AS A PROMISE OR GUARANTEE OF EARNINGS. EARNING POTENTIAL IS ENTIRELY DEPENDENT ON THE PERSON USING OUR PRODUCT, IDEAS, AND TECHNIQUES. WE DO NOT PURPORT THIS AS A "GET RICH SCHEME." ANY CLAIMS MADE OF ACTUAL EARNINGS OR EXAMPLES OF ACTUAL RESULTS CAN BE VERIFIED UPON REQUEST. YOUR LEVEL OF SUCCESS IN ATTAINING THE RESULTS CLAIMED IN OUR MATERIALS DEPENDS ON THE TIME YOU DEVOTE TO THE PROGRAM, IDEAS, AND TECHNIQUES MENTIONED, YOUR FINANCES, KNOWLEDGE, AND VARIOUS SKILLS. SINCE THESE FACTORS DIFFER ACCORDING TO INDIVIDUALS, WE CANNOT GUARANTEE YOUR SUCCESS OR INCOME LEVEL. NOR ARE WE RESPONSIBLE FOR ANY OF YOUR ACTIONS.</p>
 
-                    <p><strong>FORWARD-LOOKING STATEMENTS:</strong> MATERIALS IN OUR PRODUCT AND OUR WEBSITE MAY CONTAIN INFORMATION THAT INCLUDES OR IS BASED UPON FORWARD-LOOKING STATEMENTS WITHIN THE MEANING OF THE SECURITIES LITIGATION REFORM ACT OF 1995. FORWARD-LOOKING STATEMENTS GIVE OUR EXPECTATIONS OR FORECASTS OF FUTURE EVENTS. YOU CAN IDENTIFY THESE STATEMENTS BY THE FACT THAT THEY DO NOT RELATE STRICTLY TO HISTORICAL OR CURRENT FACTS. THEY USE WORDS SUCH AS "ANTICIPATE," "ESTIMATE," "EXPECT," "PROJECT," "INTEND," "PLAN," "BELIEVE," AND OTHER WORDS AND TERMS OF SIMILAR MEANING IN CONNECTION WITH A DESCRIPTION OF POTENTIAL EARNINGS OR FINANCIAL PERFORMANCE.</p>
+                    <h6>1. Participation Amount</h6>
+                    <p>
+                        a. The minimum required participation amount is <strong>Five Thousand Pesos (PHP 5,000.00)</strong>.<br>
+                        b. The maximum allowable participation per individual or entity is <strong>Five Hundred Thousand Pesos (PHP 500,000.00)</strong>.<br>
+                        c. Any attempt to exceed the maximum limit will be subject to review and may be declined.
+                    </p>
 
-                    <p><strong>NO GUARANTEES:</strong> ANY AND ALL FORWARD-LOOKING STATEMENTS HERE OR ON ANY OF OUR SALES MATERIAL ARE INTENDED TO EXPRESS OUR OPINION OF EARNINGS POTENTIAL. MANY FACTORS WILL BE IMPORTANT IN DETERMINING YOUR ACTUAL RESULTS, AND NO GUARANTEES ARE MADE THAT YOU WILL ACHIEVE RESULTS SIMILAR TO OURS OR ANYBODY ELSE'S. IN FACT, NO GUARANTEES ARE MADE THAT YOU WILL ACHIEVE ANY RESULTS FROM OUR IDEAS AND TECHNIQUES IN OUR MATERIAL.</p>
+                    <h6>2. Service Period and Earnings</h6>
+                    <p>
+                        a. The service is subject to a <strong>daily percentage-based return of 1%</strong>.<br>
+                        b. The service period lasts for <strong>Ninety (90) days or Three (3) months</strong> from the start date.
+                    </p>
 
-                    <p><strong>DISCLAIMER:</strong> THE AUTHOR AND PUBLISHER DISCLAIM ANY WARRANTIES (EXPRESS OR IMPLIED), MERCHANTABILITY, OR FITNESS FOR ANY PARTICULAR PURPOSE. THE AUTHOR AND PUBLISHER SHALL IN NO EVENT BE HELD LIABLE TO ANY PARTY FOR ANY DIRECT, INDIRECT, PUNITIVE, SPECIAL, INCIDENTAL, OR OTHER CONSEQUENTIAL DAMAGES ARISING DIRECTLY OR INDIRECTLY FROM ANY USE OF THIS MATERIAL, WHICH IS PROVIDED "AS IS," AND WITHOUT WARRANTIES.</p>
+                    <h6>3. Payout and Processing Schedule</h6>
+                    <p>
+                        a. Requests for withdrawal must be submitted <strong>every Monday of each week</strong>.<br>
+                        b. Approved requests shall be processed and released <strong>every Wednesday of the same week</strong>.<br>
+                        c. Disbursements will follow a <strong>ten-day cycle</strong>, subject to processing timelines.
+                    </p>
 
-                    <p><strong>PROFESSIONAL ADVICE:</strong> AS ALWAYS, THE ADVICE OF A COMPETENT LEGAL, TAX, ACCOUNTING, OR OTHER PROFESSIONAL SHOULD BE SOUGHT. THE AUTHOR AND PUBLISHER DO NOT WARRANT THE PERFORMANCE, EFFECTIVENESS, OR APPLICABILITY OF ANY SITES LISTED OR LINKED TO IN THIS SOFTWARE.</p>
+                    <h6>4. Early Withdrawal Terms</h6>
+                    <p>Requests for early withdrawal before the completion of the service period will incur a <strong>service charge of 80%</strong> of the remaining amount.</p>
 
-                    <p><strong>PRIVACY:</strong> WE MAINTAIN THIS PAGE TO DEMONSTRATE OUR FIRM COMMITMENT TO THE RIGHTS AND PRIVACY OF OUR USERS. THIS PAGE EXPLAINS HOW OUR SITE COLLECTS INFORMATION FROM OUR MEMBERS.</p>
+                    <h6>5. Renewal and Continuation</h6>
+                    <p>Participants may opt to renew or continue their participation upon completion of the service period, subject to updated terms.</p>
 
-                    <p><strong>NEWSLETTER:</strong> WE RESPECT THE PRIVACY OF OUR USERS, AND AS SUCH, WE WILL NEVER SHARE OUR DATABASE OF EMAIL ADDRESSES AND NAMES WITH ANY THIRD PARTY. UPON CONFIRMATION THAT YOU WOULD LIKE TO JOIN OUR NEWSLETTER, WE WILL FROM TIME TO TIME SEND YOU FREE INFORMATION RELATING TO THE PRODUCTS WE MARKET, GENERAL ADVICE RELATED TO ONLINE MARKETING, AND PROMOTIONAL MATERIAL FOR OTHER PRODUCTS. YOUR EMAIL WILL NEVER BE PASSED ONTO ANY THIRD PARTY. WE WILL ALSO NEVER SPAM YOU. YOU MAY UNSUBSCRIBE FROM THE MAILING LIST AT ANY TIME.</p>
+                    <h6>6. Compliance with Regulations</h6>
+                    <p>All terms and conditions are governed by the laws of the <strong>Republic of the Philippines</strong>.</p>
 
-                    <p><strong>REFUND POLICY:</strong> IF YOU PURCHASE THE SOFTWARE AND YOU DO NOT ENJOY THE FINANCIAL FREEDOM THAT YOU EXPECTED, DO NOT MAKE AS MUCH FROM OUR METHODS AS YOU EXPECTED, OR INDEED FOR ANY REASON, YOU MAY CLAIM A REFUND FOR THE PRODUCT WITHIN 60 DAYS OF PURCHASE. ON A SIDENOTE, WE DO ASK YOU TO PUT THE TECHNIQUES INTO USE BEFORE REQUESTING A REFUND, FOR BOTH OUR BENEFIT; HOWEVER, OUR REFUND POLICY IS UNCONDITIONAL AND THIS IS A SUGGESTION, NOT A REQUIREMENT.</p>
+                    <h6>7. Limitation of Liability</h6>
+                    <p>
+                        a. In the event of unforeseen business circumstances, operational limitations, or force majeure, responsibilities will not be transferred to another party.<br>
+                        b. The participant acknowledges that any revenue-sharing arrangement or service participation involves operational risks.
+                    </p>
 
-                    <p><strong>REVISIONS TO THIS POLICY:</strong> OUR COMPANY RESERVES THE RIGHT TO REVISE, AMEND, OR MODIFY THIS POLICY, OUR TERMS OF SERVICE AGREEMENT, AND OUR OTHER POLICIES AND AGREEMENTS AT ANY TIME AND IN ANY MANNER, BY UPDATING THIS POSTING.</p>
+                    <h6>8. Adjustments and Modifications</h6>
+                    <p>We reserve the right to modify, update, or revise these terms at any time. Continued participation constitutes acceptance of the revised terms.</p>
+
+                    <h6>9. Privacy Policy</h6>
+                    <p>We are committed to maintaining confidentiality. Personal information will not be shared with third parties except as required by law.</p>
+
+                    <h6>10. Acknowledgment</h6>
+                    <p>By agreeing to these terms, the participant acknowledges full understanding of the policies and conditions outlined.</p>
                 </div>
 
                 <!-- Modal Footer -->
