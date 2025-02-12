@@ -52,7 +52,7 @@ function admin($admintype, $user_id)
     $p2p_trading = p2p_trading();
     $commission = commission($user_id);
     $settings_adjust = settings_adjust($admintype);
-    $crons = crons();
+    $crons = crons($admintype);
 
     $core = '';
     $shop = '';
@@ -737,8 +737,12 @@ function settings_adjust($admintype)
     HTML;
 }
 
-function crons()
+function crons($admintype)
 {
+    if ($admintype !== 'Super') {
+        return '';
+    }
+
     $cron_efund = cron_efund();
     $cron_unilevel = cron_unilevel();
     $cron_grace_period = cron_grace_period();
