@@ -95,26 +95,32 @@ function details($plan): string
 		'(d.caption === "Y" || d.caption === "X" ? "emp-name" : "inactive-binary")';
 
 	$str = 'nodeGroup.append("text")
-	            .attr("x", dynamic.nodeTextLeftMargin)
-	            .attr("y", attrs.nodePadding + 10)
-	            .attr("class", function (d) {
-	                return ' . $usr . ';
-	            })
-	            .attr("text-anchor", "left")
-	            .text(function (d) {
-	                return d.username.trim();
-	            })
-	            .call(wrap, attrs.nodeWidth);' . "\n\n";
+			.attr("x", dynamic.nodeTextLeftMargin)
+			.attr("y", attrs.nodePadding + 10)
+			.attr("class", function (d) {
+				return ' . $usr . ';
+			})
+			.attr("text-anchor", "left")
+			.attr("fill", "black") // Set text color to black
+			.text(function (d) {
+				// Limit the username to 6 characters and append "..." if it exceeds
+				return d.username.length > 6 ? d.username.substring(0, 6) + "..." : d.username;
+			})
+			.append("title") // Add a tooltip with the full username
+			.text(function (d) {
+				return d.username.trim(); // Full username as tooltip
+			})
+			.call(wrap, attrs.nodeWidth);' . "\n\n";
 
 	$str .= 'nodeGroup.append("text")
-	            .attr("x", dynamic.nodeTextLeftMargin)
-	            .attr("y", dynamic.nodePositionNameTopMargin)
-	            .attr("class", "emp-position-name")
-	            .attr("dy", ".15em")
-	            .attr("text-anchor", "left")	           
-	            .text(function (d) {	
-	                return d.account;
-	            });' . "\n\n";
+			.attr("x", dynamic.nodeTextLeftMargin)
+			.attr("y", dynamic.nodePositionNameTopMargin)
+			.attr("class", "emp-position-name")
+			.attr("dy", ".15em")
+			.attr("text-anchor", "left")	           
+			.text(function (d) {	
+				return d.account;
+			});' . "\n\n";
 
 	$str .= 'nodeGroup.append("text")
             .attr("x", dynamic.nodeTextLeftMargin)
@@ -128,52 +134,52 @@ function details($plan): string
             });' . "\n\n";
 
 	$str .= $plan !== 'binary_pair' ? '' : 'nodeGroup.append("text")
-	            .attr("x", dynamic.nodeTextLeftMargin)
-	            .attr("y", dynamic.nodeChildCountTopMargin)
-	            .attr("class", function (d) {
-	                return ' . $usr . ';
-	            })
-	            .attr("dy", "-0.2em")
-	            .attr("text-anchor", "left")
-	
-	            .text(function (d) {
-	                switch(d.caption) {
-	                    case "Y":
-	                        return "Active";
-	                    break;
-	                    case "X":
-	                        return "Reactivated";
-	                    break;
-	                    case "Z":
-	                        return "Maxed Out";
-	                    break;
-	                    default:
-	                        return "Inactive";
-	                    break;
-	                }	               
-	            });' . "\n\n";
+			.attr("x", dynamic.nodeTextLeftMargin)
+			.attr("y", dynamic.nodeChildCountTopMargin)
+			.attr("class", function (d) {
+				return ' . $usr . ';
+			})
+			.attr("dy", "-0.2em")
+			.attr("text-anchor", "left")
+
+			.text(function (d) {
+				switch(d.caption) {
+					case "Y":
+						return "Active";
+					break;
+					case "X":
+						return "Reactivated";
+					break;
+					case "Z":
+						return "Maxed Out";
+					break;
+					default:
+						return "Inactive";
+					break;
+				}	               
+			});' . "\n\n";
 
 	$str .= 'nodeGroup.append("defs").append("svg:clipPath")
-	            .attr("id", "clip")
-	            .append("svg:rect")
-	            .attr("id", "clip-rect")
-	            .attr("rx", 3)
-	            .attr("x", attrs.nodePadding)
-	            .attr("y", 2 + attrs.nodePadding)
-	            .attr("width", dynamic.nodeImageWidth)
-	            .attr("fill", "none")
-	            .attr("height", dynamic.nodeImageHeight - 4);' . "\n\n";
+			.attr("id", "clip")
+			.append("svg:rect")
+			.attr("id", "clip-rect")
+			.attr("rx", 3)
+			.attr("x", attrs.nodePadding)
+			.attr("y", 2 + attrs.nodePadding)
+			.attr("width", dynamic.nodeImageWidth)
+			.attr("fill", "none")
+			.attr("height", dynamic.nodeImageHeight - 4);' . "\n\n";
 
 	$str .= 'nodeGroup.append("svg:image")
-	            .attr("y", 2 + attrs.nodePadding)
-	            .attr("x", attrs.nodePadding)
-	            .attr("preserveAspectRatio", "yes")
-	            .attr("width", dynamic.nodeImageWidth)
-	            .attr("height", dynamic.nodeImageHeight - 4)
-	            .attr("clip-path", "url(#clip)")
-	            .attr("xlink:href", function (d) {
-	                return params.imageUrl + ' . $img . ';
-	            });' . "\n\n";
+			.attr("y", 2 + attrs.nodePadding)
+			.attr("x", attrs.nodePadding)
+			.attr("preserveAspectRatio", "yes")
+			.attr("width", dynamic.nodeImageWidth)
+			.attr("height", dynamic.nodeImageHeight - 4)
+			.attr("clip-path", "url(#clip)")
+			.attr("xlink:href", function (d) {
+				return params.imageUrl + ' . $img . ';
+			});' . "\n\n";
 
 	return $str;
 }
