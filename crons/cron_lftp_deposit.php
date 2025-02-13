@@ -29,7 +29,9 @@ function main()
 
 	if (!empty($users)) {
 		foreach ($users as $user) {
-			if (can_claim_lftpb($user)) {
+			$can_claim_lftpb = can_claim_lftpb($user);
+
+			if ($can_claim_lftpb) {
 				try {
 					$dbh->beginTransaction();
 
@@ -100,18 +102,12 @@ function update_indirect($user)
 
 function can_claim_lftpb($lftp_user)
 {
+	// array of deposited lftp
 	$bonus_lftpb_reap = arr_lftpb_reap($lftp_user);
 
-	if (empty($bonus_lftpb_reap)) {
-		// return false;
-		// check direct fast tracks
-	}
+	// get all directs
 
-	$fast_track_id = $bonus_lftpb_reap['fast_track_id'];
-
-	$fast_track_user = fast_track_user($fast_track_id);
-
-	// get the fast track
+	return false;
 }
 
 function fast_track_user($fast_track_id)

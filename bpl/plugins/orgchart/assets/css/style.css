@@ -483,7 +483,7 @@ text {
 
 .link {
     fill: none;
-    stroke: #ccc;
+    stroke: #333;
     stroke-width: 2px;
 }
 
@@ -492,12 +492,12 @@ text {
 }
 
 .node-collapse {
-    stroke: grey;
+    stroke: #333;
 }
 
 .node-collapse-right-rect {
-    fill: #70c645;
-    stroke: #70c645;
+    fill: #333;
+    stroke: #333;
 }
 
 .node text {
@@ -508,20 +508,28 @@ text {
 
 .node circle {
     stroke-width: 1px;
-    stroke: /*#70c645*/green;
-    fill: /*#70c645*/green;
+    stroke:
+        /*#70c645*/
+        #333;
+    fill:
+        /*#70c645*/
+        #333;
 }
 
 .node-test circle {
     stroke-width: 1px;
-    stroke: /*#70c645*/red;
-    fill: /*#70c645*/red;
+    stroke:
+        /*#70c645*/
+        red;
+    fill:
+        /*#70c645*/
+        red;
 }
 
 .node-group .emp-name {
-    fill: green;
+    fill: black;
     font-size: 12px;
-    font-weight: 700
+    font-weight: 500
 }
 
 .node-group .inactive-binary {
@@ -545,4 +553,3 @@ text {
     fill: #91a4a5;
     font-size: 12px;
 }
-

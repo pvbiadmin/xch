@@ -256,18 +256,18 @@ function genealogy($plan): string
             width: params.chartWidth,
             height: params.chartHeight,
             index: 0,
-            nodePadding: 9,
-            collapseCircleRadius: 7,
+            nodePadding: 3,
+            collapseCircleRadius: 5,
             nodeHeight: 80,
-            nodeWidth: 160,
+            nodeWidth: 150,
             duration: 750,
             rootNodeTopMargin: 20,
             minMaxZoomProportions: [0.05, 3],
-            linkLineSize: 180,
+            linkLineSize: 120,
             collapsibleFontSize: "10px",
             userIcon: "\uf013",
-            nodeStroke: "#ccc",
-            nodeStrokeWidth: "1px"
+            nodeStroke: "#333",
+            nodeStrokeWidth: "2px"
         };
 	
 		var dynamic = {};

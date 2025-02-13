@@ -109,6 +109,8 @@ function table_all_members($user_id)
 				<th>Username</th>
 				<th>Account</th>
 				<th>Balance</th>
+				<th>Payouts</th>
+				<th>Cash-ins</th>
 				$actions
 			</tr>
 		</thead>
@@ -118,6 +120,8 @@ function table_all_members($user_id)
 				<th>Username</th>
 				<th>Account</th>
 				<th>Balance</th>
+				<th>Payouts</th>
+				<th>Cash-ins</th>
 				$actions
 			</tr>
 		</tfoot>
@@ -214,12 +218,12 @@ function view_member($member): string
 {
 	$usertype = session_get('usertype');
 
-	$settings_ancillaries = settings('ancillaries');
-	$settings_plans = settings('plans');
+	// $settings_ancillaries = settings('ancillaries');
+	// $settings_plans = settings('plans');
 
 	$account_type = $member->account_type;
 
-	$payment_mode = $settings_ancillaries->payment_mode;
+	// $payment_mode = $settings_ancillaries->payment_mode;
 
 	$user_cd = user_cd($member->id);
 
@@ -239,6 +243,8 @@ function view_member($member): string
 	// $str .= ($settings_plans->royalty ? ('<td>' .
 	// 	settings('royalty')->{$member->rank . '_rank_name'} . '</td>') : "\n");
 	$str .= '<td>' . number_format($member->payout_transfer, 2) . '</td>';
+	$str .= '<td>' . number_format($member->payout_total, 2) . '</td>';
+	$str .= '<td>' . number_format($member->fast_track_principal, 2) . '</td>';
 	$str .= '<td>';
 
 	// if (
