@@ -18,14 +18,14 @@ use function BPL\Mods\Helpers\db;
  */
 function main($type, $user_id, string $plan = 'binary_pair'): string
 {
-	$dir_font = 'bpl/plugins/orgchart/assets/css/font-awesome.min.css';
-	$dir_style = 'bpl/plugins/orgchart/assets/css/style.css';
-	$dir_d3 = 'bpl/plugins/orgchart/assets/js/d3.min.js';
+    $dir_font = 'bpl/plugins/orgchart/assets/css/font-awesome.min.css';
+    $dir_style = 'bpl/plugins/orgchart/assets/css/style.css';
+    $dir_d3 = 'bpl/plugins/orgchart/assets/js/d3.min.js';
 
-	$str = '<link rel="stylesheet" href="' . $dir_font . '">';
-	$str .= '<link rel=\'stylesheet prefetch\' href=\'https://fonts.googleapis.com/css?family=Roboto\'>';
-	$str .= '<link rel="stylesheet" href="' . $dir_style . '">';
-	$str .= '<style>
+    $str = '<link rel="stylesheet" href="' . $dir_font . '">';
+    $str .= '<link rel=\'stylesheet prefetch\' href=\'https://fonts.googleapis.com/css?family=Roboto\'>';
+    $str .= '<link rel="stylesheet" href="' . $dir_style . '">';
+    $str .= '<style>
     #genealogy_' . $type . ' {
         cursor: move;
         height: 700px; /* Adjust based on content */
@@ -45,15 +45,15 @@ function main($type, $user_id, string $plan = 'binary_pair'): string
         }
         .node-group rect {
             width: 80px; /* Adjust node width for mobile */
-            height: 40px; /* Adjust node height for mobile */
+            height: 50px; /* Adjust node height for mobile */
         }
     }
 </style>';
-	$str .= '<div id="genealogy_' . $type . '"></div>';
-	$str .= '<script src="' . $dir_d3 . '"></script>';
-	$str .= '<script>' . render($type, $user_id, $plan) . '</script>';
+    $str .= '<div id="genealogy_' . $type . '"></div>';
+    $str .= '<script src="' . $dir_d3 . '"></script>';
+    $str .= '<script>' . render($type, $user_id, $plan) . '</script>';
 
-	return $str;
+    return $str;
 }
 
 /**
@@ -64,18 +64,18 @@ function main($type, $user_id, string $plan = 'binary_pair'): string
  */
 function plan_attr(): array
 {
-	return [
-		'indirect_referral' => 'bonus_indirect_referral',
-		'unilevel' => 'unilevel',
-		'binary_pair' => 'income_cycle',
-		'leadership_binary' => 'bonus_leadership',
-		'leadership_passive' => 'bonus_leadership_passive',
-		'leadership_fast_track_principal' => 'bonus_leadership_fast_track_principal',
-		'matrix' => 'bonus_matrix',
-		'power' => 'bonus_power',
-		'matrix_table' => 'bonus_share',
-		'harvest' => 'bonus_harvest'
-	];
+    return [
+        'indirect_referral' => 'bonus_indirect_referral',
+        'unilevel' => 'unilevel',
+        'binary_pair' => 'income_cycle',
+        'leadership_binary' => 'bonus_leadership',
+        'leadership_passive' => 'bonus_leadership_passive',
+        'leadership_fast_track_principal' => 'bonus_leadership_fast_track_principal',
+        'matrix' => 'bonus_matrix',
+        'power' => 'bonus_power',
+        'matrix_table' => 'bonus_share',
+        'harvest' => 'bonus_harvest'
+    ];
 }
 
 /**
@@ -87,14 +87,14 @@ function plan_attr(): array
  */
 function details($plan): string
 {
-	$attr = set_attr($plan);
+    $attr = set_attr($plan);
 
-	$img = $plan !== 'binary_pair' ? '"active.png"' :
-		'(d.caption === "Y" || d.caption === "X" ? "active.png" : "inactive.png")';
-	$usr = $plan !== 'binary_pair' ? '"emp-name"' :
-		'(d.caption === "Y" || d.caption === "X" ? "emp-name" : "inactive-binary")';
+    $img = $plan !== 'binary_pair' ? '"active.png"' :
+        '(d.caption === "Y" || d.caption === "X" ? "active.png" : "inactive.png")';
+    $usr = $plan !== 'binary_pair' ? '"emp-name"' :
+        '(d.caption === "Y" || d.caption === "X" ? "emp-name" : "inactive-binary")';
 
-	$str = 'nodeGroup.append("text")
+    $str = 'nodeGroup.append("text")
 			.attr("x", dynamic.nodeTextLeftMargin)
 			.attr("y", attrs.nodePadding + 10)
 			.attr("class", function (d) {
@@ -112,7 +112,7 @@ function details($plan): string
 			})
 			.call(wrap, attrs.nodeWidth);' . "\n\n";
 
-	$str .= 'nodeGroup.append("text")
+    $str .= 'nodeGroup.append("text")
 			.attr("x", dynamic.nodeTextLeftMargin)
 			.attr("y", dynamic.nodePositionNameTopMargin)
 			.attr("class", "emp-position-name")
@@ -122,7 +122,7 @@ function details($plan): string
 				return d.account;
 			});' . "\n\n";
 
-	$str .= 'nodeGroup.append("text")
+    $str .= 'nodeGroup.append("text")
             .attr("x", dynamic.nodeTextLeftMargin)
             .attr("y", attrs.nodePadding + 10 + dynamic.nodeImageHeight / 4 * 2)
             .attr("class", "emp-position-name")
@@ -133,7 +133,7 @@ function details($plan): string
                 return d.' . $attr . ';
             });' . "\n\n";
 
-	$str .= $plan !== 'binary_pair' ? '' : 'nodeGroup.append("text")
+    $str .= $plan !== 'binary_pair' ? '' : 'nodeGroup.append("text")
 			.attr("x", dynamic.nodeTextLeftMargin)
 			.attr("y", dynamic.nodeChildCountTopMargin)
 			.attr("class", function (d) {
@@ -159,7 +159,7 @@ function details($plan): string
 				}	               
 			});' . "\n\n";
 
-	$str .= 'nodeGroup.append("defs").append("svg:clipPath")
+    $str .= 'nodeGroup.append("defs").append("svg:clipPath")
 			.attr("id", "clip")
 			.append("svg:rect")
 			.attr("id", "clip-rect")
@@ -170,7 +170,7 @@ function details($plan): string
 			.attr("fill", "none")
 			.attr("height", dynamic.nodeImageHeight - 4);' . "\n\n";
 
-	$str .= 'nodeGroup.append("svg:image")
+    $str .= 'nodeGroup.append("svg:image")
 			.attr("y", 2 + attrs.nodePadding)
 			.attr("x", attrs.nodePadding)
 			.attr("preserveAspectRatio", "yes")
@@ -181,7 +181,7 @@ function details($plan): string
 				return params.imageUrl + ' . $img . ';
 			});' . "\n\n";
 
-	return $str;
+    return $str;
 }
 
 /**
@@ -195,7 +195,7 @@ function details($plan): string
  */
 function ajax($type, $user_id, string $plan = 'binary_pair'): string
 {
-	return 'jQuery.ajax({
+    return 'jQuery.ajax({
 	    type: "post",
 	    dataType: "json",
 	    url: "bpl/ajax/action.php",
@@ -231,11 +231,11 @@ function ajax($type, $user_id, string $plan = 'binary_pair'): string
  */
 function render($type, $user_id, $plan): string
 {
-	$str = 'var params = {};';
-	$str .= ajax($type, $user_id, $plan);
-	$str .= genealogy($plan);
+    $str = 'var params = {};';
+    $str .= ajax($type, $user_id, $plan);
+    $str .= genealogy($plan);
 
-	return $str;
+    return $str;
 }
 
 /**
@@ -247,7 +247,7 @@ function render($type, $user_id, $plan): string
  */
 function genealogy($plan): string
 {
-	return 'function drawOrganizationChart(params) {		
+    return 'function drawOrganizationChart(params) {		
 	    var attrs = {
             EXPAND_SYMBOL: "\uf067",
             COLLAPSE_SYMBOL: "\uf068",
@@ -397,9 +397,9 @@ function genealogy($plan): string
 	
 			collapsiblesWrapper.on("click", click);' .
 
-		details($plan)
+        details($plan)
 
-		. '// Transition nodes to their new position.
+        . '// Transition nodes to their new position.
         var nodeUpdate = node.transition()
 		.duration(attrs.duration)
 		.attr("transform", function (d) {
@@ -734,15 +734,15 @@ function genealogy($plan): string
  */
 function set_attr($plan): string
 {
-	$attr = 'status';
+    $attr = 'status';
 
-	foreach (plan_attr() as $k => $v) {
-		if ($k === $plan && $v !== 'status') {
-			$attr = $v;
-		}
-	}
+    foreach (plan_attr() as $k => $v) {
+        if ($k === $plan && $v !== 'status') {
+            $attr = $v;
+        }
+    }
 
-	return $attr;
+    return $attr;
 }
 
 /**
@@ -754,13 +754,13 @@ function set_attr($plan): string
  */
 function user_binary($user_id)
 {
-	$db = db();
+    $db = db();
 
-	return $db->setQuery(
-		'SELECT * ' .
-		'FROM network_users u ' .
-		'INNER JOIN network_binary b ' .
-		'ON u.id = b.user_id ' .
-		'WHERE user_id = ' . $db->quote($user_id)
-	)->loadObject();
+    return $db->setQuery(
+        'SELECT * ' .
+        'FROM network_users u ' .
+        'INNER JOIN network_binary b ' .
+        'ON u.id = b.user_id ' .
+        'WHERE user_id = ' . $db->quote($user_id)
+    )->loadObject();
 }
