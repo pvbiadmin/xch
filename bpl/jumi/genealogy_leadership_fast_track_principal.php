@@ -12,9 +12,7 @@ use function BPL\Ajax\Ajaxer\Genealogy\main as genealogy;
 
 use function BPL\Mods\Helpers\session_get;
 use function BPL\Mods\Helpers\page_validate;
-// use function BPL\Mods\Helpers\menu;
 use function BPL\Mods\Helpers\input_get;
-// use function BPL\Mods\Helpers\live_reload;
 
 $content = main();
 
@@ -31,11 +29,7 @@ function main()
 
 	page_validate();
 
-	// $str = menu();
-
 	$uid = input_get('uid');
-
-	// $str = live_reload(true);
 
 	if ($uid !== '') {
 		$user_id = $uid;
@@ -53,26 +47,23 @@ function main()
 	</div>
 	HTML;
 
-	// $str .= '<h1>Genealogy Tree</h1>';
-	// $str .= genealogy('indirect', $user_id, 'leadership_fast_track_principal');
-
 	return $str;
 }
 
 function view_structure($user_id)
 {
-	return genealogy('indirect', $user_id, 'leadership_fast_track_principal');
+	$genealogy = genealogy('indirect', $user_id, 'leadership_fast_track_principal');
 
-	// return <<<HTML
-	// <div class="card mb-4">
-	// 	<div class="card-header">
-	// 		<i class="fas fa-sitemap me-1"></i>
-	// 		Royalty Bonus
-	// 	</div>
-	// 	<div class="card-body">
-	// 	$view_structure
-	// 	</div>
-	// 	<div class="card-footer small text-muted">Genealogy Structure</div>
-	// </div>
-	// HTML;
+	return <<<HTML
+	<div class="card mb-4">
+		<div class="card-header">
+			<i class="fas fa-sitemap me-1"></i>
+			Royalty Bonus
+		</div>
+		<div class="card-body">
+		$genealogy
+		</div>
+		<div class="card-footer small text-muted">Genealogy Structure</div>
+	</div>
+	HTML;
 }

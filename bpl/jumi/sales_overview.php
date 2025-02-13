@@ -39,9 +39,9 @@ function main()
 
 	$str .= <<<HTML
 	<div class="container-fluid px-4">
-		<h1 class="mt-4">Profit Summary</h1>
+		<h1 class="mt-4">System Monitoring</h1>
 		<ol class="breadcrumb mb-4">
-			<li class="breadcrumb-item active">List of income</li>
+			<li class="breadcrumb-item active">Summary</li>
 		</ol>				
 		$view_sales
 	</div>
@@ -64,7 +64,7 @@ function view_sales($counter)
 		<div class="card mb-4">
 			<div class="card-header">
 				<i class="fas fa-table me-1"></i>
-				Profit Book{$counter_span}
+				Cash Flow{$counter_span}
 			</div>
 			<div class="card-body">
 				<table class="table">
@@ -107,13 +107,16 @@ function row_sales(): string
 	HTML;
 
 	$total_sales_format = number_format($total_sales, 2);
-	$link_income_log = sef(35);
-	$button_income_log = <<<HTML
-		<a href="$link_income_log" class="btn btn-primary btn-sm" style="float:right">View Income Log</a>
-	HTML;
+	// $link_income_log = sef(35);
+
+	$button_income_log = '';
+
+	// $button_income_log = <<<HTML
+	// 	<a href="$link_income_log" class="btn btn-primary btn-sm" style="float:right">View Income Log</a>
+	// HTML;
 
 	$payouts_format = number_format($total_payouts, 2);
-	$link_payout_log = sef(49);
+	$link_payout_log = sef(111);
 	$button_payout_log = <<<HTML
 		<a href="$link_payout_log" class="btn btn-primary btn-sm" style="float:right">View Payout Log</a>
 	HTML;
@@ -136,7 +139,7 @@ function row_sales(): string
 			</tr>
 			<tr>
 				<th scope="row">Remaining Cash Balance</th>
-				<td colspan="2">$net_profit_format $currency{$button_payout_log}</td>
+				<td colspan="2">$net_profit_format $currency</td>
 			</tr>
 		</tbody>
 HTML;

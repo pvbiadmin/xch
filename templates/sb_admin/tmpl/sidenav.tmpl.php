@@ -95,7 +95,7 @@ function admin($admintype, $user_id)
         || $investment
     ) {
         $passive = <<<HTML
-        <div class="sb-sidenav-menu-heading">Passive</div>
+        <div class="sb-sidenav-menu-heading">Support</div>
         {$fixed_daily_token_admin}
         {$investment}
         HTML;
@@ -156,7 +156,7 @@ function member($user_id)
         || $commission
     ) {
         $core = <<<HTML
-        <div class="sb-sidenav-menu-heading">Core</div>
+        <div class="sb-sidenav-menu-heading">Page</div>
         {$dashboard}
         {$wallet}
         {$efund}
@@ -171,7 +171,7 @@ function member($user_id)
         || $investment
     ) {
         $passive = <<<HTML
-        <div class="sb-sidenav-menu-heading">Passive</div>
+        <div class="sb-sidenav-menu-heading">Support</div>
         {$fixed_daily_token}
         {$investment}
         HTML;
@@ -509,7 +509,7 @@ function efund($admintype, $user_id)
     <div class="collapse" id="collapseEfundAdmin" aria-labelledby="headingOne"
         data-bs-parent="#sidenavAccordion">
         <nav class="sb-sidenav-menu-nested nav">            
-            <!-- <a class="nav-link" href="{$buy_efund_link}">Buy {$efund_name}</a> --> 
+            <a class="nav-link" href="{$buy_efund_link}">Request {$efund_name}</a> 
             <a class="nav-link" href="{$buy_efund_confirmed_link}">Request {$efund_name} History</a>    
             {$buy_efund_pending}     
             {$add_efund}      
@@ -632,7 +632,7 @@ function commission($user_id)
     <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseCommissions"
         aria-expanded="false" aria-controls="collapseCommissions">
         <div class="sb-nav-link-icon"><i class="fas fa-hand-holding-usd"></i></div>
-        Affiliates
+        Leadership
         <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
     </a>
 
@@ -1233,7 +1233,7 @@ function leadership_fast_track_principal($user_id)
     <div class="collapse" id="collapseLeadershipPassive" aria-labelledby="headingOne"
         data-bs-parent="#sidenavAccordionCommissions">
         <nav class="sb-sidenav-menu-nested nav">
-            <a class="nav-link" href="{$bounty_line_link}">{$lftp_name} Line</a> 
+            <a class="nav-link" href="{$bounty_line_link}"><!-- {$lftp_name} Line -->Genealogy Tree</a> 
             <a class="nav-link" href="{$bounty_chart_link}">{$lftp_name} Chart</a>                        
         </nav>
     </div>
@@ -1392,7 +1392,7 @@ function investment()
     <a class="nav-link collapsed" href="javascript:void(0);" data-bs-toggle="collapse" data-bs-target="#collapseInvestment"
         aria-expanded="false" aria-controls="collapseInvestment">
         <div class="sb-nav-link-icon"><i class="fas fa-percent"></i></div>
-        Profits Program
+        Partnership Program
         <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
     </a>
     <div class="collapse" id="collapseInvestment" aria-labelledby="headingOne"

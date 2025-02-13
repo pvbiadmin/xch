@@ -1,6 +1,6 @@
 <?php
 
-namespace BPL\Jumi\Member;
+namespace BPL\Jumi\Member_Copy;
 
 require_once 'bpl/mods/income.php';
 require_once 'bpl/ajax/ajaxer/time_remaining_to_activate.php';
@@ -1748,7 +1748,7 @@ function row_savings($user_id): string
 'balance' : 'payout_transfer'*/ 'share_fund';
 
 	/*$reactivate = $user->status_global === 'active' ? '' :
-																																																																										   '<a style="float:right" href="' . sef(130) . '">Reactivate Account</a>';*/
+																																																																													'<a style="float:right" href="' . sef(130) . '">Reactivate Account</a>';*/
 
 	return '<tr>
 	        <td><a href="javascript:void(0)">' . $sa->share_fund_name . '</a>:</td>
@@ -1777,7 +1777,7 @@ function row_loans($user_id): string
 'balance' : 'payout_transfer'*/ 'loans';
 
 	/*$reactivate = $user->status_global === 'active' ? '' :
-																																																																										   '<a style="float:right" href="' . sef(130) . '">Reactivate Account</a>';*/
+																																																																													'<a style="float:right" href="' . sef(130) . '">Reactivate Account</a>';*/
 
 	return '<tr>
 	        <td><a href="javascript:void(0)">Loans</a>:</td>

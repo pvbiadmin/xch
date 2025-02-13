@@ -42,7 +42,7 @@ function main()
 	<div class="container-fluid px-4">
 		<h1 class="mt-4">Sponsored</h1>
 		<ol class="breadcrumb mb-4">
-			<li class="breadcrumb-item active">List of Sponsored Accounts</li>
+			<li class="breadcrumb-item active">List of Sponsored Members</li>
 		</ol>				
 		$view_sponsored_members
 	</div>
@@ -84,17 +84,15 @@ function table_sponsored_members($user_id)
 		<thead>
 			<tr>
 				<th>#</th>
-				<th>Accounts</th>
-				<th>Package</th>
-				<th>Title</th>
+				<th>Direct Username</th>
+				<th>Package</th>				
 			</tr>
 		</thead>
 		<tfoot>
 			<tr>
 				<th>#</th>
-				<th>Accounts</th>
-				<th>Package</th>
-				<th>Title</th>
+				<th>Direct Username</th>
+				<th>Package</th>				
 			</tr>
 		</tfoot>
 		<tbody>
@@ -139,7 +137,7 @@ function row_sponsored_members($user_id)
 					<td>$ctr</td>
 					<td><a href="$profile_link">$member->username</a></td>
 					<td>$package_name</td>
-					<td>$rank_name</td>									
+					<!-- <td>$rank_name</td> -->									
 				</tr>
 			HTML;
 	}

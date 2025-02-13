@@ -50,7 +50,9 @@ function main($input, $user_id)
 
         insert_fast_track($user_id, $input);
 
-        $update_user = update_user_fast_track($user_id, $input);
+        $insert_id = $dbh->lastInsertId();
+
+        $update_user = update_user_fast_track($insert_id, $user_id, $input);
 
         if ($update_user) {
             $sponsor_id = user($user_id)->sponsor_id;
@@ -262,14 +264,8 @@ function income_admin()
     );
 }
 
-/**
- * @param $user_id
- * @param $input
- *
- *
- * @since version
- */
-function update_user_fast_track($user_id, $input)
+
+function update_user_fast_track($fast_track_id, $user_id, $input)
 {
     $user = user($user_id);
 
@@ -279,7 +275,7 @@ function update_user_fast_track($user_id, $input)
     return crud(
         'UPDATE network_users ' .
         'SET fast_track_principal = :principal, ' .
-        'payout_transfer = :payout_transfer '/*'points = :points '*/ .
+        'payout_transfer = :payout_transfer ' .
         'WHERE id = :id',
         [
             'principal' => ($fast_track_principal + $input),
@@ -287,6 +283,13 @@ function update_user_fast_track($user_id, $input)
             'id' => $user_id
         ]
     );
+}
+
+function arr_lftpb_list($user)
+{
+    $bonus_lftpb_list = empty($user->bonus_lftpb_list) ? '{}' : $user->bonus_lftpb_list;
+
+    return json_decode($bonus_lftpb_list, true);
 }
 
 function update_user_bonus_lftp($current_sponsor_id, $bonus)

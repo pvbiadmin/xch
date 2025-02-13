@@ -66,6 +66,16 @@ function member($user_id, $counter = false)
 		return '';
 	}
 
+	$user = user($user_id);
+
+	$usertype = $user->usertype;
+
+	$app = application();
+
+	if ($usertype === 'Admin') {
+		$app->redirect(Uri::root(true) . '/' . sef(79));
+	}
+
 	$str = live_reload($counter);
 
 	$view_direct_referral = view_direct_referral($user_id);

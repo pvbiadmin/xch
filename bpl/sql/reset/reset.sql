@@ -932,16 +932,18 @@ INSERT INTO `network_leadership_passive` (`user_id`) VALUES (1);
 DROP TABLE IF EXISTS `network_leadership_fast_track_principal`;
 
 CREATE TABLE IF NOT EXISTS `network_leadership_fast_track_principal` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
-    `user_id` int(11) NOT NULL,
-    `bonus_leadership_fast_track_principal` double NOT NULL DEFAULT '0',
-    `bonus_leadership_fast_track_principal_now` double NOT NULL DEFAULT '0',
-    `bonus_leadership_fast_track_principal_last` double NOT NULL DEFAULT '0',
-    `income_today` double NOT NULL DEFAULT '0',
-    `flushout_local` double NOT NULL DEFAULT '0',
-    `flushout_global` double NOT NULL DEFAULT '0',
-    `date_last_flushout` int(11) NOT NULL DEFAULT '0',
-    PRIMARY KEY (`id`)
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `bonus_leadership_fast_track_principal` double NOT NULL DEFAULT '0',
+  `bonus_leadership_fast_track_principal_now` double NOT NULL DEFAULT '0',
+  `bonus_leadership_fast_track_principal_last` double NOT NULL DEFAULT '0',
+  `income_today` double NOT NULL DEFAULT '0',
+  `flushout_local` double NOT NULL DEFAULT '0',
+  `flushout_global` double NOT NULL DEFAULT '0',
+  `date_last_flushout` int NOT NULL DEFAULT '0',
+  `date_last_deposit` int NOT NULL DEFAULT '0',
+  `bonus_lftpb_reap` json DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 --
@@ -1700,6 +1702,7 @@ CREATE TABLE IF NOT EXISTS `network_users` (
   `coin_transfer` double NOT NULL DEFAULT '0',
   `bonus_leadership_passive_balance` double NOT NULL DEFAULT '0',
   `bonus_leadership_fast_track_principal_balance` double NOT NULL DEFAULT '0',
+  `bonus_lftpb_list` json DEFAULT NULL,
   `top_up_balance` double NOT NULL DEFAULT '0',
   `fast_track_balance` double NOT NULL DEFAULT '0',
   `fixed_daily_balance` double NOT NULL DEFAULT '0',
