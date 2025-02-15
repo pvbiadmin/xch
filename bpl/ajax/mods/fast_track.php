@@ -86,7 +86,7 @@ function main($input, $user_id)
     $return['interest'] = $value_last + $user_latest->fast_track_interest;
     $return['input'] = $input;
 
-    $return['success_fast_track'] = $settings_plans->fast_track_name . ' successful! (fast_track_id: ' . $fast_track_id . ')';
+    $return['success_fast_track'] = $settings_plans->fast_track_name . ' successful!';
 
     try {
         $return['fast_track_json'] = json_encode($return, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
