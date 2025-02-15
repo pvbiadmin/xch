@@ -355,40 +355,40 @@ function row_list_stakes($user_id)
 
     $str = '';
 
-    // if (empty($fast_tracks)) {
-    //     $str .= <<<HTML
-    // 		<tr>
-    // 			<td>0.00</td>
-    // 			<td>0.00</td>
-    // 			<td>0</td>
-    // 			<td>n/a</td>
-    // 			<td>n/a</td>				
-    // 		</tr>					
-    // 	HTML;
-    // } else {
-    foreach ($fast_tracks as $ft) {
-        $start = new DateTime('@' . $ft->date_entry);
-        $end = new DateInterval('P' . $maturity . 'D');
-
-        $start->add($end);
-
-        $starting_value = number_format($ft->principal, 2);
-        $current_value = number_format($ft->value_last, 2);
-        $maturity_date = $start->format('F d, Y');
-        $status = time_remaining($ft->day, $ft->processing, $interval, $maturity);
-
-        $remaining = ($ft->processing + $maturity - $ft->day) * $interval;
-        $remain_maturity = ($maturity - $ft->day) * $interval;
-
-        $type_day = '';
-
-        if ($remaining > $maturity && $ft->processing) {
-            $type_day = 'Days for Processing: ';
-        } elseif ($remain_maturity > 0) {
-            $type_day = 'Time Balance: ';
-        }
-
+    if (empty($fast_tracks)) {
         $str .= <<<HTML
+    		<tr>
+    			<td>0.00</td>
+    			<td>0.00</td>
+    			<td>0</td>
+    			<td>n/a</td>
+    			<td>n/a</td>				
+    		</tr>					
+HTML;
+    } else {
+        foreach ($fast_tracks as $ft) {
+            $start = new DateTime('@' . $ft->date_entry);
+            $end = new DateInterval('P' . $maturity . 'D');
+
+            $start->add($end);
+
+            $starting_value = number_format($ft->principal, 2);
+            $current_value = number_format($ft->value_last, 2);
+            $maturity_date = $start->format('F d, Y');
+            $status = time_remaining($ft->day, $ft->processing, $interval, $maturity);
+
+            $remaining = ($ft->processing + $maturity - $ft->day) * $interval;
+            $remain_maturity = ($maturity - $ft->day) * $interval;
+
+            $type_day = '';
+
+            if ($remaining > $maturity && $ft->processing) {
+                $type_day = 'Days for Processing: ';
+            } elseif ($remain_maturity > 0) {
+                $type_day = 'Time Balance: ';
+            }
+
+            $str .= <<<HTML
 				<tr>
 					<td>$starting_value</td>
 					<td>$current_value</td>
@@ -397,8 +397,8 @@ function row_list_stakes($user_id)
 					<td>{$type_day}{$status}</td>				
 				</tr>
 			HTML;
+        }
     }
-    // }
 
     return $str;
 }

@@ -17,7 +17,7 @@ class JConfig
 	public $host = 'localhost';
 	public $user = 'root';
 	public $password = '';
-	public $db = 'b2p2_db';
+	public $db = 'escudero_db';
 	public $dbprefix = 'joomla_';
 	public $live_site = '';
 	public $secret = 'D3C2u2y0XFn6tXvU';
@@ -34,7 +34,7 @@ class JConfig
 	public $mailonline = '1';
 	public $mailer = 'smtp';
 	public $mailfrom = 'admin@pvbi.org';
-	public $fromname = 'B2P - Holders';
+	public $fromname = 'Escudero Animal Raising';
 	public $sendmail = '/usr/sbin/sendmail';
 	public $smtpauth = '1';
 	public $smtpuser = 'admin@pvbi.org';
@@ -46,7 +46,7 @@ class JConfig
 	public $cache_handler = 'file';
 	public $cachetime = '15';
 	public $cache_platformprefix = '0';
-	public $MetaDesc = 'B2P - Holders';
+	public $MetaDesc = 'Escudero Animal Raising';
 	public $MetaKeys = '';
 	public $MetaTitle = '1';
 	public $MetaAuthor = '1';

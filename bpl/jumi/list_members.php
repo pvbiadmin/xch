@@ -17,7 +17,7 @@ use function BPL\Mods\Helpers\input_get;
 use function BPL\Mods\Helpers\page_validate;
 use function BPL\Mods\Helpers\settings;
 // use function BPL\Mods\Helpers\page_reload;
-use function BPL\Mods\Helpers\live_reload;
+// use function BPL\Mods\Helpers\live_reload;
 
 $content = main();
 
@@ -32,23 +32,11 @@ function main()
 {
 	page_validate();
 
-	// $str = menu();
-
-	// $str .= page_reload();
-	// $str .= paginate();
-	// $str .= header();
-
 	$user_id = session_get('user_id');
 
-	$str = live_reload(true);
+	$str = /* live_reload(true) */ '';
 
-	// if (count(users_desc()) > 0) {
-	// 	$str .= view_members(5);
-	// } else {
-	// 	$str .= '<hr><p>No members yet.</p>';
-	// }
-
-	$view_members = view_members($user_id, true);
+	$view_members = view_members($user_id, false);
 
 	$str .= <<<HTML
 	<div class="container-fluid px-4">
