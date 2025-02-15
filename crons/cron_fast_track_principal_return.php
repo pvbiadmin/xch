@@ -219,16 +219,35 @@ function update_user_efund($user, $fast_track_id, $bonus)
 	// Update the database with the new bonus balance, efund, and updated bonus_lftp_list
 	crud(
 		'UPDATE network_users' .
-		' SET' .
-		// ' bonus_leadership_fast_track_principal_balance = :bonus_lftp_balance' .
-		' payout_transfer = :efund' .
-		', bonus_lftp_list = :bonus_lftp_list' .
+		' SET bonus_lftp_list = :bonus_lftp_list' .
 		' WHERE id = :id',
 		[
-			// 'bonus_lftp_balance' => $bonus_lftp_balance_new,
-			'efund' => $efund_new,
 			'bonus_lftp_list' => $updated_bonus_lftp_list,
 			'id' => $user->id
+		]
+	);
+
+	$fast_track = fast_track_user($fast_track_id);
+
+	$fast_track_user_id = $fast_track->user_id;
+
+	// update fast track user efund
+	crud(
+		'UPDATE network_users' .
+		' SET payout_transfer = :payout_transfer' .
+		' WHERE id = :id',
+		[
+			'payout_transfer' => $efund_new,
+			'id' => $fast_track_user_id
+		]
+	);
+
+	// delete fast track
+	crud(
+		'DELETE FROM network_fast_track' .
+		' WHERE fast_track_id = :fast_track_id',
+		[
+			'fast_track_id' => $fast_track_id
 		]
 	);
 }
