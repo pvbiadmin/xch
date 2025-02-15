@@ -112,7 +112,7 @@ function return_principal_ft($fast_track)
 
 		$principal = $fast_track->principal;
 
-		update_user_efund($user, $principal);
+		update_user_efund($user, $fast_track_id, $principal);
 		delete_fast_track($fast_track_id);
 	}
 }
@@ -136,17 +136,31 @@ function fast_track_user($fast_track_id)
 	);
 }
 
-function update_user_efund($user, $principal)
+function update_user_efund($user, $fast_track_id, $principal)
 {
+	$bonus_lftp_list = arr_lftp_list($user);
+
+	foreach ($bonus_lftp_list as $key => &$entry) {
+		if ($entry['fast_track_id'] == $fast_track_id) {
+			unset($bonus_lftp_list[$key]);
+		}
+	}
+
+	$bonus_lftp_list = array_values($bonus_lftp_list);
+
+	$updated_bonus_lftp_list = json_encode($bonus_lftp_list);
+
 	$efund = $user->payout_transfer;
 	$efund_new = $efund + $principal;
 
 	crud(
 		'UPDATE network_users' .
 		' SET payout_transfer = :efund' .
+		', bonus_lftp_list = :bonus_lftp_list' .
 		' WHERE id = :id',
 		[
 			'efund' => $efund_new,
+			'bonus_lftp_list' => $updated_bonus_lftp_list,
 			'id' => $user->id
 		]
 	);
