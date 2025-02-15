@@ -25,13 +25,22 @@ function main()
 {
 	$dbh = DB_Cron::connect();
 
-	$fts = fast_tracks();
+	$users = users();
 
-	foreach ($fts as $ft) {
+	// testing and debugging
+	// $arr_users = [];
+
+	foreach ($users as $user) {
 		try {
 			$dbh->beginTransaction();
 
-			return_principal_ft($ft);
+			// testing and debugging
+			// $claim = claim_lftpb($user);
+			// if ($claim) {
+			// 	$arr_users[] = $claim;
+			// }
+
+			return_principal_fast_track($user);
 
 			$dbh->commit();
 		} catch (Exception $e) {
@@ -41,6 +50,11 @@ function main()
 			}
 		}
 	}
+
+	// testing and debugging
+	// echo '<pre>';
+	// print_r($arr_users);
+	// exit;
 }
 
 /**
@@ -102,19 +116,60 @@ function update_indirect($user)
 	);
 }
 
-function return_principal_ft($fast_track)
+function return_principal_fast_track($user)
 {
-	if ($fast_track->day >= 100) {
-		$user_id = $fast_track->user_id;
-		$fast_track_id = $fast_track->fast_track_id;
+	// testing and debugging
+	// $collect_lftp_list = [];
 
-		$user = user($user_id);
+	if ($user->bonus_lftp_list !== null) {
+		// $slftp = settings('leadership_fast_track_principal');
 
-		$principal = $fast_track->principal;
+		$arr_lftp_list = arr_lftp_list($user);
 
-		update_user_efund($user, $fast_track_id, $principal);
-		delete_fast_track($fast_track_id);
+		$filtered_arr_lftp_list = array_filter($arr_lftp_list, function ($item) {
+			return $item['fast_track_id'] != 0 && $item['reaped'] != 0;
+		});
+
+		// testing and debugging
+		// $bonus_list = [];
+
+		foreach ($filtered_arr_lftp_list as $lftp) {
+
+			$fast_track_id = $lftp['fast_track_id'];
+
+			$fast_track = fast_track_user($fast_track_id);
+
+			$fast_track_days = $fast_track->day;
+
+			if ($fast_track_days >= 100) {
+				// $fast_track_user_id = $fast_track->user_id;
+
+				// $fast_track_user = user($fast_track_user_id);
+
+				// $account_type = $fast_track_user->account_type;
+
+				// $level = get_downline_level($user->id, $fast_track_user_id);
+
+				// $share = $slftp->{$account_type . '_leadership_fast_track_principal_share_' . $level};
+				// $share_cut = $slftp->{$account_type . '_leadership_fast_track_principal_share_cut_' . $level};
+
+				$fast_track_principal = $fast_track->principal;
+
+				$bonus = $fast_track_principal/*  * ($share / 100) * ($share_cut / 100) */ ;
+
+				// testing and debugging
+				// $bonus_list[$fast_track_id] = [$bonus];
+
+				update_user_efund($user, $fast_track_id, $bonus);
+			}
+		}
+
+		// testing and debugging
+		// $collect_lftp_list[$user->username] = $bonus_list;
 	}
+
+	// testing and debugging
+	// return $collect_lftp_list;
 }
 
 function arr_lftp_list($lftp_user)
@@ -136,43 +191,44 @@ function fast_track_user($fast_track_id)
 	);
 }
 
-function update_user_efund($user, $fast_track_id, $principal)
+function update_user_efund($user, $fast_track_id, $bonus)
 {
+	// Decode the bonus_lftp_list JSON array
 	$bonus_lftp_list = arr_lftp_list($user);
 
 	foreach ($bonus_lftp_list as $key => &$entry) {
 		if ($entry['fast_track_id'] == $fast_track_id) {
+			// Remove the entry with $entry['fast_track_id'] == $fast_track_id
 			unset($bonus_lftp_list[$key]);
 		}
 	}
 
+	// Re-index the array to remove any gaps left by unset()
 	$bonus_lftp_list = array_values($bonus_lftp_list);
 
+	// Encode the updated array back to JSON
 	$updated_bonus_lftp_list = json_encode($bonus_lftp_list);
 
+	// Calculate the new bonus balance and efund
+	// $bonus_lftp_balance = $user->bonus_leadership_fast_track_principal_balance;
 	$efund = $user->payout_transfer;
-	$efund_new = $efund + $principal;
 
+	// $bonus_lftp_balance_new = $bonus_lftp_balance - $bonus;
+	$efund_new = $efund + $bonus;
+
+	// Update the database with the new bonus balance, efund, and updated bonus_lftp_list
 	crud(
 		'UPDATE network_users' .
-		' SET payout_transfer = :efund' .
+		' SET' .
+		// ' bonus_leadership_fast_track_principal_balance = :bonus_lftp_balance' .
+		' payout_transfer = :efund' .
 		', bonus_lftp_list = :bonus_lftp_list' .
 		' WHERE id = :id',
 		[
+			// 'bonus_lftp_balance' => $bonus_lftp_balance_new,
 			'efund' => $efund_new,
 			'bonus_lftp_list' => $updated_bonus_lftp_list,
 			'id' => $user->id
-		]
-	);
-}
-
-function delete_fast_track($fast_track_id)
-{
-	crud(
-		'DELETE FROM network_fast_track' .
-		' WHERE fast_track_id = :fast_track_id',
-		[
-			'fast_track_id' => $fast_track_id
 		]
 	);
 }
