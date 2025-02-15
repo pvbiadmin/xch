@@ -36,7 +36,6 @@ function main()
 
 			// testing and debugging
 			// $claim = claim_lftpb($user);
-
 			// if ($claim) {
 			// 	$arr_users[] = $claim;
 			// }
@@ -119,6 +118,7 @@ function update_indirect($user)
 
 function claim_lftpb($user)
 {
+	// testing and debugging
 	// $collect_lftp_list = [];
 
 	if ($user->bonus_lftp_list !== null) {
@@ -127,9 +127,10 @@ function claim_lftpb($user)
 		$arr_lftp_list = arr_lftp_list($user);
 
 		$filtered_arr_lftp_list = array_filter($arr_lftp_list, function ($item) {
-			return $item['fast_track_id'] != 0;
+			return $item['fast_track_id'] != 0 && $item['reaped'] == 0;
 		});
 
+		// testing and debugging
 		// $bonus_list = [];
 
 		foreach ($filtered_arr_lftp_list as $lftp) {
