@@ -50,18 +50,18 @@ function validate_input(
 	$password1,
 	$password2,
 	$code,
-	$sponsor,
-	$admintype,
-	$edit
+	$sponsor/* ,
+$admintype *//* ,
+$edit */
 ) {
 	$settings_plans = settings('plans');
 	$settings_ancillaries = settings('ancillaries');
 
 	$payment_mode = $settings_ancillaries->payment_mode;
 
-	if ($edit && $admintype === 'Super') {
-		$date = input_get('date', '', 'RAW');
-	}
+	// if ($edit && $admintype === 'Super') {
+	// $date = input_get('date', '', 'RAW');
+	// }
 
 	$app = application();
 
@@ -80,10 +80,10 @@ function validate_input(
 		$app->redirect(Uri::current());
 	}
 
-	if ($edit && !isset($date)) {
-		$app->enqueueMessage('Please specify your Registration Date.', 'error');
-		$app->redirect(Uri::current());
-	}
+	// if ($edit && !isset($date)) {
+	// 	$app->enqueueMessage('Please specify your Registration Date.', 'error');
+	// 	$app->redirect(Uri::current());
+	// }
 
 	if (count(user_username_unblock($username))) {
 		$app->enqueueMessage('Username already taken.', 'error');
@@ -127,7 +127,7 @@ function process_form()
 	// echo display_loader();
 
 	$admintype = session_get('admintype');
-	$edit = session_get('edit');
+	// $edit = session_get('edit');
 
 	$username = input_get('username');
 	$password1 = input_get('password1');
@@ -146,7 +146,7 @@ function process_form()
 
 	$email = substr($email, 0, 60);
 
-	session_set_date($admintype, $edit);
+	// session_set_date($admintype, $edit);
 
 	session_set('s_username', $username);
 	session_set('s_email', $email);
@@ -158,12 +158,12 @@ function process_form()
 		$password1,
 		$password2,
 		$code,
-		$sponsor,
-		$admintype,
-		$edit
+		$sponsor/* ,
+	  $admintype *//* ,
+$edit */
 	);
 
-	$insert_user = insert_user($username, $password1, $sponsor, $email, $admintype, $edit);
+	$insert_user = insert_user($username, $password1, $sponsor, $email/* , $admintype *//* , $edit */);
 
 	if ($insert_user) {
 		$insert_id = $db->insertid();
@@ -238,19 +238,19 @@ function process_leadership_fast_track_principal($insert_id, $code_type)
 	}
 }
 
-/**
- * @param $username
- * @param $password
- * @param $sponsor
- * @param $email
- * @param $admintype
- * @param $edit
- *
- * @return false|mixed
- *
- * @since version
- */
-function insert_user($username, $password, $sponsor, $email, $admintype, $edit)
+// /**
+//  * @param $username
+//  * @param $password
+//  * @param $sponsor
+//  * @param $email
+//  * @param $admintype
+//  * @param $edit
+//  *
+//  * @return false|mixed
+//  *
+//  * @since version
+//  */
+function insert_user($username, $password, $sponsor, $email/* , $admintype *//* , $edit */)
 {
 	$db = db();
 
@@ -261,7 +261,7 @@ function insert_user($username, $password, $sponsor, $email, $admintype, $edit)
 
 	$email = substr($email, 0, 60);
 
-	$date = input_get_date($admintype, $edit);
+	// $date = input_get_date($admintype, $edit);
 
 	// sponsor
 	$sponsor_id = '1';
@@ -283,13 +283,23 @@ function insert_user($username, $password, $sponsor, $email, $admintype, $edit)
 		'email'
 	];
 
-	$date_registered = ($edit && isset($date) ? $db->quote($date) : $db->quote(time()));
+	$admintype = session_get('admintype');
 
-	if ($payment_mode === 'CODE') {
-		$date_activated = $date_registered;
-	} else {
-		$date_activated = ($edit && (int) $date !== 0 ? $db->quote($date) : $db->quote(0));
+	$date_registered = $db->quote(time());
+	$date_activated = $db->quote(time());
+
+	if ($admintype === 'Super' && input_get('date') !== '') {
+		$date_registered = strtotime(input_get('date'));
+		$date_activated = strtotime(input_get('date'));
 	}
+
+	// $date_registered = ($edit && isset($date) ? $db->quote($date) : $db->quote(time()));
+
+	// if ($payment_mode === 'CODE') {
+	// 	$date_activated = $date_registered;
+	// } else {
+	// 	$date_activated = ($edit && (int) $date !== 0 ? $db->quote($date) : $db->quote(0));
+	// }
 
 	$values_user_insert = [
 		$db->quote($username),

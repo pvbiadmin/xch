@@ -942,7 +942,6 @@ CREATE TABLE IF NOT EXISTS `network_leadership_fast_track_principal` (
   `flushout_global` double NOT NULL DEFAULT '0',
   `date_last_flushout` int NOT NULL DEFAULT '0',
   `date_last_deposit` int NOT NULL DEFAULT '0',
-  `bonus_lftpb_reap` json DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
@@ -1702,7 +1701,7 @@ CREATE TABLE IF NOT EXISTS `network_users` (
   `coin_transfer` double NOT NULL DEFAULT '0',
   `bonus_leadership_passive_balance` double NOT NULL DEFAULT '0',
   `bonus_leadership_fast_track_principal_balance` double NOT NULL DEFAULT '0',
-  `bonus_lftpb_list` json DEFAULT NULL,
+  `bonus_lftp_list` json DEFAULT NULL,
   `top_up_balance` double NOT NULL DEFAULT '0',
   `fast_track_balance` double NOT NULL DEFAULT '0',
   `fixed_daily_balance` double NOT NULL DEFAULT '0',

@@ -493,12 +493,14 @@ function log_transfer($user_id, $username, $amount, $date)
 		[
 			'transfer_from',
 			'transfer_to',
+			'type',
 			'date',
 			'amount'
 		],
 		[
 			$db->quote($user_id),
 			$db->quote(user_username($username)->id),
+			$db->quote('transfer'),
 			$db->quote($date),
 			$db->quote($amount)
 		]

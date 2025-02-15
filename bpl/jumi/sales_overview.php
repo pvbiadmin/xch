@@ -103,7 +103,7 @@ function row_sales(): string
 
 	$link_directs = sef(40);
 	$button_directs = <<<HTML
-		<a href="$link_directs" class="btn btn-primary btn-sm" style="float:right">View All Members</a>
+		<a href="$link_directs" class="btn btn-primary btn-sm" style="float:right">Overall History</a>
 	HTML;
 
 	$total_sales_format = number_format($total_sales, 2);
@@ -126,7 +126,7 @@ function row_sales(): string
 	$str = <<<HTML
 		<tbody>
 			<tr>
-				<th scope="row">Members</th>
+				<th scope="row">Total Members</th>
 				<td>$count_users{$button_directs}</td>			
 			</tr>
 			<tr>
@@ -134,7 +134,7 @@ function row_sales(): string
 				<td>$total_sales_format $currency{$button_income_log}</td>
 			</tr>
 			<tr>
-				<th scope="row">Payouts</th>
+				<th scope="row">Total Payouts</th>
 				<td colspan="2">$payouts_format $currency{$button_payout_log}</td>
 			</tr>
 			<tr>

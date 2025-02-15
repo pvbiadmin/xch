@@ -52,7 +52,7 @@ function main()
 
 	$str .= <<<HTML
 	<div class="container-fluid px-4">
-		<h1 class="mt-4">Members List</h1>
+		<h1 class="mt-4">Monitoring Page</h1>
 		<ol class="breadcrumb mb-4">
 			<li class="breadcrumb-item active">List of All Members</li>
 		</ol>				
@@ -77,7 +77,7 @@ function view_members($user_id, $counter)
 		<div class="card mb-4">
 			<div class="card-header">
 				<i class="fas fa-table me-1"></i>
-				All Members{$counter_span}
+				Summary{$counter_span}
 			</div>
 			<div class="card-body">
 				<table id="datatablesSimple">
@@ -107,10 +107,12 @@ function table_all_members($user_id)
 			<tr>
 				<th>Date Registered</th>
 				<th>Username</th>
-				<th>Account</th>
-				<th>Balance</th>
+				<th>Registered</th>
+				<th>Wallet</th>
 				<th>Payouts</th>
 				<th>Cash-ins</th>
+				<th>Transfer-outs</th>
+				<th>Transfer-ins</th>
 				$actions
 			</tr>
 		</thead>
@@ -119,9 +121,11 @@ function table_all_members($user_id)
 				<th>Date Registered</th>
 				<th>Username</th>
 				<th>Account</th>
-				<th>Balance</th>
+				<th>Wallet</th>
 				<th>Payouts</th>
 				<th>Cash-ins</th>
+				<th>Transfer-outs</th>
+				<th>Transfer-ins</th>
 				$actions
 			</tr>
 		</tfoot>
@@ -231,6 +235,11 @@ function view_member($member): string
 
 	$account_rd = settings('entry')->{$account_type . '_package_name'} . ($user_cd ? ' CD' : '');
 
+	$transfer = user_transfer($member->id);
+
+	$transfer_ins = $transfer['ins'];
+	$transfer_outs = $transfer['outs'];
+
 	// $account_rd .= !0 ? '' : harvest_append($member);
 
 	// $psv = $account_type !== 'starter' ? settings('binary')->{$account_type . '_pairs'} : 0; // pair set value
@@ -245,6 +254,8 @@ function view_member($member): string
 	$str .= '<td>' . number_format($member->payout_transfer, 2) . '</td>';
 	$str .= '<td>' . number_format($member->payout_total, 2) . '</td>';
 	$str .= '<td>' . number_format($member->fast_track_principal, 2) . '</td>';
+	$str .= '<td>' . number_format($transfer_outs, 2) . '</td>';
+	$str .= '<td>' . number_format($transfer_ins, 2) . '</td>';
 	$str .= '<td>';
 
 	// if (
@@ -304,6 +315,34 @@ HTML;
 	$str .= '</tr>';
 
 	return $str;
+}
+
+function user_transfer($user_id)
+{
+	$sql = <<<SQL
+		SELECT 
+			u.id AS user_id,
+			u.username,
+			COALESCE(SUM(CASE WHEN t.transfer_from = u.id THEN t.amount ELSE 0 END), 0) AS total_transferred_out,
+			COALESCE(SUM(CASE WHEN t.transfer_to = u.id THEN t.amount ELSE 0 END), 0) AS total_received
+		FROM 
+			network_users u
+		LEFT JOIN 
+			network_transfer t ON u.id = t.transfer_from OR u.id = t.transfer_to
+		WHERE 
+			u.id = $user_id
+		GROUP BY 
+			u.id, u.username;
+	SQL;
+
+	$db = db();
+
+	$transfers = $db->setQuery($sql)->loadObject();
+
+	return [
+		'ins' => $transfers->total_received,
+		'outs' => $transfers->total_transferred_out
+	];
 }
 
 /**

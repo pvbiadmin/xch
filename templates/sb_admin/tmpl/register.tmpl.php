@@ -140,6 +140,7 @@ function view_registration()
     $s_password = session_get('s_password');
     $s_sponsor = session_get('s_sponsor');
     $sponsor = sponsor();
+    $date_registered = date_registered();
 
     // Sponsor field
     $sponsor_field = '';
@@ -201,6 +202,8 @@ HTML;
             <!-- Sponsor Field -->
             {$sponsor_field}<br>
 
+            {$date_registered}<br>
+
             <!-- Terms and Conditions -->
             <div class="form-group terms">
                 <label style="display: flex; align-items: center;">
@@ -244,6 +247,22 @@ function sponsor(): string
     }
 
     return $sponsor;
+}
+
+function date_registered()
+{
+    $admintype = session_get('admintype');
+
+    if ($admintype !== 'Super') {
+        return '';
+    }
+
+    return <<<HTML
+    <div class="form-group">
+        <label for="date">Date Registered:</label>
+        <input type="date" name="date" id="date" class="form-control">
+    </div>
+    HTML;
 }
 
 function notifications(): string

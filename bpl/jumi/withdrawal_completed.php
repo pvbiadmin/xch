@@ -131,7 +131,7 @@ function table_withdrawal_completed_admin(): string
 	$str = <<<HTML
 		<thead>
 			<tr>
-				<th>Date Requested</th>
+				<th>Date</th>
 				<th>Username</th>
 				<th>Balance ($currency)</th>
 				<th>Amount ($currency)</th>
@@ -141,7 +141,7 @@ function table_withdrawal_completed_admin(): string
 		</thead>
 		<tfoot>
 			<tr>
-				<th>Date Requested</th>
+				<th>Date</th>
 				<th>Username</th>
 				<th>Balance ($currency)</th>
 				<th>Amount ($currency)</th>
@@ -224,7 +224,7 @@ function table_withdrawal_completed_user($user_id)
 	$str = <<<HTML
 		<thead>
 			<tr>
-				<th>Date Requested</th>
+				<th>Date</th>
 				<th>Amount ($currency)</th>
 				<th>Final Deducted ($currency)</th>
 				<th>Method</th>
@@ -232,7 +232,7 @@ function table_withdrawal_completed_user($user_id)
 		</thead>
 		<tfoot>
 			<tr>
-				<th>Date Requested</th>
+				<th>Date</th>
 				<th>Amount ($currency)</th>
 				<th>Final Deducted ($currency)</th>
 				<th>Method</th>

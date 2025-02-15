@@ -48,17 +48,18 @@ function main($input, $user_id)
     try {
         $dbh->beginTransaction();
 
-        insert_fast_track($user_id, $input);
+        // Insert the fast track record and get the insert ID
+        $fast_track_id = insert_fast_track($dbh, $user_id, $input);
 
-        $insert_id = $dbh->lastInsertId();
-
-        $update_user = update_user_fast_track($insert_id, $user_id, $input);
+        // Update the user's fast track details
+        $update_user = update_user_fast_track($user_id, $input);
 
         if ($update_user) {
             $sponsor_id = user($user_id)->sponsor_id;
 
+            // Process referral and leadership logic
             referral_fast_track_principal($sponsor_id, $input);
-            leadership_fast_track_principal($sponsor_id, $input);
+            leadership_fast_track_principal($sponsor_id, $fast_track_id, $input);
         }
 
         $dbh->commit();
@@ -85,7 +86,7 @@ function main($input, $user_id)
     $return['interest'] = $value_last + $user_latest->fast_track_interest;
     $return['input'] = $input;
 
-    $return['success_fast_track'] = $settings_plans->fast_track_name . ' successful!';
+    $return['success_fast_track'] = $settings_plans->fast_track_name . ' successful! (fast_track_id: ' . $fast_track_id . ')';
 
     try {
         $return['fast_track_json'] = json_encode($return, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
@@ -128,7 +129,7 @@ function referral_fast_track_principal($user_id, $input)
     }
 }
 
-function leadership_fast_track_principal($user_id, $input)
+function leadership_fast_track_principal($user_id, $fast_track_id, $input)
 {
     $sp = settings('plans');
     $slftp = settings('leadership_fast_track_principal');
@@ -163,7 +164,7 @@ function leadership_fast_track_principal($user_id, $input)
             $percent = ($share / 100) * ($share_cut / 100);
             $bonus = $input * $percent;
 
-            update_user_bonus_lftp($current_sponsor_id, $bonus);
+            update_user_bonus_lftp($current_sponsor_id, $fast_track_id, $bonus);
         }
 
         // Move up to next sponsor
@@ -171,62 +172,40 @@ function leadership_fast_track_principal($user_id, $input)
     }
 }
 
-/**
- * @param $user_id
- * @param $input
- *
- *
- * @since version
- */
-function insert_fast_track($user_id, $input)
+function insert_fast_track($dbh, $user_id, $input)
 {
-    $dbh = DB::connect();
-
     $settings_investment = settings('investment');
-
     $account_type = user($user_id)->account_type;
-
-    //    $fast_track_maturity = $settings_investment->{$account_type . '_fast_track_maturity'};
     $fast_track_processing = $settings_investment->{$account_type . '_fast_track_processing'};
 
-    $time = new DateTime('now');
-    $time->setTimezone(new DateTimeZone('Asia/Manila'));
-    $now = $time->format('U'); // seconds since unix epoch
+    $time = new DateTime('now', new DateTimeZone('Asia/Manila'));
+    $now = $time->format('U'); // seconds since Unix epoch
 
-    crud(
+    // Execute the insert query using the same PDO instance
+    $stmt = $dbh->prepare(
         'INSERT INTO network_fast_track' .
-        ' (user_id' .
-        ', time_last' .
-        ', value_last' .
-        ', day' .
-        ', principal' .
-        ', date_entry' .
-        ', processing' .
-        ', date_last_cron)' .
-        ' VALUES' .
-        ' (:user_id' .
-        ', :time_last' .
-        ', :value_last' .
-        ', :day' .
-        ', :principal' .
-        ', :date_entry' .
-        ', :processing' .
-        ', :date_last_cron)',
-        [
-            'user_id' => $user_id,
-            'time_last' => 0,
-            'value_last' => 0,
-            'day' => 0,
-            'principal' => $input,
-            'date_entry' => $now,
-            'processing' => $fast_track_processing,
-            'date_last_cron' => $now
-        ]
+        ' (user_id, time_last, value_last, day, principal, date_entry, processing, date_last_cron)' .
+        ' VALUES (:user_id, :time_last, :value_last, :day, :principal, :date_entry, :processing, :date_last_cron)'
     );
 
+    $stmt->execute([
+        'user_id' => $user_id,
+        'time_last' => 0,
+        'value_last' => 0,
+        'day' => 0,
+        'principal' => $input,
+        'date_entry' => $now,
+        'processing' => $fast_track_processing,
+        'date_last_cron' => $now
+    ]);
+
+    // Get the last inserted ID using the same DB instance
     $insert_id = $dbh->lastInsertId();
 
+    // Log admin income (if needed)
     log_income_admin($insert_id, $input);
+
+    return $insert_id;
 }
 
 function log_income_admin($insert_id, $input)
@@ -265,7 +244,7 @@ function income_admin()
 }
 
 
-function update_user_fast_track($fast_track_id, $user_id, $input)
+function update_user_fast_track($user_id, $input)
 {
     $user = user($user_id);
 
@@ -292,7 +271,7 @@ function arr_lftpb_list($user)
     return json_decode($bonus_lftpb_list, true);
 }
 
-function update_user_bonus_lftp($current_sponsor_id, $bonus)
+function update_user_bonus_lftp($current_sponsor_id, $fast_track_id, $bonus)
 {
     $sponsor = user($current_sponsor_id);
 
@@ -300,17 +279,24 @@ function update_user_bonus_lftp($current_sponsor_id, $bonus)
     $bonus_lftp = $sponsor->bonus_leadership_fast_track_principal;
     $bonus_lftp_bal = $sponsor->bonus_leadership_fast_track_principal_balance;
     // $balance = $sponsor->payout_transfer;
+    $arr_bonus_lftp_list = arr_bonus_lftp_list($sponsor);
+
+    $arr_bonus_lftp_list[] = ['fast_track_id' => $fast_track_id, 'reaped' => 0];
+
+    $bonus_lftp_list = json_encode($arr_bonus_lftp_list);
 
     $update_user_bonus_lftp = crud(
         'UPDATE network_users' .
         ' SET bonus_leadership_fast_track_principal = :bonus_lftp' .
         ', bonus_leadership_fast_track_principal_balance = :bonus_lftp_bal' .
         // ', payout_transfer = :payout_transfer' .
+        ', bonus_lftp_list  = :bonus_lftp_list' .
         ' WHERE id = :id',
         [
             'bonus_lftp' => $bonus_lftp + $bonus,
             'bonus_lftp_bal' => $bonus_lftp_bal + $bonus,
             // 'payout_transfer' => $balance + $bonus,
+            'bonus_lftp_list' => $bonus_lftp_list,
             'id' => $current_sponsor_id
         ]
     );
@@ -318,6 +304,15 @@ function update_user_bonus_lftp($current_sponsor_id, $bonus)
     if ($update_user_bonus_lftp) {
         log_activity_lftp($current_sponsor_id, $bonus);
     }
+}
+
+function arr_bonus_lftp_list($user)
+{
+    $bonus_lftp_list = $user->bonus_lftp_list;
+
+    $bonus_lftp_list = empty($bonus_lftp_list) ? '{}' : $bonus_lftp_list;
+
+    return json_decode($bonus_lftp_list, true);
 }
 
 function log_activity_lftp($current_sponsor_id, $bonus)

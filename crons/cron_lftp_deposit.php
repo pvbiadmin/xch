@@ -25,28 +25,37 @@ function main()
 {
 	$dbh = DB_Cron::connect();
 
-	$users = lftp_users();
+	$users = users();
 
-	if (!empty($users)) {
-		foreach ($users as $user) {
-			$can_claim_lftpb = can_claim_lftpb($user);
+	// testing and debugging
+	// $arr_users = [];
 
-			if ($can_claim_lftpb) {
-				try {
-					$dbh->beginTransaction();
+	foreach ($users as $user) {
+		try {
+			$dbh->beginTransaction();
 
-					update_indirect($user);
+			// testing and debugging
+			// $claim = claim_lftpb($user);
 
-					$dbh->commit();
-				} catch (Exception $e) {
-					try {
-						$dbh->rollback();
-					} catch (Exception $e2) {
-					}
-				}
+			// if ($claim) {
+			// 	$arr_users[] = $claim;
+			// }
+
+			claim_lftpb($user);
+
+			$dbh->commit();
+		} catch (Exception $e) {
+			try {
+				$dbh->rollback();
+			} catch (Exception $e2) {
 			}
 		}
 	}
+
+	// testing and debugging
+	// echo '<pre>';
+	// print_r($arr_users);
+	// exit;
 }
 
 /**
@@ -70,13 +79,21 @@ function settings($type)
  *
  * @since version
  */
-function lftp_users()
+function users()
 {
 	return fetch_all(
 		'SELECT *' .
-		' FROM network_leadership_fast_track_principal lftp' .
-		' INNER JOIN network_users u' .
-		' ON lftp.user_id = u.id'
+		' FROM network_users'
+	);
+}
+
+function user($user_id)
+{
+	return fetch(
+		'SELECT *' .
+		' FROM network_users' .
+		' WHERE id = :id',
+		['id' => $user_id]
 	);
 }
 
@@ -100,14 +117,67 @@ function update_indirect($user)
 	);
 }
 
-function can_claim_lftpb($lftp_user)
+function claim_lftpb($user)
 {
-	// array of deposited lftp
-	$bonus_lftpb_reap = arr_lftpb_reap($lftp_user);
+	// $collect_lftp_list = [];
 
-	// get all directs
+	if ($user->bonus_lftp_list !== null) {
+		$slftp = settings('leadership_fast_track_principal');
 
-	return false;
+		$arr_lftp_list = arr_lftp_list($user);
+
+		$filtered_arr_lftp_list = array_filter($arr_lftp_list, function ($item) {
+			return $item['fast_track_id'] != 0;
+		});
+
+		// $bonus_list = [];
+
+		foreach ($filtered_arr_lftp_list as $lftp) {
+
+			$fast_track_id = $lftp['fast_track_id'];
+
+			$fast_track = fast_track_user($fast_track_id);
+
+			$fast_track_days = $fast_track->day;
+
+			if ($fast_track_days >= 30) {
+				$fast_track_user_id = $fast_track->user_id;
+
+				$fast_track_user = user($fast_track_user_id);
+
+				$account_type = $fast_track_user->account_type;
+
+				$level = get_downline_level($user->id, $fast_track_user_id);
+
+				$share = $slftp->{$account_type . '_leadership_fast_track_principal_share_' . $level};
+				$share_cut = $slftp->{$account_type . '_leadership_fast_track_principal_share_cut_' . $level};
+
+				$fast_track_principal = $fast_track->principal;
+
+				$bonus = $fast_track_principal * ($share / 100) * ($share_cut / 100);
+
+				// testing and debugging
+				// $bonus_list[$fast_track_id] = [$bonus];
+
+				update_user_bonus_lftp($user, $fast_track_id, $bonus);
+			}
+		}
+
+		// testing and debugging
+		// $collect_lftp_list[$user->username] = $bonus_list;
+	}
+
+	// testing and debugging
+	// return $collect_lftp_list;
+}
+
+function arr_lftp_list($lftp_user)
+{
+	$user_bonus_lftp_list = $lftp_user->bonus_lftp_list;
+
+	$json_user_bonus_lftp_list = empty($user_bonus_lftp_list) ? '{}' : $user_bonus_lftp_list;
+
+	return json_decode($json_user_bonus_lftp_list, true);
 }
 
 function fast_track_user($fast_track_id)
@@ -120,13 +190,51 @@ function fast_track_user($fast_track_id)
 	);
 }
 
-function arr_lftpb_reap($lftp_user)
+function update_user_bonus_lftp($user, $fast_track_id, $bonus)
 {
-	$user_bonus_lftpb_reap = $lftp_user->bonus_lftpb_reap;
+	// Decode the bonus_lftp_list JSON array
+	$bonus_lftp_list = arr_lftp_list($user);
 
-	$json_user_bonus_lftpb_reap = empty($user_bonus_lftpb_reap) ? '{}' : $user_bonus_lftpb_reap;
+	// Find the entry with the matching fast_track_id and update the reaped value
+	foreach ($bonus_lftp_list as &$entry) {
+		if ($entry['fast_track_id'] == $fast_track_id) {
+			$entry['reaped'] = time(); // Update reaped to current time
+			break;
+		}
+	}
 
-	return json_decode($json_user_bonus_lftpb_reap, true);
+	// Encode the updated array back to JSON
+	$updated_bonus_lftp_list = json_encode($bonus_lftp_list);
+
+	// Calculate the new bonus balance and efund
+	$bonus_lftp_balance = $user->bonus_leadership_fast_track_principal_balance;
+	$efund = $user->payout_transfer;
+
+	$bonus_lftp_balance_new = $bonus_lftp_balance - $bonus;
+	$efund_new = $efund + $bonus;
+
+	// Update the database with the new bonus balance, efund, and updated bonus_lftp_list
+	crud(
+		'UPDATE network_users' .
+		' SET bonus_leadership_fast_track_principal_balance = :bonus_lftp_balance' .
+		', payout_transfer = :efund' .
+		', bonus_lftp_list = :bonus_lftp_list' .
+		' WHERE id = :id',
+		[
+			'bonus_lftp_balance' => $bonus_lftp_balance_new,
+			'efund' => $efund_new,
+			'bonus_lftp_list' => $updated_bonus_lftp_list,
+			'id' => $user->id
+		]
+	);
+}
+
+function fast_tracks()
+{
+	return fetch(
+		'SELECT *' .
+		' FROM network_fast_track'
+	);
 }
 
 /**

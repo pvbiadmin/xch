@@ -168,6 +168,7 @@ function view_form($user_id): string
 					<option value="gcash">Gcash</option>
 					<option value="maya">Maya</option>
 					<option value="bank">Bank</option>
+					<option value="office">Office</option>
 				</select>
 				<label class="input-group-text" for="method">Method</label>
 			</div>
@@ -559,7 +560,7 @@ function process_payout($amount, $amount_final, $deductions_total, $method, $use
 	// 	'success'
 	// );
 
-	$app->enqueueMessage('Payout processing time: Within 48 hours', 'success');
+	$app->enqueueMessage('Payout will be received after 72 hours every wednesday.', 'success');
 	$app->redirect(Uri::current());
 
 	//	send_mail($amount, $user_id);
