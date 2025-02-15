@@ -115,6 +115,9 @@ function row_sales(): string
 	// 	<a href="$link_income_log" class="btn btn-primary btn-sm" style="float:right">View Income Log</a>
 	// HTML;
 
+	$total_payout_transfer = cash_ins()->total_payout_transfer;
+	$total_payout_transfer_format = number_format($total_payout_transfer, 2);
+
 	$payouts_format = number_format($total_payouts, 2);
 	$link_payout_log = sef(111);
 	$button_payout_log = <<<HTML
@@ -130,8 +133,12 @@ function row_sales(): string
 				<td>$count_users{$button_directs}</td>			
 			</tr>
 			<tr>
-				<th scope="row">Total Cash-in</th>
+				<th scope="row">Total Cash Activate</th>
 				<td>$total_sales_format $currency{$button_income_log}</td>
+			</tr>
+			<tr>
+				<th scope="row">Total Cash-ins</th>
+				<td>$total_payout_transfer_format $currency</td>
 			</tr>
 			<tr>
 				<th scope="row">Total Payouts</th>
@@ -145,6 +152,16 @@ function row_sales(): string
 HTML;
 
 	return $str;
+}
+
+function cash_ins()
+{
+	$sql = <<<SQL
+		SELECT SUM(payout_transfer) AS total_payout_transfer
+		FROM network_users;
+SQL;
+
+	return db()->setQuery($sql)->loadObject();
 }
 
 /**
