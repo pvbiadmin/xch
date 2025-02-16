@@ -8,6 +8,7 @@ require_once 'bpl/mods/helpers.php';
 use Exception;
 
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Exception\ExceptionHandler;
 
 use function BPL\Mods\Database\Query\update as query_update;
@@ -18,95 +19,193 @@ use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\application;
 use function BPL\Mods\Helpers\settings;
 
+function view(): string
+{
+	$form_token = HTMLHelper::_('form.token');
+
+	$notifications = notifications();
+
+	$row_settings_plans = row_settings_plans();
+
+	return <<<HTML
+		$notifications
+		<div class="card mb-4">
+			<div class="card-header">
+				<i class="fas fa-table me-1"></i>
+				Plans
+			</div>
+			<div class="card-body">
+				<form method="post">
+					$form_token
+					<div class="table-responsive">
+						<table class="table align-middle">
+							<thead>
+								<tr>
+									<th scope="col">Plan</th>
+									<th scope="col">Alias</th>
+									<th scope="col">Active</th>								
+								</tr>
+							</thead>
+							<tbody>
+								$row_settings_plans
+							</tbody>
+						</table>
+					</div>
+					<div class="d-grid gap-2 col-6 mx-auto">
+						<button type="submit" class="btn btn-primary">Update</button>                
+					</div>					
+				</form>
+			</div>
+		</div>
+HTML;
+}
+
 /**
  * @throws Exception
+ *
  * @since 2021
  */
+function row_settings_plans(): string
+{
+	$inputs = input();
+
+	$sp = settings('plans');
+
+	$str = '';
+
+	foreach ($inputs as $k => $v) {
+		$str .= '<tr>';
+
+		foreach ($v as $u => $y) {
+			$name = ($u === 'name' ? ($k . '_' . $u) : '');
+			$value = ($u === 'status' ? $k : '');
+
+			$default = name_default();
+
+			$str .= $name !== '' ?
+				'<th scope="row">' . $default[$name] . '</th>
+                <td>
+					<div class="input-group">
+						<label>
+							<input type="text" class="form-control" name="' . $name . '" value="' . $sp->$name . '">
+						</label>						
+					</div>
+                </td>' : '';
+
+			$str .= $value !== '' ? '<td>
+					<div class="input-group">
+                        <label>
+                            <input type="checkbox" name="' . $value . '" value="1" ' . ($sp->$value ? 'checked' : '') . '>
+						</label>
+                    </div>
+                </td>' : '';
+		}
+
+		$str .= '</tr>';
+		$str .= "\n";
+	}
+
+	return $str;
+}
+
+function notifications(): string
+{
+	$app = application();
+
+	// Display Joomla messages as dismissible alerts
+	$messages = $app->getMessageQueue(true);
+	$notification_str = fade_effect(); // Initialize the notification string
+
+	if (!empty($messages)) {
+		foreach ($messages as $message) {
+			// Map Joomla message types to Bootstrap alert classes
+			$alert_class = '';
+			switch ($message['type']) {
+				case 'error':
+					$alert_class = 'danger'; // Bootstrap uses 'danger' instead of 'error'
+					break;
+				case 'warning':
+					$alert_class = 'warning';
+					break;
+				case 'notice':
+					$alert_class = 'info'; // Joomla 'notice' maps to Bootstrap 'info'
+					break;
+				case 'message':
+				default:
+					$alert_class = 'success'; // Joomla 'message' maps to Bootstrap 'success'
+					break;
+			}
+
+			$notification_str .= <<<HTML
+            <div class="alert alert-{$alert_class} alert-dismissible fade show mt-5" role="alert">
+                {$message['message']}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+HTML;
+		}
+	}
+
+	return $notification_str;
+}
+
+function fade_effect(int $duration = 10000)
+{
+	return <<<HTML
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Select all alert elements
+      const alerts = document.querySelectorAll('.alert');
+
+      // Loop through each alert and set a timeout to dismiss it
+      alerts.forEach(function (alert) {
+        setTimeout(function () {
+          // Use Bootstrap's alert method to close the alert
+          bootstrap.Alert.getOrCreateInstance(alert).close();
+        }, $duration);
+      });
+    });
+  </script>
+HTML;
+}
+
 function input(): array
 {
-	$inputs['account_freeze']['name'] = input_get('account_freeze_name', '', 'RAW');
-	$inputs['account_freeze']['status'] = input_get('account_freeze', 0);
+	$keys = [
+		'account_freeze',
+		'direct_referral',
+		'direct_referral_fast_track_principal',
+		'indirect_referral',
+		'unilevel',
+		'binary_pair',
+		'leadership_binary',
+		'leadership_passive',
+		'leadership_fast_track_principal',
+		'redundant_binary',
+		'royalty',
+		'echelon',
+		'etrade',
+		'top_up',
+		'fast_track',
+		'fixed_daily',
+		'fixed_daily_token',
+		'trading',
+		'p2p_trading',
+		'p2p_commerce',
+		'merchant',
+		'upline_support',
+		'passup_binary',
+		'elite_reward',
+		'harvest',
+		'stockist',
+		'franchise',
+	];
 
-	$inputs['direct_referral']['name'] = input_get('direct_referral_name', '', 'RAW');
-	$inputs['direct_referral']['status'] = input_get('direct_referral', 0);
+	$inputs = [];
 
-	$inputs['direct_referral_fast_track_principal']['name'] = input_get('direct_referral_fast_track_principal_name', '', 'RAW');
-	$inputs['direct_referral_fast_track_principal']['status'] = input_get('direct_referral_fast_track_principal', 0);
-
-	$inputs['indirect_referral']['name'] = input_get('indirect_referral_name', '', 'RAW');
-	$inputs['indirect_referral']['status'] = input_get('indirect_referral', 0);
-
-	$inputs['unilevel']['name'] = input_get('unilevel_name', '', 'RAW');
-	$inputs['unilevel']['status'] = input_get('unilevel', 0);
-
-	$inputs['binary_pair']['name'] = input_get('binary_pair_name', '', 'RAW');
-	$inputs['binary_pair']['status'] = input_get('binary_pair', 0);
-
-	$inputs['leadership_binary']['name'] = input_get('leadership_binary_name', '', 'RAW');
-	$inputs['leadership_binary']['status'] = input_get('leadership_binary', 0);
-
-	$inputs['leadership_passive']['name'] = input_get('leadership_passive_name', '', 'RAW');
-	$inputs['leadership_passive']['status'] = input_get('leadership_passive', 0);
-
-	$inputs['leadership_fast_track_principal']['name'] = input_get('leadership_fast_track_principal_name', '', 'RAW');
-	$inputs['leadership_fast_track_principal']['status'] = input_get('leadership_fast_track_principal', 0);
-
-	$inputs['redundant_binary']['name'] = input_get('redundant_binary_name', '', 'RAW');
-	$inputs['redundant_binary']['status'] = input_get('redundant_binary', 0);
-
-	$inputs['royalty']['name'] = input_get('royalty_name', '', 'RAW');
-	$inputs['royalty']['status'] = input_get('royalty', 0);
-
-	$inputs['echelon']['name'] = input_get('echelon_name', '', 'RAW');
-	$inputs['echelon']['status'] = input_get('echelon', 0);
-
-	$inputs['etrade']['name'] = input_get('etrade_name', '', 'RAW');
-	$inputs['etrade']['status'] = input_get('etrade', 0);
-
-	$inputs['top_up']['name'] = input_get('top_up_name', '', 'RAW');
-	$inputs['top_up']['status'] = input_get('top_up', 0);
-
-	$inputs['fast_track']['name'] = input_get('fast_track_name', '', 'RAW');
-	$inputs['fast_track']['status'] = input_get('fast_track', 0);
-
-	$inputs['fixed_daily']['name'] = input_get('fixed_daily_name', '', 'RAW');
-	$inputs['fixed_daily']['status'] = input_get('fixed_daily', 0);
-
-	$inputs['fixed_daily_token']['name'] = input_get('fixed_daily_token_name', '', 'RAW');
-	$inputs['fixed_daily_token']['status'] = input_get('fixed_daily_token', 0);
-
-	$inputs['trading']['name'] = input_get('trading_name', '', 'RAW');
-	$inputs['trading']['status'] = input_get('trading', 0);
-
-	$inputs['p2p_trading']['name'] = input_get('p2p_trading_name', '', 'RAW');
-	$inputs['p2p_trading']['status'] = input_get('p2p_trading', 0);
-
-	$inputs['p2p_commerce']['name'] = input_get('p2p_commerce_name', '', 'RAW');
-	$inputs['p2p_commerce']['status'] = input_get('p2p_commerce', 0);
-
-	$inputs['merchant']['name'] = input_get('merchant_name', '', 'RAW');
-	$inputs['merchant']['status'] = input_get('merchant', 0);
-
-	$inputs['upline_support']['name'] = input_get('upline_support_name', '', 'RAW');
-	$inputs['upline_support']['status'] = input_get('upline_support', 0);
-
-	// $inputs['passup']['name'] = input_get('passup_name', '', 'RAW');
-	// $inputs['passup']['status'] = input_get('passup', 0);
-
-	$inputs['passup_binary']['name'] = input_get('passup_binary_name', '', 'RAW');
-	$inputs['passup_binary']['status'] = input_get('passup_binary', 0);
-
-	$inputs['elite_reward']['name'] = input_get('elite_reward_name', '', 'RAW');
-	$inputs['elite_reward']['status'] = input_get('elite_reward', 0);
-
-	$inputs['harvest']['name'] = input_get('harvest_name', '', 'RAW');
-	$inputs['harvest']['status'] = input_get('harvest', 0);
-
-	$inputs['stockist']['name'] = input_get('stockist_name', '', 'RAW');
-	$inputs['stockist']['status'] = input_get('stockist', 0);
-
-	$inputs['franchise']['name'] = input_get('franchise_name', '', 'RAW');
-	$inputs['franchise']['status'] = input_get('franchise', 0);
+	foreach ($keys as $key) {
+		$inputs[$key]['name'] = input_get($key . '_name', '', 'RAW');
+		$inputs[$key]['status'] = input_get($key, 0);
+	}
 
 	return $inputs;
 }
@@ -159,118 +258,9 @@ function update()
 			ExceptionHandler::render($e);
 		}
 
-		$app->enqueueMessage('Compensation Plan Settings Updated Successfully!', 'success');
+		$app->enqueueMessage('Marketing Plan Settings Updated Successfully!', 'success');
 		$app->redirect(Uri::root(true) . '/' . sef(88));
 	}
-}
-
-/**
- *
- * @return string
- *
- * @since version
- */
-function view_styles(): string
-{
-	return '<style>
-	    .table th, .table td {
-	        vertical-align: middle;
-	        text-align: center;
-	    }
-	
-	    .net_align {
-	        width: 120px;
-	        text-align: center;
-	    }
-	
-	    .center_align {
-	        text-align: center;
-	        display: block;
-	        margin: 0;
-	    }
-	
-	    label {
-	        margin-bottom: 0;
-	    }
-	
-	    select {
-	        text-align-last: center;
-	        direction: ltr;
-	    }
-	</style>';
-}
-
-/**
- * @throws Exception
- *
- * @since 2021
- */
-function view(): string
-{
-	$inputs = input();
-
-	$settings_plans = settings('plans');
-
-	$str = view_styles();
-
-	$str .= '<section class="tm-top-b uk-grid" 
-			data-uk-grid-match="{target:\'> div > .uk-panel\'}" data-uk-grid-margin="">
-	    <div class="uk-width-1-1 uk-row-first">
-	        <div class="uk-panel uk-text-center">
-	            <form method="post">
-	                <table class="category table table-striped table-bordered table-hover">
-	                    <tr>
-	                        <td colspan="3"><h3 class="center_align">Plans</h3></td>
-	                    </tr>
-	                    <tr>
-	                        <td><h4 style="margin:0" class="center_align">Plan</h4></td>
-	                        <td><h4 style="margin:0" class="center_align">Alias</h4></td>
-	                        <td><h4 style="margin:0" class="center_align">Active</h4></td>
-	                    </tr>';
-
-	foreach ($inputs as $k => $v) {
-		$str .= '<tr>';
-
-		foreach ($v as $u => $y) {
-			$name = ($u === 'name' ? ($k . '_' . $u) : '');
-			$value = ($u === 'status' ? $k : '');
-
-			$default = name_default();
-
-			$str .= $name !== '' ? '<td>
-                    <div class="center_align">
-                        <label>' . $default[$name] . '</label>
-                    </div>
-                </td>
-                <td>
-                    <div class="center_align">
-                        <label class="input_align">
-							<input type="text" name="' . $name . '" style="text-align: center" value="' .
-				$settings_plans->$name . '"></label>
-                    </div>
-                </td>' : '';
-
-			$str .= $value !== '' ? '<td>
-                    <div class="center_align">
-                        <label>
-                            <input type="checkbox" name="' . $value . '" id="' . $value . '" class="net_align" 
-                                value="1" ' . ($settings_plans->$value ? 'checked' : '') . '></label>
-                    </div>
-                </td>' : '';
-		}
-
-		$str .= '</tr>';
-		$str .= "\n";
-	}
-
-	$str .= '</table>
-	                <input type="submit" name="submit" value="Update Settings" class="uk-button uk-button-primary">
-	            </form>
-	        </div>
-	    </div>
-	</section>';
-
-	return $str;
 }
 
 /**
