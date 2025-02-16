@@ -96,9 +96,9 @@ function table_all_members($user_id)
 				<th>Date Registered</th>
 				<th>Username</th>
 				<th>Registered</th>
-				<th>Wallet</th>
-				<th>Payouts</th>
 				<th>Cash-ins</th>
+				<th>Payouts</th>
+				<th>Cash Activate</th>
 				<th>Transfer-outs</th>
 				<th>Transfer-ins</th>
 				$actions
@@ -108,10 +108,10 @@ function table_all_members($user_id)
 			<tr>
 				<th>Date Registered</th>
 				<th>Username</th>
-				<th>Account</th>
-				<th>Wallet</th>
-				<th>Payouts</th>
+				<th>Registered</th>
 				<th>Cash-ins</th>
+				<th>Payouts</th>
+				<th>Cash Activate</th>
 				<th>Transfer-outs</th>
 				<th>Transfer-ins</th>
 				$actions
@@ -239,7 +239,7 @@ function view_member($member): string
 	$str .= '<td>' . $account_rd . '</td>';
 	// $str .= ($settings_plans->royalty ? ('<td>' .
 	// 	settings('royalty')->{$member->rank . '_rank_name'} . '</td>') : "\n");
-	$str .= '<td>' . number_format($member->payout_transfer, 2) . '</td>';
+	$str .= '<td>' . number_format(total_cash_ins($member->id), 2) . '</td>';
 	$str .= '<td>' . number_format($member->payout_total, 2) . '</td>';
 	$str .= '<td>' . number_format($member->fast_track_principal, 2) . '</td>';
 	$str .= '<td>' . number_format($transfer_outs, 2) . '</td>';
@@ -303,6 +303,34 @@ HTML;
 	$str .= '</tr>';
 
 	return $str;
+}
+
+function user_efund_request_confirmed($user_id)
+{
+	$db = db();
+
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_users u, ' .
+		'network_efund_request r ' .
+		'WHERE u.id = r.user_id ' .
+		'AND r.date_confirmed <> ' . $db->quote(0) .
+		' AND r.user_id = ' . $db->quote($user_id) .
+		' ORDER BY r.request_id DESC'
+	)->loadObjectList();
+}
+
+function total_cash_ins($user_id)
+{
+	$result = user_efund_request_confirmed($user_id);
+
+	$total = 0;
+
+	foreach ($result as $member) {
+		$total += $member->amount;
+	}
+
+	return $total;
 }
 
 function user_transfer($user_id)

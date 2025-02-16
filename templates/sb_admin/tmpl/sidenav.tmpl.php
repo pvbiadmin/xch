@@ -310,7 +310,7 @@ function wallet_member($user_id)
         <nav class="sb-sidenav-menu-nested nav">
             <!-- <a class="nav-link" href="{$convert_to_efund_link}">Transfer Efund</a> -->
             <a class="nav-link" href="{$payout_logs_link}">Payout Logs</a>
-            <a class="nav-link" href="{$withdrawal_request_link}">Withdrawal Request</a>
+            <a class="nav-link" href="{$withdrawal_request_link}">Withdraw</a>
             <a class="nav-link" href="{$withdrawal_completed_link}">Withdrawal Completed</a>
         </nav>
     </div>
@@ -353,7 +353,7 @@ function members_admin($admintype)
 <div class="collapse" id="collapseMembersAdmin" aria-labelledby="headingOne"
     data-bs-parent="#sidenavAccordion">
     <nav class="sb-sidenav-menu-nested nav">
-        <a class="nav-link" href="{$list_members_link}">All Members</a>
+        <!-- <a class="nav-link" href="{$list_members_link}">All Members</a> -->
         <a class="nav-link" href="{$registration_link}">Registration</a>
         <!-- <a class="nav-link" href="{$member_info_link}">Information</a>
         <a class="nav-link" href="{$profile_update_link}">Edit Details</a> -->

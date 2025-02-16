@@ -115,7 +115,7 @@ function row_sales(): string
 	// 	<a href="$link_income_log" class="btn btn-primary btn-sm" style="float:right">View Income Log</a>
 	// HTML;
 
-	$total_payout_transfer = cash_ins()->total_payout_transfer;
+	$total_payout_transfer = total_cash_ins();
 	$total_payout_transfer_format = number_format($total_payout_transfer, 2);
 
 	$payouts_format = number_format($total_payouts, 2);
@@ -154,14 +154,31 @@ HTML;
 	return $str;
 }
 
-function cash_ins()
+function total_cash_ins()
 {
-	$sql = <<<SQL
-		SELECT SUM(payout_transfer) AS total_payout_transfer
-		FROM network_users;
-SQL;
+	$result = efund_request_confirmed();
 
-	return db()->setQuery($sql)->loadObject();
+	$total = 0;
+
+	foreach ($result as $member) {
+		$total += $member->amount;
+	}
+
+	return $total;
+}
+
+function efund_request_confirmed()
+{
+	$db = db();
+
+	return $db->setQuery(
+		'SELECT * ' .
+		'FROM network_users u, ' .
+		'network_efund_request r ' .
+		'WHERE u.id = r.user_id ' .
+		'AND r.date_confirmed <> ' . $db->quote(0) .
+		' ORDER BY r.request_id DESC'
+	)->loadObjectList();
 }
 
 /**
