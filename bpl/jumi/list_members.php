@@ -95,10 +95,10 @@ function table_all_members($user_id)
 			<tr>
 				<th>Date Registered</th>
 				<th>Username</th>
-				<th>Registered</th>
-				<th>Cash-ins</th>
+				<th>Wallet Balance</th>
+				<th>Cash Requests</th>
 				<th>Payouts</th>
-				<th>Cash Activate</th>
+				<th>Subscriptions</th>
 				<th>Transfer-outs</th>
 				<th>Transfer-ins</th>
 				$actions
@@ -108,10 +108,10 @@ function table_all_members($user_id)
 			<tr>
 				<th>Date Registered</th>
 				<th>Username</th>
-				<th>Registered</th>
-				<th>Cash-ins</th>
+				<th>Wallet Balance</th>
+				<th>Cash Requests</th>
 				<th>Payouts</th>
-				<th>Cash Activate</th>
+				<th>Subscriptions</th>
 				<th>Transfer-outs</th>
 				<th>Transfer-ins</th>
 				$actions
@@ -236,7 +236,7 @@ function view_member($member): string
 	$str .= '<td>' . date('M j, Y - G:i', $member->date_registered) . '</td>';
 	$str .= '<td><a href="' . sef(44) . qs() .
 		'uid=' . $member->id . '">' . $member->username . '</a></td>';
-	$str .= '<td>' . $account_rd . '</td>';
+	$str .= '<td>' . number_format($member->payout_transfer, 2) . '</td>';
 	// $str .= ($settings_plans->royalty ? ('<td>' .
 	// 	settings('royalty')->{$member->rank . '_rank_name'} . '</td>') : "\n");
 	$str .= '<td>' . number_format(total_cash_ins($member->id), 2) . '</td>';

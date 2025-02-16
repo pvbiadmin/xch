@@ -133,11 +133,11 @@ function row_sales(): string
 				<td>$count_users{$button_directs}</td>			
 			</tr>
 			<tr>
-				<th scope="row">Total Cash Activate</th>
+				<th scope="row">Total Subscriptions</th>
 				<td>$total_sales_format $currency{$button_income_log}</td>
 			</tr>
 			<tr>
-				<th scope="row">Total Cash-ins</th>
+				<th scope="row">Total Cash Requests</th>
 				<td>$total_payout_transfer_format $currency</td>
 			</tr>
 			<tr>

@@ -1,6 +1,6 @@
 <?php
 
-namespace BPL\Settings\Ancillaries;
+namespace BPL\Settings\Ancillaries_Copy;
 
 require_once 'bpl/mods/query.php';
 require_once 'bpl/mods/helpers.php';
@@ -18,10 +18,15 @@ use function BPL\Mods\Helpers\application;
 use function BPL\Mods\Helpers\db;
 use function BPL\Mods\Helpers\settings;
 
+/**
+ *
+ * @return array
+ *
+ * @since version
+ */
 function get_input(): array
 {
-    // Define the input keys and their default values
-    $inputs = [
+    return [
         'payment_mode' => input_get('payment_mode'),
         'currency' => input_get('currency'),
         'email_official' => input_get('email_official', '', 'RAW'),
@@ -29,134 +34,235 @@ function get_input(): array
         'cybercharge' => input_get('cybercharge'),
         'processing_fee' => input_get('processing_fee'),
         'grace_period' => input_get('grace_period'),
+
+        'chairman_min_withdraw' => input_get('chairman_min_withdraw'),
+        'executive_min_withdraw' => input_get('executive_min_withdraw'),
+        'regular_min_withdraw' => input_get('regular_min_withdraw'),
+        'associate_min_withdraw' => input_get('associate_min_withdraw'),
+        'basic_min_withdraw' => input_get('basic_min_withdraw'),
+
+        'chairman_min_bal_usd' => input_get('chairman_min_bal_usd'),
+        'executive_min_bal_usd' => input_get('executive_min_bal_usd'),
+        'regular_min_bal_usd' => input_get('regular_min_bal_usd'),
+        'associate_min_bal_usd' => input_get('associate_min_bal_usd'),
+        'basic_min_bal_usd' => input_get('basic_min_bal_usd'),
+
+        'chairman_min_bal_fmc' => input_get('chairman_min_bal_fmc'),
+        'executive_min_bal_fmc' => input_get('executive_min_bal_fmc'),
+        'regular_min_bal_fmc' => input_get('regular_min_bal_fmc'),
+        'associate_min_bal_fmc' => input_get('associate_min_bal_fmc'),
+        'basic_min_bal_fmc' => input_get('basic_min_bal_fmc'),
+
+        'chairman_max_request_usd' => input_get('chairman_max_request_usd'),
+        'executive_max_request_usd' => input_get('executive_max_request_usd'),
+        'regular_max_request_usd' => input_get('regular_max_request_usd'),
+        'associate_max_request_usd' => input_get('associate_max_request_usd'),
+        'basic_max_request_usd' => input_get('basic_max_request_usd'),
+
+        'chairman_min_request_usd' => input_get('chairman_min_request_usd'),
+        'executive_min_request_usd' => input_get('executive_min_request_usd'),
+        'regular_min_request_usd' => input_get('regular_min_request_usd'),
+        'associate_min_request_usd' => input_get('associate_min_request_usd'),
+        'basic_min_request_usd' => input_get('basic_min_request_usd'),
+
+        'chairman_min_convert_usd' => input_get('chairman_min_convert_usd'),
+        'executive_min_convert_usd' => input_get('executive_min_convert_usd'),
+        'regular_min_convert_usd' => input_get('regular_min_convert_usd'),
+        'associate_min_convert_usd' => input_get('associate_min_convert_usd'),
+        'basic_min_convert_usd' => input_get('basic_min_convert_usd'),
+
+        'chairman_max_convert_usd' => input_get('chairman_max_convert_usd'),
+        'executive_max_convert_usd' => input_get('executive_max_convert_usd'),
+        'regular_max_convert_usd' => input_get('regular_max_convert_usd'),
+        'associate_max_convert_usd' => input_get('associate_max_convert_usd'),
+        'basic_max_convert_usd' => input_get('basic_max_convert_usd'),
+
+        'chairman_min_convert_fmc' => input_get('chairman_min_convert_fmc'),
+        'executive_min_convert_fmc' => input_get('executive_min_convert_fmc'),
+        'regular_min_convert_fmc' => input_get('regular_min_convert_fmc'),
+        'associate_min_convert_fmc' => input_get('associate_min_convert_fmc'),
+        'basic_min_convert_fmc' => input_get('basic_min_convert_fmc'),
+
+        'chairman_convert_points_cut' => input_get('chairman_convert_points_cut'),
+        'executive_convert_points_cut' => input_get('executive_convert_points_cut'),
+        'regular_convert_points_cut' => input_get('regular_convert_points_cut'),
+        'associate_convert_points_cut' => input_get('associate_convert_points_cut'),
+        'basic_convert_points_cut' => input_get('basic_convert_points_cut'),
+
+        'chairman_convert_points_usd' => input_get('chairman_convert_points_usd'),
+        'executive_convert_points_usd' => input_get('executive_convert_points_usd'),
+        'regular_convert_points_usd' => input_get('regular_convert_points_usd'),
+        'associate_convert_points_usd' => input_get('associate_convert_points_usd'),
+        'basic_convert_points_usd' => input_get('basic_convert_points_usd'),
+
+        'chairman_savings_target' => input_get('chairman_savings_target'),
+        'executive_savings_target' => input_get('executive_savings_target'),
+        'regular_savings_target' => input_get('regular_savings_target'),
+        'associate_savings_target' => input_get('associate_savings_target'),
+        'basic_savings_target' => input_get('basic_savings_target'),
+
+        'chairman_savings_min_bal' => input_get('chairman_savings_min_bal'),
+        'executive_savings_min_bal' => input_get('executive_savings_min_bal'),
+        'regular_savings_min_bal' => input_get('regular_savings_min_bal'),
+        'associate_savings_min_bal' => input_get('associate_savings_min_bal'),
+        'basic_savings_min_bal' => input_get('basic_savings_min_bal'),
+
         'referral_mode' => input_get('referral_mode'),
         'withdrawal_mode' => input_get('withdrawal_mode'),
         'cd_mode' => input_get('cd_mode'),
+
         'efund_name' => input_get('efund_name'),
         'share_fund_name' => input_get('share_fund_name'),
         'loan_fund_name' => input_get('loan_fund_name'),
-        'p2p_price_buffer' => input_get('p2p_price_buffer'),
+        'p2p_price_buffer' => input_get('p2p_price_buffer')
     ];
-
-    // Define the roles and their associated keys
-    $roles = ['chairman', 'executive', 'regular', 'associate', 'basic'];
-    $keys = [
-        'min_withdraw',
-        'min_bal_usd',
-        'min_bal_fmc',
-        'max_request_usd',
-        'min_request_usd',
-        'min_convert_usd',
-        'max_convert_usd',
-        'min_convert_fmc',
-        'convert_points_cut',
-        'convert_points_usd',
-        'savings_target',
-        'savings_min_bal',
-    ];
-
-    // Dynamically generate role-based inputs
-    foreach ($roles as $role) {
-        foreach ($keys as $key) {
-            $inputs["{$role}_{$key}"] = input_get("{$role}_{$key}");
-        }
-    }
-
-    return $inputs;
 }
 
+/**
+ *
+ *
+ * @since version
+ */
 function update()
 {
     $app = application();
+
     $db = db();
+
     $input = get_input();
 
-    // Define the keys to validate
-    $validationKeys = [
-        'cybercharge',
-        'email_official',
-        'company_name',
-        'processing_fee',
-        'chairman_min_withdraw',
-        'executive_min_withdraw',
-        'regular_min_withdraw',
-        'associate_min_withdraw',
-        'basic_min_withdraw',
-        'chairman_min_bal_usd',
-        'executive_min_bal_usd',
-        'regular_min_bal_usd',
-        'associate_min_bal_usd',
-        'basic_min_bal_usd'
+    $test = [
+        $input['cybercharge'],
+        $input['email_official'],
+        $input['company_name'],
+        $input['processing_fee'],
+
+        $input['chairman_min_withdraw'],
+        $input['executive_min_withdraw'],
+        $input['regular_min_withdraw'],
+        $input['associate_min_withdraw'],
+        $input['basic_min_withdraw'],
+
+        $input['chairman_min_bal_usd'],
+        $input['executive_min_bal_usd'],
+        $input['regular_min_bal_usd'],
+        $input['associate_min_bal_usd'],
+        $input['basic_min_bal_usd']
     ];
 
-    // Validate inputs
-    $test = array_map(fn($key) => $input[$key], $validationKeys);
-    if (in_array('', $test, true)) {
-        return; // Exit if any required field is empty
-    }
+    if (!in_array('', $test, true)) {
+        $sa = settings('ancillaries');
 
-    // Get existing settings
-    $sa = settings('ancillaries');
+        try {
+            $db->transactionStart();
 
-    // Define all keys to update
-    $updateKeys = [
-        'payment_mode',
-        'currency',
-        'email_official',
-        'company_name',
-        'cybercharge',
-        'processing_fee',
-        'grace_period',
-        'referral_mode',
-        'withdrawal_mode',
-        'cd_mode',
-        'efund_name',
-        'share_fund_name',
-        'loan_fund_name',
-        'p2p_price_buffer'
-    ];
+            query_update(
+                'network_settings_ancillaries',
+                [
+                    'payment_mode = ' . $db->quote($input['payment_mode'] ?: $sa->payment_mode),
+                    'currency = ' . $db->quote($input['currency'] ?: $sa->currency),
+                    'email_official = ' . $db->quote($input['email_official'] ?: $sa->email_official),
+                    'company_name = ' . $db->quote($input['company_name'] ?: $sa->company_name),
+                    'cybercharge = ' . $db->quote($input['cybercharge'] ?: $sa->cybercharge),
+                    'processing_fee = ' . $db->quote($input['processing_fee'] ?: $sa->processing_fee),
+                    'grace_period = ' . $db->quote($input['grace_period'] ?: $sa->grace_period),
 
-    // Add role-based keys
-    $roles = ['chairman', 'executive', 'regular', 'associate', 'basic'];
-    $roleKeys = [
-        'min_withdraw',
-        'min_bal_usd',
-        'min_bal_fmc',
-        'max_request_usd',
-        'min_request_usd',
-        'min_convert_usd',
-        'max_convert_usd',
-        'min_convert_fmc',
-        'convert_points_cut',
-        'convert_points_usd',
-        'savings_target',
-        'savings_min_bal'
-    ];
+                    'chairman_min_withdraw = ' . $db->quote($input['chairman_min_withdraw'] ?: $sa->chairman_min_withdraw),
+                    'executive_min_withdraw = ' . $db->quote($input['executive_min_withdraw'] ?: $sa->executive_min_withdraw),
+                    'regular_min_withdraw = ' . $db->quote($input['regular_min_withdraw'] ?: $sa->regular_min_withdraw),
+                    'associate_min_withdraw = ' . $db->quote($input['associate_min_withdraw'] ?: $sa->associate_min_withdraw),
+                    'basic_min_withdraw = ' . $db->quote($input['basic_min_withdraw'] ?: $sa->basic_min_withdraw),
 
-    foreach ($roles as $role) {
-        foreach ($roleKeys as $key) {
-            $updateKeys[] = "{$role}_{$key}";
+                    'chairman_min_bal_usd = ' . $db->quote($input['chairman_min_bal_usd'] ?: $sa->chairman_min_bal_usd),
+                    'executive_min_bal_usd = ' . $db->quote($input['executive_min_bal_usd'] ?: $sa->executive_min_bal_usd),
+                    'regular_min_bal_usd = ' . $db->quote($input['regular_min_bal_usd'] ?: $sa->regular_min_bal_usd),
+                    'associate_min_bal_usd = ' . $db->quote($input['associate_min_bal_usd'] ?: $sa->associate_min_bal_usd),
+                    'basic_min_bal_usd = ' . $db->quote($input['basic_min_bal_usd'] ?: $sa->basic_min_bal_usd),
+
+                    'chairman_min_bal_fmc = ' . $db->quote($input['chairman_min_bal_fmc'] ?: $sa->chairman_min_bal_fmc),
+                    'executive_min_bal_fmc = ' . $db->quote($input['executive_min_bal_fmc'] ?: $sa->executive_min_bal_fmc),
+                    'regular_min_bal_fmc = ' . $db->quote($input['regular_min_bal_fmc'] ?: $sa->regular_min_bal_fmc),
+                    'associate_min_bal_fmc = ' . $db->quote($input['associate_min_bal_fmc'] ?: $sa->associate_min_bal_fmc),
+                    'basic_min_bal_fmc = ' . $db->quote($input['basic_min_bal_fmc'] ?: $sa->basic_min_bal_fmc),
+
+                    'chairman_max_request_usd = ' . $db->quote($input['chairman_max_request_usd'] ?: $sa->chairman_max_request_usd),
+                    'executive_max_request_usd = ' . $db->quote($input['executive_max_request_usd'] ?: $sa->executive_max_request_usd),
+                    'regular_max_request_usd = ' . $db->quote($input['regular_max_request_usd'] ?: $sa->regular_max_request_usd),
+                    'associate_max_request_usd = ' . $db->quote($input['associate_max_request_usd'] ?: $sa->associate_max_request_usd),
+                    'basic_max_request_usd = ' . $db->quote($input['basic_max_request_usd'] ?: $sa->basic_max_request_usd),
+
+                    'chairman_min_request_usd = ' . $db->quote($input['chairman_min_request_usd'] ?: $sa->chairman_min_request_usd),
+                    'executive_min_request_usd = ' . $db->quote($input['executive_min_request_usd'] ?: $sa->executive_min_request_usd),
+                    'regular_min_request_usd = ' . $db->quote($input['regular_min_request_usd'] ?: $sa->regular_min_request_usd),
+                    'associate_min_request_usd = ' . $db->quote($input['associate_min_request_usd'] ?: $sa->associate_min_request_usd),
+                    'basic_min_request_usd = ' . $db->quote($input['basic_min_request_usd'] ?: $sa->basic_min_request_usd),
+
+                    'chairman_min_convert_usd = ' . $db->quote($input['chairman_min_convert_usd'] ?: $sa->chairman_min_convert_usd),
+                    'executive_min_convert_usd = ' . $db->quote($input['executive_min_convert_usd'] ?: $sa->executive_min_convert_usd),
+                    'regular_min_convert_usd = ' . $db->quote($input['regular_min_convert_usd'] ?: $sa->regular_min_convert_usd),
+                    'associate_min_convert_usd = ' . $db->quote($input['associate_min_convert_usd'] ?: $sa->associate_min_convert_usd),
+                    'basic_min_convert_usd = ' . $db->quote($input['basic_min_convert_usd'] ?: $sa->basic_min_convert_usd),
+
+                    'chairman_max_convert_usd = ' . $db->quote($input['chairman_max_convert_usd'] ?: $sa->chairman_max_convert_usd),
+                    'executive_max_convert_usd = ' . $db->quote($input['executive_max_convert_usd'] ?: $sa->executive_max_convert_usd),
+                    'regular_max_convert_usd = ' . $db->quote($input['regular_max_convert_usd'] ?: $sa->regular_max_convert_usd),
+                    'associate_max_convert_usd = ' . $db->quote($input['associate_max_convert_usd'] ?: $sa->associate_max_convert_usd),
+                    'basic_max_convert_usd = ' . $db->quote($input['basic_max_convert_usd'] ?: $sa->basic_max_convert_usd),
+
+                    'chairman_min_convert_fmc = ' . $db->quote($input['chairman_min_convert_fmc'] ?: $sa->chairman_min_convert_fmc),
+                    'executive_min_convert_fmc = ' . $db->quote($input['executive_min_convert_fmc'] ?: $sa->executive_min_convert_fmc),
+                    'regular_min_convert_fmc = ' . $db->quote($input['regular_min_convert_fmc'] ?: $sa->regular_min_convert_fmc),
+                    'associate_min_convert_fmc = ' . $db->quote($input['associate_min_convert_fmc'] ?: $sa->associate_min_convert_fmc),
+                    'basic_min_convert_fmc = ' . $db->quote($input['basic_min_convert_fmc'] ?: $sa->basic_min_convert_fmc),
+
+                    'chairman_convert_points_cut = ' . $db->quote($input['chairman_convert_points_cut'] ?: $sa->chairman_convert_points_cut),
+                    'executive_convert_points_cut = ' . $db->quote($input['executive_convert_points_cut'] ?: $sa->executive_convert_points_cut),
+                    'regular_convert_points_cut = ' . $db->quote($input['regular_convert_points_cut'] ?: $sa->regular_convert_points_cut),
+                    'associate_convert_points_cut = ' . $db->quote($input['associate_convert_points_cut'] ?: $sa->associate_convert_points_cut),
+                    'basic_convert_points_cut = ' . $db->quote($input['basic_convert_points_cut'] ?: $sa->basic_convert_points_cut),
+
+                    'chairman_convert_points_usd = ' . $db->quote($input['chairman_convert_points_usd'] ?: $sa->chairman_convert_points_usd),
+                    'executive_convert_points_usd = ' . $db->quote($input['executive_convert_points_usd'] ?: $sa->executive_convert_points_usd),
+                    'regular_convert_points_usd = ' . $db->quote($input['regular_convert_points_usd'] ?: $sa->regular_convert_points_usd),
+                    'associate_convert_points_usd = ' . $db->quote($input['associate_convert_points_usd'] ?: $sa->associate_convert_points_usd),
+                    'basic_convert_points_usd = ' . $db->quote($input['basic_convert_points_usd'] ?: $sa->basic_convert_points_usd),
+
+                    'chairman_savings_target = ' . $db->quote($input['chairman_savings_target'] ?: $sa->chairman_savings_target),
+                    'executive_savings_target = ' . $db->quote($input['executive_savings_target'] ?: $sa->executive_savings_target),
+                    'regular_savings_target = ' . $db->quote($input['regular_savings_target'] ?: $sa->regular_savings_target),
+                    'associate_savings_target = ' . $db->quote($input['associate_savings_target'] ?: $sa->associate_savings_target),
+                    'basic_savings_target = ' . $db->quote($input['basic_savings_target'] ?: $sa->basic_savings_target),
+
+                    'chairman_savings_min_bal = ' . $db->quote($input['chairman_savings_min_bal'] ?: $sa->chairman_savings_min_bal),
+                    'executive_savings_min_bal = ' . $db->quote($input['executive_savings_min_bal'] ?: $sa->executive_savings_min_bal),
+                    'regular_savings_min_bal = ' . $db->quote($input['regular_savings_min_bal'] ?: $sa->regular_savings_min_bal),
+                    'associate_savings_min_bal = ' . $db->quote($input['associate_savings_min_bal'] ?: $sa->associate_savings_min_bal),
+                    'basic_savings_min_bal = ' . $db->quote($input['basic_savings_min_bal'] ?: $sa->basic_savings_min_bal),
+
+                    'referral_mode = ' . $db->quote($input['referral_mode'] ?: $sa->referral_mode),
+                    'withdrawal_mode = ' . $db->quote($input['withdrawal_mode'] ?: $sa->withdrawal_mode),
+                    'cd_mode = ' . $db->quote($input['cd_mode'] ?: $sa->cd_mode),
+
+                    'efund_name = ' . $db->quote($input['efund_name'] ?: $sa->efund_name),
+                    'share_fund_name = ' . $db->quote($input['share_fund_name'] ?: $sa->share_fund_name),
+                    'loan_fund_name = ' . $db->quote($input['loan_fund_name'] ?: $sa->loan_fund_name),
+                    'p2p_price_buffer = ' . $db->quote($input['p2p_price_buffer'] ?: $sa->p2p_price_buffer)/*,
+'freezer = ' . $db->quote($input['freezer'] ?: $sa->freezer)*/
+                ]
+            );
+
+            $db->transactionCommit();
+        } catch (Exception $e) {
+            $db->transactionRollback();
+            ExceptionHandler::render($e);
         }
-    }
 
-    // Prepare update data
-    $updateData = [];
-    foreach ($updateKeys as $key) {
-        $updateData[] = "{$key} = " . $db->quote($input[$key] ?: $sa->$key);
+        $app->redirect(
+            Uri::root(true) . '/' . sef(94),
+            'Ancillary Settings Updated Successfully!',
+            'success'
+        );
     }
-
-    // Perform the update in a transaction
-    try {
-        $db->transactionStart();
-        query_update('network_settings_ancillaries', $updateData);
-        $db->transactionCommit();
-    } catch (Exception $e) {
-        $db->transactionRollback();
-        ExceptionHandler::render($e);
-    }
-
-    $app->enqueueMessage('Ancillary Settings Updated Successfully!', 'success');
-    $app->redirect(Uri::root(true) . '/' . sef(94));
 }
 
 /**
@@ -1206,7 +1312,7 @@ function view_table_profile_admin(): string
 <td>
 <div class="center_align">
 <label><input type="text" class="net_align" name="p2p_price_buffer"
-value="' . $settings_ancillaries->p2p_price_buffer . '"></label></div>
+        value="' . $settings_ancillaries->p2p_price_buffer . '"></label></div>
 </td>'*/ . /*'
 <td>
 <div class="center_align">

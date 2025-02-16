@@ -40,7 +40,7 @@ function admin($admintype, $user_id)
     $dashboard = dashboard_admin($admintype);
     $members = members_admin($admintype);
     $codes = codes($admintype);
-    $logs = logs_admin($admintype);
+    $logs = /* logs_admin($admintype) */ '';
     $efund_admin = efund($admintype, $user_id);
     $wallet_admin = wallet_admin($admintype);
     $fixed_daily_token_admin = fixed_daily_token($admintype);
