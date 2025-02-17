@@ -22,7 +22,7 @@ use function Cron\Database\Query\crud;
 
 //use function Cron\Income\main as income_global;
 
-use function Cron\Leadership\Fast_Track\main as leadership_fast_track;
+// use function Cron\Leadership\Fast_Track\main as leadership_fast_track;
 
 //use function BPL\Mods\Local\Url_SEF\qs;
 //use function BPL\Mods\Local\Url_SEF\sef;
@@ -315,7 +315,7 @@ function update_user($fast_track, $value_now, $donation_new)
 		]
 	);
 
-	if ($fast_track->day + 1 >= 10) {
+	if ($fast_track->day % 10 == 0) {
 		crud(
 			'UPDATE network_users' .
 			' SET payout_transfer = :payout_transfer' .
