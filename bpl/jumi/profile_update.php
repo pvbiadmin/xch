@@ -417,10 +417,10 @@ function change_password($user_id)
 				<tbody>
 					<tr>
 						<th scope="row">Password</th>
-						<td><input type="password" class="form-control" name="password" id="password"></td>
+						<td><input type="password" class="form-control" name="password1" id="password"></td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="fullname">Confirm Password</th>
+						<th scope="row">Confirm Password</th>
 						<td><input type="password" class="form-control" name="password2" id="password2"></td>                        
 					</tr>
 				</tbody>
@@ -1149,12 +1149,12 @@ function fill_payout_method($user)
 	}
 	/* } else if ($tokens) { */
 	/* foreach ($tokens as $token) {
-															  $strl_token = strtolower($token);
+																					  $strl_token = strtolower($token);
 
-															  if ($payout_method === $strl_token) {
-																  $payout_method_user[$strl_token] = input_get($strl_token . '_address', '', 'RAW');
-															  }
-														  } */
+																					  if ($payout_method === $strl_token) {
+																						  $payout_method_user[$strl_token] = input_get($strl_token . '_address', '', 'RAW');
+																					  }
+																				  } */
 	/* } */
 
 	return $payout_method_user;
@@ -1556,12 +1556,6 @@ function process_form($user_id, $usertype, $admintype)
 
 	$edit = session_get('edit', false);
 
-	/* if ($admintype === 'Super') {
-					$usertype_edit = input_get('usertype', '', 'RAW');
-				} else {
-					$usertype_edit = $user->usertype;
-				} */
-
 	$account_type = substr(input_get('account_type', '', 'RAW'), 0, 60);
 
 	$rank = input_get('rank', '', 'RAW');
@@ -1588,7 +1582,6 @@ function process_form($user_id, $usertype, $admintype)
 	$email = input_get('email', '', 'RAW');
 
 	$contact_info_user = arr_contact_info($user);
-	/* $contact = input_get('contact', '', 'RAW'); */
 
 	$input_whatsapp = input_get('whatsapp_url', '', 'RAW');
 	$input_telegram = input_get('telegram_url', '', 'RAW');
@@ -1602,73 +1595,12 @@ function process_form($user_id, $usertype, $admintype)
 	$contact_info_user['mobile'] = $input_mobile;
 	$contact_info_user['landline'] = $input_landline;
 
-	/* switch ($contact) {
-														case 'whatsapp':
-															if (!empty($input_whatsapp)) {
-																$contact_info_user['whatsapp'] = $input_whatsapp;
-															}
-
-															break;
-														case 'telegram':
-															if (!empty($input_telegram)) {
-																$contact_info_user['telegram'] = $input_telegram;
-															}
-
-															break;
-														case 'messenger':
-															if (!empty($input_messenger)) {
-																$contact_info_user['messenger'] = $input_messenger;
-															}
-
-															break;
-														case 'mobile':
-															if (!empty($input_mobile)) {
-																$contact_info_user['mobile'] = $input_mobile;
-															}
-
-															break;
-														case 'landline':
-															if (!empty($input_landline)) {
-																$contact_info_user['landline'] = $input_landline;
-															}
-
-															break;
-													} */
-
-	/* //	$beneficiary_info_user = arr_beneficiary_info($user);
-							  //	$beneficiary           = input_get('beneficiary', '', 'RAW');
-							  //
-							  //	$beneficiary_name    = input_get('beneficiary_name_input', '', 'RAW');
-							  //	$beneficiary_contact = input_get('beneficiary_contact_input', '', 'RAW');
-							  //
-							  //	switch ($beneficiary)
-							  //	{
-							  //		case 'beneficiary_name':
-							  //			if (!empty($beneficiary_name))
-							  //			{
-							  //				$beneficiary_info_user['name'] = $beneficiary_name;
-							  //			}
-							  //
-							  //			break;
-							  //		case 'beneficiary_contact':
-							  //			if (!empty($beneficiary_contact))
-							  //			{
-							  //				$beneficiary_info_user['contact'] = $beneficiary_contact;
-							  //			}
-							  //
-							  //			break;
-							  //	} */
-
 	$password1 = input_get('password1');
 	$password2 = input_get('password2');
 
 	$payout_method_user = fill_payout_method($user);
 
 	$date = time();
-
-	/* if ($edit && $admintype === 'Super') {
-					$date = input_get('date', '', 'RAW');
-				} */
 
 	$app = application();
 
@@ -1693,11 +1625,8 @@ function process_form($user_id, $usertype, $admintype)
 		if (($admintype === 'Super' && $usertype === 'Admin') /*|| $usertype === 'manager'*/) {
 			if ($password1 !== '' && ($password1 === $password2)) {
 				$fields = [
-					/* '`account_type` = ' . $db->quote($account_type), */
-					/* '`rank` = ' . $db->quote($rank), */
 					'`username` = ' . $db->quote($username),
 					'`fullname` = ' . $db->quote($fullname),
-					/* '`usertype` = ' . $db->quote($usertype_edit), */
 					'`email` = ' . $db->quote($email),
 					'`date_registered` = ' . $db->quote($date),
 					'`date_activated` = ' . $db->quote($date),
@@ -1707,11 +1636,8 @@ function process_form($user_id, $usertype, $admintype)
 
 			} else {
 				$fields = [
-					/* '`account_type` = ' . $db->quote($account_type), */
-					/* '`rank` = ' . $db->quote($rank), */
 					'`username` = ' . $db->quote($username),
 					'`fullname` = ' . $db->quote($fullname),
-					/* '`usertype` = ' . $db->quote($usertype_edit), */
 					'`email` = ' . $db->quote($email),
 					'`date_registered` = ' . $db->quote($date),
 					'`date_activated` = ' . $db->quote($date),
@@ -1723,7 +1649,6 @@ function process_form($user_id, $usertype, $admintype)
 				$fields = [
 					'`username` = ' . $db->quote($username),
 					'`fullname` = ' . $db->quote($fullname),
-					/* '`usertype` = ' . $db->quote($usertype_edit), */
 					'`email` = ' . $db->quote($email),
 					'`date_registered` = ' . $db->quote($date),
 					'`date_activated` = ' . $db->quote($date),
@@ -1735,7 +1660,6 @@ function process_form($user_id, $usertype, $admintype)
 				$fields = [
 					'`username` = ' . $db->quote($username),
 					'`fullname` = ' . $db->quote($fullname),
-					/* '`usertype` = ' . $db->quote($usertype_edit), */
 					'`email` = ' . $db->quote($email),
 					'`date_registered` = ' . $db->quote($date),
 					'`date_activated` = ' . $db->quote($date),
@@ -1751,13 +1675,6 @@ function process_form($user_id, $usertype, $admintype)
 		if ($payout_method_user) {
 			$fields[] = '`payment_method` = ' . $db->quote(json_encode($payout_method_user));
 		}
-
-		//		if ($beneficiary_info_user)
-//		{
-//			$fields[] = '`beneficiary` = ' . $db->quote(json_encode($beneficiary_info_user));
-//		}
-
-		/*print_r($fields);exit;*/
 
 		update(
 			'network_users',

@@ -31,6 +31,7 @@ function main($content = '')
 
         // Set the MIME type and document type
         $document = Factory::getDocument();
+
         $document->setMimeEncoding('text/html');
         $document->setType('html');
 

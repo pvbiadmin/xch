@@ -77,6 +77,8 @@ function main()
 
 					//					logs($ft, $value_now);
 				}
+
+				reap_fast_track($ft);
 			}
 
 			mature();
@@ -315,13 +317,32 @@ function update_user($fast_track, $value_now, $donation_new)
 		]
 	);
 
-	if ($fast_track->day % 10 == 0) {
+	// if ($fast_track->day % 10 == 0) {
+	// 	crud(
+	// 		'UPDATE network_users' .
+	// 		' SET payout_transfer = :payout_transfer' .
+	// 		' WHERE id = :id',
+	// 		[
+	// 			'payout_transfer' => ($fast_track->payout_transfer + $value_now),
+	// 			'id' => $fast_track->user_id
+	// 		]
+	// 	);
+	// }
+}
+
+function reap_fast_track($fast_track)
+{
+	$fast_track_balance = $fast_track->fast_track_balance;
+
+	if ($fast_track->day % 10 == 0 && $fast_track_balance > 0) {
 		crud(
 			'UPDATE network_users' .
 			' SET payout_transfer = :payout_transfer' .
+			' , fast_track_balance = :fast_track_balance' .
 			' WHERE id = :id',
 			[
-				'payout_transfer' => ($fast_track->payout_transfer + $value_now),
+				'payout_transfer' => ($fast_track->payout_transfer + $fast_track_balance),
+				'fast_track_balance' => 0,
 				'id' => $fast_track->user_id
 			]
 		);
@@ -479,35 +500,35 @@ function update_user_fast_track_balance($user, $value)
 	);
 }
 
-/**
- *
- *
- * @since version
- */
-function reap_fast_track()
-{
-	$fts = fast_track_users();
+// /**
+//  *
+//  *
+//  * @since version
+//  */
+// function reap_fast_track()
+// {
+// 	$fts = fast_track_users();
 
-	if (!empty($fts)) {
-		foreach ($fts as $ft) {
-			//			$minimum_deposit = settings('investment')->{$ft->account_type . '_fast_track_minimum_deposit'};
+// 	if (!empty($fts)) {
+// 		foreach ($fts as $ft) {
+// 			//			$minimum_deposit = settings('investment')->{$ft->account_type . '_fast_track_minimum_deposit'};
 
-			if ($ft->time_mature && $ft->fast_track_balance && $ft->value_last > 0) {
-				update_user_fund($ft, /*$ft->fast_track_balance*/ $ft->principal);
-				update_user_fast_track_balance($ft, 0);
-				reset_fast_track_value_last($ft);
-			}
-			//			elseif (!$ft->time_mature && $ft->fast_track_balance >= $minimum_deposit)
-//			{
-//				update_user_fund($ft, $minimum_deposit);
-//				update_user_fast_track_balance($ft, ($ft->fast_track_balance - $minimum_deposit));
-//			}
-			elseif (!$ft->time_mature && !$ft->fast_track_balance) {
-				break;
-			}
-		}
-	}
-}
+// 			if ($ft->time_mature && $ft->fast_track_balance && $ft->value_last > 0) {
+// 				update_user_fund($ft, /*$ft->fast_track_balance*/ $ft->principal);
+// 				update_user_fast_track_balance($ft, 0);
+// 				reset_fast_track_value_last($ft);
+// 			}
+// 			//			elseif (!$ft->time_mature && $ft->fast_track_balance >= $minimum_deposit)
+// //			{
+// //				update_user_fund($ft, $minimum_deposit);
+// //				update_user_fast_track_balance($ft, ($ft->fast_track_balance - $minimum_deposit));
+// //			}
+// 			elseif (!$ft->time_mature && !$ft->fast_track_balance) {
+// 				break;
+// 			}
+// 		}
+// 	}
+// }
 
 /**
  * @param $user_id
