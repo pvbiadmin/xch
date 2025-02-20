@@ -126,7 +126,7 @@ function process_form()
 
 	// echo display_loader();
 
-	$admintype = session_get('admintype');
+	// $admintype = session_get('admintype');
 	// $edit = session_get('edit');
 
 	$username = input_get('username');
@@ -159,7 +159,7 @@ function process_form()
 		$password2,
 		$code,
 		$sponsor/* ,
-	  $admintype *//* ,
+  $admintype *//* ,
 $edit */
 	);
 

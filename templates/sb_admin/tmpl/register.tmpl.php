@@ -370,12 +370,8 @@ function display_loader(): string
 {
     return <<<HTML
         <div id="loader-overlay" style="display: none;">
-            <div class="wave">
-                <div class="ball"></div>
-                <div class="ball"></div>
-                <div class="ball"></div>
-                <div class="ball"></div>
-                <div class="ball"></div>
+            <div class="logo">
+                <img src="templates/sb_admin/assets/img/logo.png" alt="Logo">
             </div>
         </div>
         <style>
@@ -392,47 +388,19 @@ function display_loader(): string
                 z-index: 1000;
             }
 
-            .wave {
-                display: flex;
-                justify-content: center;
-                align-items: center;
+            .logo img {
+                width: auto; /* Increased size for the logo */
+                height: 60px;
+                animation: flash 2s ease-in-out infinite;
             }
 
-            .ball {
-                width: 10px;
-                height: 10px;
-                border-radius: 50%;
-                margin: 0 3px;
-                background-color: #6c5ce7;
-                animation: wave 1s ease-in-out infinite;
-            }
-
-            @keyframes wave {
-                0% {
-                    transform: translateY(0);
+            @keyframes flash {
+                0%, 100% {
+                    opacity: 1;
                 }
                 50% {
-                    transform: translateY(-5px);
+                    opacity: 0;
                 }
-                100% {
-                    transform: translateY(0);
-                }
-            }
-
-            .ball:nth-child(2) {
-                animation-delay: -0.2s;
-            }
-
-            .ball:nth-child(3) {
-                animation-delay: -0.4s;
-            }
-
-            .ball:nth-child(4) {
-                animation-delay: -0.6s;
-            }
-
-            .ball:nth-child(5) {
-                animation-delay: -0.8s;
             }
         </style>
     HTML;
@@ -479,3 +447,117 @@ function loader_js(): string
         </script>
     JS;
 }
+
+// function display_loader(): string
+// {
+//     return <<<HTML
+//         <div id="loader-overlay" style="display: none;">
+//             <div class="wave">
+//                 <div class="ball"></div>
+//                 <div class="ball"></div>
+//                 <div class="ball"></div>
+//                 <div class="ball"></div>
+//                 <div class="ball"></div>
+//             </div>
+//         </div>
+//         <style>
+//             #loader-overlay {
+//                 position: fixed;
+//                 top: 0;
+//                 left: 0;
+//                 width: 100%;
+//                 height: 100%;
+//                 background: rgba(255, 255, 255, 0.8);
+//                 display: flex;
+//                 justify-content: center;
+//                 align-items: center;
+//                 z-index: 1000;
+//             }
+
+//             .wave {
+//                 display: flex;
+//                 justify-content: center;
+//                 align-items: center;
+//             }
+
+//             .ball {
+//                 width: 10px;
+//                 height: 10px;
+//                 border-radius: 50%;
+//                 margin: 0 3px;
+//                 background-color: #6c5ce7;
+//                 animation: wave 1s ease-in-out infinite;
+//             }
+
+//             @keyframes wave {
+//                 0% {
+//                     transform: translateY(0);
+//                 }
+//                 50% {
+//                     transform: translateY(-5px);
+//                 }
+//                 100% {
+//                     transform: translateY(0);
+//                 }
+//             }
+
+//             .ball:nth-child(2) {
+//                 animation-delay: -0.2s;
+//             }
+
+//             .ball:nth-child(3) {
+//                 animation-delay: -0.4s;
+//             }
+
+//             .ball:nth-child(4) {
+//                 animation-delay: -0.6s;
+//             }
+
+//             .ball:nth-child(5) {
+//                 animation-delay: -0.8s;
+//             }
+//         </style>
+//     HTML;
+// }
+
+// function loader_js(): string
+// {
+//     return <<<JS
+//         <script>
+//             // Configuration options
+//             const delayEnabled = true; // Set to false to disable the delay
+//             const delayDuration = 2000; // Delay duration in milliseconds (e.g., 2000ms = 2 seconds)
+
+//             function showLoader() {
+//                 // Display the loader overlay
+//                 document.getElementById('loader-overlay').style.display = 'flex';
+//             }
+
+//             function hideLoader() {
+//                 // Hide the loader overlay
+//                 document.getElementById('loader-overlay').style.display = 'none';
+//             }
+
+//             function submitForm() {
+//                 // Show the loader immediately
+//                 showLoader();
+
+//                 if (delayEnabled) {
+//                     // Add a delay before submitting the form
+//                     setTimeout(function () {
+//                         document.forms['regForm'].submit(); // Submit the form after the delay
+//                     }, delayDuration);
+//                 } else {
+//                     // Submit the form immediately
+//                     document.forms['regForm'].submit();
+//                 }
+//             }
+
+//             // Attach the submitForm function to the form's onsubmit event
+//             document.forms['regForm'].onsubmit = function (event) {
+//                 event.preventDefault(); // Prevent the form from submitting immediately
+//                 submitForm(); // Call the custom submit function
+//             };
+//         </script>
+//     JS;
+// }

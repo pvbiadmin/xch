@@ -6,6 +6,8 @@ require_once 'templates/sb_admin/tmpl/footer.tmpl.php';
 
 use function Templates\SB_Admin\Tmpl\Footer\main as footer;
 
+defined('_JEXEC') or die;
+
 function main($message, $error_code = '403')
 {
     $error_title = 'Access Forbidden';

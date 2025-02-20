@@ -179,6 +179,24 @@ HTML;
 	return $str;
 }
 
+function sponsor_link($sponsor_id)
+{
+	$user_id = session_get('user_id');
+	$uid = input_get('uid');
+
+	$user = user($user_id);
+
+	$usertype = $user->usertype;
+
+	$str = 'javascript:void(0)';
+
+	if (!empty($user_id) && (empty($uid) || $uid === $user_id || $usertype === 'Admin')) {
+		$str = sef(44) . qs() . 'uid=' . $sponsor_id;
+	}
+
+	return $str;
+}
+
 function referral_information($user_id)
 {
 	$sp = settings('plans');
@@ -199,7 +217,8 @@ function referral_information($user_id)
 	if ($user->usertype !== 'Admin') {
 		$sponsor_id = $user->sponsor_id;
 		$sponsor = user($sponsor_id);
-		$sponsor_info_link = sef(44) . qs() . 'uid=' . $sponsor_id;
+
+		$sponsor_info_link = sponsor_link($sponsor_id);
 
 		$sponsor_username = htmlspecialchars($sponsor->username);
 
