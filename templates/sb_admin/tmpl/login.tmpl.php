@@ -116,9 +116,12 @@ function view_login()
                 <input class="form-control" id="inputUsername" type="text" name="username" placeholder="Username" />
                 <label for="inputUsername">Username</label>
             </div>
-            <div class="form-floating mb-3">
+            <div class="form-floating mb-3 position-relative">
                 <input class="form-control" id="inputPassword" type="password" name="password" placeholder="Password" />
                 <label for="inputPassword">Password</label>
+                <span class="position-absolute top-50 end-0 translate-middle-y pe-3" style="cursor: pointer;" onclick="togglePasswordVisibility()">
+                    <i id="eyeIcon" class="fas fa-eye"></i>
+                </span>
             </div>
             <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
                 <button class="btn btn-primary" type="submit">Login</button>
@@ -129,6 +132,23 @@ function view_login()
         <div class="small"><a href="{$registration_link}">No accounts yet? Sign up!</a></div>
     </div>
 </div>
+
+<script>
+    function togglePasswordVisibility() {
+        const passwordInput = document.getElementById('inputPassword');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            eyeIcon.classList.remove('fa-eye');
+            eyeIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            eyeIcon.classList.remove('fa-eye-slash');
+            eyeIcon.classList.add('fa-eye');
+        }
+    }
+</script>
 HTML;
 
     return $str;

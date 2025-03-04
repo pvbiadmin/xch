@@ -307,7 +307,7 @@ function contact_information($user_id)
 								<input class="form-control" type="text" name="mobile_number" value="$mobile" aria-label="mobile_number">
 							</div>
 							<div class="input-group mb-2">
-								<div class="input-group-text">Whatsapp</div>
+								<div class="input-group-text">Landline</div>
 								<input class="form-control" type="text" name="landline_number" value="$landline" aria-label="landline_number">
 							</div>
 						</td>						                     
@@ -407,27 +407,58 @@ function change_password($user_id)
 {
 	$str = <<<HTML
 <div class="card mb-4">
-	<div class="card-header">
-		<i class="fas fa-table me-1"></i>
-		Change Password
-	</div>
-	<div class="card-body">
-		<div class="row">
-			<table class="table table-hover table-responsive">            
-				<tbody>
-					<tr>
-						<th scope="row">Password</th>
-						<td><input type="password" class="form-control" name="password1" id="password"></td>
-					</tr>
-					<tr>
-						<th scope="row">Confirm Password</th>
-						<td><input type="password" class="form-control" name="password2" id="password2"></td>                        
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</div>
+    <div class="card-header">
+        <i class="fas fa-table me-1"></i>
+        Change Password
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <table class="table table-hover table-responsive">            
+                <tbody>
+                    <tr>
+                        <th scope="row">Password</th>
+                        <td>
+                            <div class="position-relative">
+                                <input type="password" class="form-control" name="password1" id="password">
+                                <span class="position-absolute top-50 end-0 translate-middle-y pe-3" style="cursor: pointer;" onclick="togglePasswordVisibility('password', 'eyeIcon1')">
+                                    <i id="eyeIcon1" class="fas fa-eye"></i>
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Confirm Password</th>
+                        <td>
+                            <div class="position-relative">
+                                <input type="password" class="form-control" name="password2" id="password2">
+                                <span class="position-absolute top-50 end-0 translate-middle-y pe-3" style="cursor: pointer;" onclick="togglePasswordVisibility('password2', 'eyeIcon2')">
+                                    <i id="eyeIcon2" class="fas fa-eye"></i>
+                                </span>
+                            </div>
+                        </td>                        
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+<script>
+	function togglePasswordVisibility(inputId, iconId) {
+		const passwordInput = document.getElementById(inputId);
+		const eyeIcon = document.getElementById(iconId);
+
+		if (passwordInput.type === 'password') {
+			passwordInput.type = 'text';
+			eyeIcon.classList.remove('fa-eye');
+			eyeIcon.classList.add('fa-eye-slash');
+		} else {
+			passwordInput.type = 'password';
+			eyeIcon.classList.remove('fa-eye-slash');
+			eyeIcon.classList.add('fa-eye');
+		}
+	}
+</script>
 HTML;
 
 	return $str;
@@ -1149,12 +1180,12 @@ function fill_payout_method($user)
 	}
 	/* } else if ($tokens) { */
 	/* foreach ($tokens as $token) {
-																					  $strl_token = strtolower($token);
+																									 $strl_token = strtolower($token);
 
-																					  if ($payout_method === $strl_token) {
-																						  $payout_method_user[$strl_token] = input_get($strl_token . '_address', '', 'RAW');
-																					  }
-																				  } */
+																									 if ($payout_method === $strl_token) {
+																										 $payout_method_user[$strl_token] = input_get($strl_token . '_address', '', 'RAW');
+																									 }
+																								 } */
 	/* } */
 
 	return $payout_method_user;

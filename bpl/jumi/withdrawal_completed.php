@@ -63,7 +63,7 @@ function main()
 		</ol>				
 		$view_withdrawal_completed
 	</div>
-	HTML;
+HTML;
 
 	return $str;
 }
@@ -167,11 +167,11 @@ function row_withdrawal_completed_admin(): string
 		foreach ($results as $result) {
 			$str .= '<tr>';
 			$str .= '<td>' . date('M j, Y - g:i A', $result->date_requested) . '</td>';
-			$str .= '<td><a href="' . sef(9) . qs() . 'uid=' . $result->id . '">' . $result->username . '</a></td>';
+			$str .= '<td><a href="' . sef(44) . qs() . 'uid=' . $result->id . '">' . $result->username . '</a></td>';
 			$str .= '<td>' . number_format($result->balance, 2) . '</td>';
 			$str .= '<td>' . number_format($result->amount, 2) . '</td>';
 			$str .= '<td>' . number_format($result->deductions_total, 2) . '</td>';
-			$str .= '<td>' . ucwords($result->amount) . '</td>';
+			$str .= '<td>' . ucwords($result->method) . '</td>';
 			$str .= '</tr>';
 		}
 	} else {

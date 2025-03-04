@@ -149,13 +149,11 @@ function view_registration()
         $sponsor_value = $s_sponsor && !isset($sponsor) ? $s_sponsor : $sponsor;
         $readonly = $s_sponsor !== '' ? ' readonly' : '';
         $sponsor_field = <<<HTML
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="sponsor">Sponsor Username: *</label>
                 <div class="input-group">
                     <input type="text" name="sponsor" id="sponsor" class="form-control" value="$sponsor_value" placeholder="Enter Sponsor Username Here.." required$readonly>
-                    <span class="input-group-btn">
-                        <button type="button" onClick="checkInput('sponsor')" class="btn btn-default" style="height: 38px;">Check Validity</button>
-                    </span>
+                    <button type="button" onClick="checkInput('sponsor')" class="btn btn-outline-secondary">Check Validity</button>
                 </div>
                 <div id="sponsorDiv" class="help-block validation-message"></div>
             </div>
@@ -171,33 +169,43 @@ HTML;
             {$form_token}
             <p>Please fill up all fields marked *</p>
             <!-- Username Field -->
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="username">Username: *</label>
                 <div class="input-group">
-                    <input type="text" name="username" id="username" class="form-control" value="$s_username" placeholder="Enter Username Here.." required>
-                    <span class="input-group-btn">
-                        <button type="button" onClick="checkInput('username')" class="btn btn-default" style="height: 38px;">Check Availability</button>
-                    </span>
+                    <input type="text" name="username" id="username" class="form-control" value="$s_username" placeholder="Enter Username Here.." required>                    
+                    <button type="button" onClick="checkInput('username')" class="btn btn-outline-secondary">
+                        Check Validity
+                    </button>                    
                 </div>
                 <div id="usernameDiv" class="help-block validation-message"></div>
-            </div><br>
+            </div>
 
             <!-- Email Field -->
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="email">Email: *</label>
                 <input type="email" name="email" id="email" class="form-control" value="$s_email" placeholder="Enter Email Here.." required>
-            </div><br>
+            </div>
 
             <!-- Password Fields -->
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="password1">Password: *</label>
-                <input type="password" name="password1" id="password1" class="form-control" value="$s_password" placeholder="Enter Password Here.." required>
-            </div><br>
+                <div class="input-group">
+                    <input type="password" name="password1" id="password1" class="form-control" value="$s_password" placeholder="Enter Password Here.." required>
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('password1', 'eyeIcon1')">
+                        <i id="eyeIcon1" class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
 
-            <div class="form-group">
+            <div class="mb-3">
                 <label for="password2">Confirm Password: *</label>
-                <input type="password" name="password2" id="password2" class="form-control" value="$s_password" placeholder="Confirm Password Here.." required>
-            </div><br>
+                <div class="input-group">
+                    <input type="password" name="password2" id="password2" class="form-control" value="$s_password" placeholder="Confirm Password Here.." required>                    
+                    <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('password2', 'eyeIcon2')">
+                        <i id="eyeIcon2" class="fas fa-eye"></i>
+                    </button>                    
+                </div>
+            </div>
 
             <!-- Sponsor Field -->
             {$sponsor_field}<br>
@@ -220,6 +228,23 @@ HTML;
     </div>
     {$login}
 </div>
+
+<script>
+function togglePasswordVisibility(fieldId) {
+    const passwordInput = document.getElementById(fieldId);
+    const eyeIcon = document.getElementById(`eyeIcon\${fieldId.charAt(0).toUpperCase() + fieldId.slice(1)}`);
+
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.classList.remove('fa-eye');
+        eyeIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        eyeIcon.classList.remove('fa-eye-slash');
+        eyeIcon.classList.add('fa-eye');
+    }
+}
+</script>
 HTML;
 
     // Append additional functions
