@@ -44,7 +44,7 @@ function process_user_lftp($user)
 
 	// Retrieve settings for the user's account type
 	$type_level = $slftp->{$account_type . '_leadership_fast_track_principal_level'};
-	$required_directs = $slftp->{$account_type . '_leadership_fast_track_principalsponsored'};
+	$required_directs = $slftp->{$account_type . '_leadership_fast_track_principal_sponsored'};
 	$max_daily_income = $slftp->{$account_type . '_leadership_fast_track_principal_max_daily_income'};
 	$income_max = $slftp->{$account_type . '_leadership_fast_track_principal_maximum'};
 
