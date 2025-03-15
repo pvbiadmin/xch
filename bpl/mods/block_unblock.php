@@ -39,7 +39,7 @@ function main($type = 'block')
 	$str = '';
 
 	if (input_get('final') === '') {
-		$str .= view_request_efund($user_id, $type);
+		$str .= view_form($user_id, $type);
 	} else {
 		process_form($user_id, $type);
 	}
